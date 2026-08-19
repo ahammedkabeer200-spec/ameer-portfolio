@@ -708,6 +708,9 @@
         <button type="button" class="nav-pill-btn" onclick="lockStudioSession()" style="color: #f87171;">
           <span>Lock</span>
         </button>
+        <button type="button" class="nav-pill-btn" onclick="publishAllToGitHub()" style="background: rgba(59, 130, 246, 0.25); border-color: #3b82f6; color: #93c5fd; font-weight: 700;" title="1-Click commit & publish changes to GitHub and live Netlify site">
+          <span>Publish to Live Site &uarr;</span>
+        </button>
         <a href="index.html" class="nav-pill-btn" target="_blank">
           <span>Live Site &nearr;</span>
         </a>
@@ -2176,23 +2179,44 @@
     function getGitHubConfig() {
       try {
         const saved = localStorage.getItem('ameer_github_config');
-        return saved ? JSON.parse(saved) : null;
+        if (saved) return JSON.parse(saved);
+        return {
+          owner: 'ahammedkabeer200-spec',
+          repo: 'ameer-portfolio',
+          branch: 'main',
+          token: ''
+        };
       } catch (e) {
-        return null;
+        return {
+          owner: 'ahammedkabeer200-spec',
+          repo: 'ameer-portfolio',
+          branch: 'main',
+          token: ''
+        };
       }
     }
 
     function loadGitHubConfigUI() {
       const cfg = getGitHubConfig();
       const badge = document.getElementById('ghStatusBadge');
-      if (cfg && cfg.owner && cfg.repo && cfg.token) {
-        if (document.getElementById('ghOwnerInput')) document.getElementById('ghOwnerInput').value = cfg.owner;
-        if (document.getElementById('ghRepoInput')) document.getElementById('ghRepoInput').value = cfg.repo;
-        if (document.getElementById('ghBranchInput')) document.getElementById('ghBranchInput').value = cfg.branch || 'main';
-        if (document.getElementById('ghTokenInput')) document.getElementById('ghTokenInput').value = cfg.token;
-        if (badge) {
-          badge.textContent = 'Connected: ' + cfg.owner + '/' + cfg.repo;
+      
+      const owner = cfg?.owner || 'ahammedkabeer200-spec';
+      const repo = cfg?.repo || 'ameer-portfolio';
+      const branch = cfg?.branch || 'main';
+      const token = cfg?.token || '';
+
+      if (document.getElementById('ghOwnerInput')) document.getElementById('ghOwnerInput').value = owner;
+      if (document.getElementById('ghRepoInput')) document.getElementById('ghRepoInput').value = repo;
+      if (document.getElementById('ghBranchInput')) document.getElementById('ghBranchInput').value = branch;
+      if (document.getElementById('ghTokenInput')) document.getElementById('ghTokenInput').value = token;
+
+      if (badge) {
+        if (token) {
+          badge.textContent = 'Connected: ' + owner + '/' + repo;
           badge.style.color = '#4ade80';
+        } else {
+          badge.textContent = 'Ready (Enter Token Below)';
+          badge.style.color = '#f59e0b';
         }
       }
     }
