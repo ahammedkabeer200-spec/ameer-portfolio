@@ -225,7 +225,7 @@ const fallbackProjects = [
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', async () => {
   initCursorGlow();
-  loadAndApplySiteContent();
+  await loadAndApplySiteContent();
   await loadProjectsData();
   renderProjectsGrid();
   handleUrlRouting();
@@ -292,13 +292,26 @@ function calculateCareerMilestones() {
 }
 
 // Load & Apply Custom Page Content (01 About, 02 Services, 03 Selected Work, 04 Contact)
-function loadAndApplySiteContent() {
-  const local = localStorage.getItem('ameer_portfolio_site_content');
-  if (local) {
-    try {
-      siteContent = JSON.parse(local);
-    } catch (e) {}
+async function loadAndApplySiteContent() {
+  const isPreview = window.location.search.includes('preview=');
+  let loaded = false;
+  if (isPreview) {
+    const local = localStorage.getItem('ameer_portfolio_site_content');
+    if (local) {
+      try { siteContent = JSON.parse(local); loaded = true; } catch (e) {}
+    }
   }
+
+  if (!loaded) {
+    try {
+      const res = await fetch('data/siteContent.json?t=' + Date.now());
+      if (res.ok) {
+        siteContent = await res.json();
+        loaded = true;
+      }
+    } catch(e) {}
+  }
+  
   if (!siteContent) siteContent = defaultSiteContent;
 
   const milestones = calculateCareerMilestones();
@@ -450,23 +463,37 @@ function initCursorGlow() {
 
 // Load Projects Data
 async function loadProjectsData() {
-  const localData = localStorage.getItem('ameer_portfolio_projects');
-  if (localData) {
-    try {
-      projectsData = JSON.parse(localData);
-      if (Array.isArray(projectsData) && projectsData.length > 0) return;
-    } catch (e) {}
+  const isPreview = window.location.search.includes('preview=');
+  if (isPreview) {
+    const localData = localStorage.getItem('ameer_portfolio_projects');
+    if (localData) {
+      try {
+        projectsData = JSON.parse(localData);
+        if (Array.isArray(projectsData) && projectsData.length > 0) return;
+      } catch (e) {}
+    }
   }
 
   try {
-    const res = await fetch('data/projects.json');
+    const res = await fetch('data/projects.json?t=' + Date.now());
     if (res.ok) {
-      projectsData = await res.json();
-      return;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        projectsData = data;
+        return;
+      }
     }
-  } catch (e) {}
-
-  projectsData = fallbackProjects;
+  } catch(e) {}
+  
+  // Fallback to local
+  const localData = localStorage.getItem('ameer_portfolio_projects');
+  if (localData) {
+    try { projectsData = JSON.parse(localData); } catch (e) {}
+  }
+  
+  if (!projectsData || projectsData.length === 0) {
+    projectsData = fallbackProjects;
+  }
 }
 
 function getCategoryDisplayName(catId) {
