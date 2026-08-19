@@ -246,13 +246,14 @@ body {
 
 .hero-image-wrapper img {
   width: 100%;
-  max-width: 420px;
   height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9);
-  border: 1px solid var(--border-dark);
+  object-fit: contain;
+  object-position: bottom center;
+  transform: scale(1.16);
+  transform-origin: bottom center;
+  mask-image: linear-gradient(to bottom, black 0%, black 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 82%, transparent 100%);
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.85));
 }
 
 .hero-overlay-grid {
