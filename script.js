@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AMEER SUHAIL — SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
  * JavaScript Engine: Dynamic Site Content Hydration & Universal Case Study Engine
  */
@@ -17,7 +17,7 @@ const defaultSiteContent = {
     yearPill: "UAE • 3 YRS EXP",
     heroHeadline: "BRAND & VISUAL<br>COMMUNICATION",
     heroLead: "Senior Graphic Designer with 4 years of experience (3 years in UAE) delivering high-impact visual design, branding, and campaign solutions across government, tourism, and corporate sectors.",
-    heroPortrait: "assets/hero-portrait.png",
+    heroPortrait: "",
     signatureScript: "Ameer Suhail",
     signatureSub: "AMEER SUHAIL",
     tagline: "DESIGN THAT RESONATES.<br>CAMPAIGNS THAT DELIVER.",
@@ -313,8 +313,13 @@ function loadAndApplySiteContent() {
 
   // Dynamic Hero Portrait Image
   const heroImg = document.getElementById('heroPortraitImg');
-  if (heroImg && ab.heroPortrait) {
-    heroImg.src = ab.heroPortrait;
+  if (heroImg) {
+    if (ab.heroPortrait && ab.heroPortrait.trim() !== '') {
+      heroImg.src = ab.heroPortrait;
+      heroImg.style.display = 'block';
+    } else {
+      heroImg.style.display = 'none';
+    }
   }
 
   setElementText('signatureScriptText', ab.signatureScript);
