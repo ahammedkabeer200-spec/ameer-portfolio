@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AMEER SUHAIL — SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
    Luxury Poster Layout & Design System matching Reference Poster
    Deep Obsidian (#0a0a0a), Charcoal Surface (#141414), Champagne Gold (#DFBD69)
@@ -249,11 +249,10 @@ body {
   height: 100%;
   object-fit: contain;
   object-position: bottom center;
-  transform: scale(1.18);
+  transform: scale(1.05);
   transform-origin: bottom center;
-  /* Natural bottom blend so the straight horizontal cut of the sweatshirt dissolves seamlessly into the black canvas */
-  mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
   filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.85));
 }
 
@@ -1841,8 +1840,8 @@ body {
     position: relative;
     width: 100%;
     max-width: 440px;
-    height: 500px;
-    margin: 12px auto 16px;
+    height: 480px;
+    margin: 14px auto 18px;
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -1850,10 +1849,10 @@ body {
   
   .hero-backdrop-word {
     position: absolute;
-    top: 75px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    font-size: clamp(3.8rem, 18vw, 6rem);
+    transform: translate(-50%, -50%);
+    font-size: clamp(4.2rem, 18vw, 6.5rem);
     letter-spacing: 0.03em;
     color: #dec39d;
     line-height: 0.85;
@@ -1862,18 +1861,30 @@ body {
     pointer-events: none;
     user-select: none;
     text-align: center;
+    opacity: 0.85;
   }
   
   .hero-image-wrapper {
     position: relative;
     width: 100%;
     height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
     z-index: 5;
   }
 
   .hero-image-wrapper img {
-    transform: scale(1.16);
-    transform-origin: bottom center;
+    width: auto;
+    max-width: 92%;
+    height: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    object-position: bottom center;
+    transform: none;
+    mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
+    filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.9));
   }
   
   /* 3. Bottom Signature, Tagline & Location */
@@ -1987,24 +1998,43 @@ body {
   }
 
   .hero-visual-stage {
-    height: 440px;
-    max-width: 360px;
-    margin: 8px auto 14px;
+    height: 390px;
+    max-width: 320px;
+    margin: 10px auto 14px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
   }
 
   .hero-backdrop-word {
-    font-size: clamp(3.4rem, 16vw, 4.8rem);
-    top: 65px;
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(3.6rem, 17vw, 4.8rem);
     z-index: 1;
+    opacity: 0.85;
   }
 
   .hero-image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
     z-index: 5;
   }
 
   .hero-image-wrapper img {
-    transform: scale(1.18);
-    transform-origin: bottom center;
+    width: auto;
+    max-width: 95%;
+    height: 100%;
+    max-height: 390px;
+    object-fit: contain;
+    object-position: bottom center;
+    transform: none;
+    mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
   }
 
   .signature-script {
