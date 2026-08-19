@@ -1,0 +1,9 @@
+﻿# System & OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+
+# Local Batch / PowerShell Export Helpers
+export_zip.bat
+export_zip.ps1
