@@ -708,13 +708,16 @@
         <button type="button" class="nav-pill-btn" onclick="lockStudioSession()" style="color: #f87171;">
           <span>Lock</span>
         </button>
+        <button type="button" class="nav-pill-btn gold" onclick="openFullWebsitePreview()" style="font-weight: 700;" title="Live interactive preview of your entire website with current edits">
+          <span>👁️ Preview Website</span>
+        </button>
         <button type="button" class="nav-pill-btn" onclick="publishAllToGitHub()" style="background: rgba(59, 130, 246, 0.25); border-color: #3b82f6; color: #93c5fd; font-weight: 700;" title="1-Click commit & publish changes to GitHub and live Netlify site">
           <span>Publish to Live Site &uarr;</span>
         </button>
-        <a href="index.html" class="nav-pill-btn" target="_blank">
+        <a href="index.html" class="nav-pill-btn" target="_blank" title="Open website in new browser tab">
           <span>Live Site &nearr;</span>
         </a>
-        <button type="button" class="nav-pill-btn gold" onclick="switchAdminTab('sync')">
+        <button type="button" class="nav-pill-btn" onclick="switchAdminTab('sync')">
           <span>Backup Center</span>
         </button>
       </div>
@@ -1295,6 +1298,9 @@
       </div>
 
       <div class="save-bar-actions">
+        <button type="button" class="nav-pill-btn gold" onclick="openFullWebsitePreview()" style="font-weight: 700;">
+          <span>👁️ Preview Website</span>
+        </button>
         <button type="button" class="nav-pill-btn" onclick="publishAllToGitHub()" style="background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;" title="Push changes directly to GitHub">
           Push to GitHub
         </button>
@@ -1306,6 +1312,59 @@
         </button>
       </div>
     </div>
+
+  <!-- ====================================================================
+       FULL WEBSITE LIVE PREVIEW MODAL WITH DEVICE EMULATOR
+       ==================================================================== -->
+  <div class="admin-modal-overlay" id="fullWebsitePreviewModal" onclick="closeFullWebsitePreview(event)">
+    <div class="admin-modal-card" style="max-width: 1400px; width: 98vw; height: 95vh; max-height: 95vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: #0c0d12;" onclick="event.stopPropagation()">
+      
+      <!-- Top Device Bar -->
+      <div style="background: rgba(18, 18, 24, 0.98); border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 0.74rem; font-weight: 700; color: var(--admin-gold); letter-spacing: 0.12em; text-transform: uppercase;">
+            LIVE WEBSITE PREVIEW
+          </span>
+          <span class="card-title-badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: rgba(34, 197, 94, 0.3);">
+            ● Real-Time Edits Active
+          </span>
+        </div>
+
+        <!-- Device Viewport Switcher -->
+        <div style="display: flex; gap: 6px; background: rgba(0, 0, 0, 0.4); padding: 4px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+          <button type="button" class="modal-cat-pill active" id="btnDeviceDesktop" onclick="switchPreviewDevice('desktop')" style="padding: 4px 12px; font-size: 0.74rem;">
+            Desktop (100%)
+          </button>
+          <button type="button" class="modal-cat-pill" id="btnDeviceTablet" onclick="switchPreviewDevice('tablet')" style="padding: 4px 12px; font-size: 0.74rem;">
+            Tablet (768px)
+          </button>
+          <button type="button" class="modal-cat-pill" id="btnDeviceMobile" onclick="switchPreviewDevice('mobile')" style="padding: 4px 12px; font-size: 0.74rem;">
+            Mobile (390px)
+          </button>
+        </div>
+
+        <!-- Right Action Controls -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="nav-pill-btn" onclick="refreshWebsitePreview()" title="Refresh preview">
+            Refresh
+          </button>
+          <a href="index.html" target="_blank" class="nav-pill-btn gold" title="Open website in full separate browser tab">
+            Open in Full Tab &nearr;
+          </a>
+          <button type="button" class="nav-pill-btn" onclick="publishAllToGitHub()" style="background: rgba(59, 130, 246, 0.25); border-color: #3b82f6; color: #93c5fd; font-weight: 700;">
+            Publish to Live Site &uarr;
+          </button>
+          <button type="button" class="btn-icon-del" onclick="closeFullWebsitePreview()" style="width: 32px; height: 32px; font-size: 1.2rem; border-radius: 50%; color: #fff; border-color: rgba(255, 255, 255, 0.2);">&times;</button>
+        </div>
+      </div>
+
+      <!-- Iframe Preview Stage -->
+      <div style="flex: 1; background: #000; display: flex; justify-content: center; align-items: stretch; overflow: hidden; position: relative;" id="previewStageWrapper">
+        <iframe id="websitePreviewIframe" src="about:blank" style="width: 100%; height: 100%; border: none; background: #09090b; transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;" title="Website Live Preview"></iframe>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ====================================================================
        LIVE PROJECT PRESENTATION & FILE PREVIEW MODAL
@@ -2099,6 +2158,65 @@
       if (e && e.target && e.target.classList.contains('admin-modal-card')) return;
       const modal = document.getElementById('adminProjectPreviewModal');
       if (modal) modal.classList.remove('active');
+    }
+
+    // =========================================================================
+    // FULL WEBSITE LIVE PREVIEW ENGINE & DEVICE EMULATOR
+    // =========================================================================
+    function openFullWebsitePreview() {
+      triggerCurrentSave();
+
+      const modal = document.getElementById('fullWebsitePreviewModal');
+      const iframe = document.getElementById('websitePreviewIframe');
+      if (!modal || !iframe) return;
+
+      iframe.src = 'index.html?preview=' + Date.now();
+      switchPreviewDevice('desktop');
+
+      modal.classList.add('active');
+      showToast('Live Website Preview active with all current edits!');
+    }
+
+    function closeFullWebsitePreview(e) {
+      if (e && e.target && e.target.classList.contains('admin-modal-card')) return;
+      const modal = document.getElementById('fullWebsitePreviewModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function refreshWebsitePreview() {
+      triggerCurrentSave();
+      const iframe = document.getElementById('websitePreviewIframe');
+      if (iframe) {
+        iframe.src = 'index.html?preview=' + Date.now();
+        showToast('Preview refreshed!');
+      }
+    }
+
+    function switchPreviewDevice(device) {
+      const iframe = document.getElementById('websitePreviewIframe');
+      const btnDesk = document.getElementById('btnDeviceDesktop');
+      const btnTab = document.getElementById('btnDeviceTablet');
+      const btnMob = document.getElementById('btnDeviceMobile');
+      if (!iframe) return;
+
+      [btnDesk, btnTab, btnMob].forEach(b => b && b.classList.remove('active'));
+
+      if (device === 'mobile') {
+        iframe.style.width = '390px';
+        iframe.style.boxShadow = '0 0 40px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.15)';
+        iframe.style.borderRadius = '12px';
+        if (btnMob) btnMob.classList.add('active');
+      } else if (device === 'tablet') {
+        iframe.style.width = '768px';
+        iframe.style.boxShadow = '0 0 40px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.15)';
+        iframe.style.borderRadius = '12px';
+        if (btnTab) btnTab.classList.add('active');
+      } else {
+        iframe.style.width = '100%';
+        iframe.style.boxShadow = 'none';
+        iframe.style.borderRadius = '0';
+        if (btnDesk) btnDesk.classList.add('active');
+      }
     }
 
     function addMediaRow(type = 'image', url = '', caption = '') {
