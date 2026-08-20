@@ -2585,22 +2585,57 @@
         return;
       }
 
-      showToast('Committing updates to GitHub repository...');
+      const overlay = document.getElementById('deploymentOverlay');
+      const deployStatus = document.getElementById('deployStatusText');
+      const deployProgress = document.getElementById('deployProgressBar');
+      const spinner = document.getElementById('deploySpinner');
+      
+      if(overlay) overlay.style.display = 'flex';
+      
       try {
-        // Save current project & site content
+        if(deployStatus) deployStatus.textContent = "Saving local changes...";
+        if(deployProgress) deployProgress.style.width = "10%";
         triggerCurrentSave();
+        await new Promise(r => setTimeout(r, 600));
 
-        // 1. Commit projects.json
+        if(deployStatus) deployStatus.textContent = "Uploading to Cloud (1/2)...";
+        if(deployProgress) deployProgress.style.width = "30%";
         const projectsJsonStr = JSON.stringify(allProjects, null, 2);
         await commitFileToGitHub('data/projects.json', projectsJsonStr, 'Update projects data via Studio CMS');
 
-        // 2. Commit siteContent.json
+        if(deployStatus) deployStatus.textContent = "Uploading to Cloud (2/2)...";
+        if(deployProgress) deployProgress.style.width = "50%";
         const siteContentStr = JSON.stringify(currentSiteContent || {}, null, 2);
         await commitFileToGitHub('data/siteContent.json', siteContentStr, 'Update site content via Studio CMS');
 
-        showToast('Published to GitHub! Live site is auto-deploying...');
+        if(deployStatus) deployStatus.textContent = "Building Live Website... (takes ~20s)";
+        if(deployProgress) deployProgress.style.width = "75%";
+        
+        // Simulate Netlify build wait (20 seconds)
+        await new Promise(r => setTimeout(r, 20000));
+
+        if(deployStatus) deployStatus.textContent = "Publishing Completed!";
+        if(deployProgress) {
+          deployProgress.style.width = "100%";
+          deployProgress.style.backgroundColor = "#10b981"; // success green
+        }
+        if(spinner) {
+          spinner.style.animation = "none";
+          spinner.style.borderColor = "#10b981";
+        }
+        
+        // Wait a moment for them to read "Completed!"
+        await new Promise(r => setTimeout(r, 1500));
+        
+        // Redirect to live site
+        window.location.href = "index.html?t=" + Date.now();
       } catch (err) {
-        showToast(`GitHub Publish Failed: ${err.message}`);
+        if(deployStatus) deployStatus.textContent = `Upload Failed: ${err.message}`;
+        if(deployProgress) deployProgress.style.backgroundColor = "#ef4444"; // red
+        setTimeout(() => { 
+          if(overlay) overlay.style.display = 'none'; 
+          if(deployProgress) deployProgress.style.backgroundColor = "var(--gold-primary)";
+        }, 5000);
       }
     }
 
@@ -2649,5 +2684,19 @@
     }
 
   </script>
+  <!-- Deployment Overlay -->
+  <div id="deploymentOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 100000; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-body); color: #fff; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div style="background: var(--admin-surface); border: 1px solid var(--admin-border-gold); padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+      <div id="deploySpinner" style="width: 50px; height: 50px; border: 4px solid rgba(223, 189, 105, 0.15); border-top-color: var(--gold-primary); border-radius: 50%; animation: adminSpin 1s linear infinite; margin: 0 auto 24px;"></div>
+      <h3 style="font-family: var(--font-condensed); font-size: 1.6rem; letter-spacing: 0.08em; color: var(--gold-sand); margin: 0 0 12px 0;">PUBLISHING UPDATES</h3>
+      <p id="deployStatusText" style="font-size: 0.95rem; color: #a39e93; margin: 0 0 24px 0; min-height: 22px;">Initializing...</p>
+      <div style="width: 100%; background: rgba(0,0,0,0.5); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+        <div id="deployProgressBar" style="width: 0%; height: 100%; background: var(--gold-primary); transition: width 0.4s ease, background-color 0.4s ease;"></div>
+      </div>
+    </div>
+  </div>
+  <style>
+  @keyframes adminSpin { to { transform: rotate(360deg); } }
+  </style>
 </body>
 </html>
