@@ -1,13 +1,90 @@
 {
-  "brandName": "AMEER SUHAIL",
-  "brandRole": "SENIOR GRAPHIC DESIGNER & BRAND SPECIALIST",
-  "yearPill": "UAE • 3 YRS EXP",
-  "heroHeadline": "BRAND & VISUAL<br>COMMUNICATION",
-  "heroLead": "Senior Graphic Designer with 4 years of experience (3 years in UAE) delivering high-impact visual design, branding, and campaign solutions across government, tourism, and corporate sectors.",
-  "heroPortrait": "",
-  "signatureScript": "Ameer Suhail",
-  "signatureSub": "AMEER SUHAIL",
-  "tagline": "DESIGN THAT RESONATES.<br>CAMPAIGNS THAT DELIVER.",
-  "locationBadge": "📍 UMM AL QUWAIN, UAE • AVAILABLE GLOBALLY",
-  "tocTitle": "TABLE OF<br>CONTENTS"
+  "about": {
+    "brandName": "AMEER SUHAIL",
+    "brandRole": "SENIOR GRAPHIC DESIGNER & BRAND SPECIALIST",
+    "heroHeadline": "BRAND & VISUAL COMMUNICATION",
+    "heroLead": "Senior Graphic Designer with 4 years of experience (3 years in UAE) delivering high-impact visual design, branding, and campaign solutions across government, tourism, and corporate sectors.",
+    "heroPortrait": "assets/hero-portrait.png",
+    "signatureScript": "Ameer Suhail",
+    "tagline": "DESIGN THAT RESONATES. CAMPAIGNS THAT DELIVER.",
+    "locationBadge": "UMM AL QUWAIN, UAE - AVAILABLE GLOBALLY",
+    "tocTitle": "TABLE OF CONTENTS",
+    "tocDesc": "Explore career milestones, government tourism case studies, AI creative workflows, and direct contact details.",
+    "tocLabels": {
+      "l1": "ABOUT ME",
+      "l2": "SERVICES",
+      "l3": "SELECTED WORK",
+      "l4": "CONTACT"
+    },
+    "sectionTitle": "ABOUT ME",
+    "headline": "STRATEGIC CREATIVITY MEETS PRECISION EXECUTION",
+    "bioP1": "A results-oriented Senior Graphic Designer with 4 years of proven creative excellence, including 3 impactful years in the UAE driving brand transformation for government entities, tourism boards, and commercial enterprises.",
+    "bioP2": "Currently leading creative campaigns at UAQ Next and the Tourism Department, orchestrating large-scale visual communication, national event branding, luxury collateral, and digital activations.",
+    "quote": "Design is not merely aesthetic ornamentation — it is the strategic visual architecture that defines credibility, commands attention, and drives measurable commercial results.",
+    "metrics": [
+      {
+        "num": "4+",
+        "title": "YEARS TOTAL EXPERIENCE",
+        "desc": "Government, tourism, and corporate visual design"
+      },
+      {
+        "num": "3 YRS",
+        "title": "UAE INDUSTRY LEADERSHIP",
+        "desc": "Leading creative campaigns at UAQ Next & Tourism"
+      },
+      {
+        "num": "100%",
+        "title": "AI-POWERED ACCELERATION",
+        "desc": "Rapid prototyping with Midjourney, Firefly & ChatGPT"
+      },
+      {
+        "num": "5 YRS",
+        "title": "ADOBE CC MASTERY",
+        "desc": "Photoshop, Illustrator, After Effects & InDesign"
+      }
+    ]
+  },
+  "services": {
+    "title": "CREATIVE SERVICES & DISCIPLINES",
+    "items": [
+      {
+        "title": "BRAND IDENTITY & ARCHITECTURE",
+        "sub": "Logo architecture, corporate identity systems, typography & brand guidelines"
+      },
+      {
+        "title": "GOVERNMENT & TOURISM CAMPAIGNS",
+        "sub": "Tourism promotion, strategic city branding & high-profile public initiatives"
+      },
+      {
+        "title": "DIGITAL PROMOTIONS & ADVERTISING",
+        "sub": "Multi-channel social campaigns, marketing collateral & visual communication"
+      },
+      {
+        "title": "MOTION GRAPHICS & VIDEO CREATIVE",
+        "sub": "After Effects animation, Premiere video editing & AI-driven motion storytelling"
+      },
+      {
+        "title": "PRINT, PACKAGING & OFFSET PRODUCTION",
+        "sub": "Structural dielines, Swiss grid publications, luxury packaging & large-format signage"
+      }
+    ]
+  },
+  "selectedWork": {
+    "title": "SELECTED WORK",
+    "viewAllText": "EXPLORE BEHANCE ARCHIVE ↗"
+  },
+  "contact": {
+    "ctaHeading": "LET'S CREATE SOMETHING AMAZING",
+    "email": "ameersuhail4729@gmail.com",
+    "phone": "Direct WhatsApp Chat",
+    "website": "Umm Al Quwain, UAE",
+    "location": "Umm Al Quwain, UAE",
+    "socials": {
+      "linkedin": "https://www.linkedin.com/in/ameersuhail2/",
+      "behance": "https://www.behance.net/ameersuhailv",
+      "dribbble": "https://dribbble.com",
+      "instagram": "https://instagram.com"
+    },
+    "copyright": "© 2026 AMEER SUHAIL. ALL RIGHTS RESERVED."
+  }
 }
