@@ -682,7 +682,15 @@ function openCaseStudy(identifier) {
     // 1. Open PDF Presentation Directly
     if (pdfContainer) pdfContainer.style.display = 'flex';
     if (galleryList) galleryList.style.display = 'none';
-    if (pdfIframe) pdfIframe.src = `${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+    
+    let finalPdfUrl = pdfUrl;
+    if (finalPdfUrl.includes('drive.google.com')) {
+      // Force preview mode for Google Drive links so they embed properly without an "Open" button
+      finalPdfUrl = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
+      if (pdfIframe) pdfIframe.src = finalPdfUrl;
+    } else {
+      if (pdfIframe) pdfIframe.src = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+    }
   } else {
     // 2. Open High-Res Vertical List Gallery (Images)
     if (pdfContainer) pdfContainer.style.display = 'none';
