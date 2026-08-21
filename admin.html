@@ -1956,7 +1956,11 @@
         }
       };
 
-      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(updatedContent));
+      try {
+        localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(updatedContent));
+      } catch (e) {
+        console.warn('Local storage full!', e);
+      }
       currentSiteContent = updatedContent;
       showToast("Saved page content to live website!");
     }
@@ -2313,7 +2317,12 @@
       document.getElementById('currentModeLabel').textContent = `Mode: Editing "${projectObj.title}"`;
       document.getElementById('deleteCurrentBtn').style.display = 'inline-flex';
 
-      localStorage.setItem('ameer_portfolio_projects', JSON.stringify(allProjects));
+      try {
+        localStorage.setItem('ameer_portfolio_projects', JSON.stringify(allProjects));
+      } catch (e) {
+        console.warn('Local storage quota exceeded!', e);
+        showToast('Warning: Local browser memory is full. Click Publish to Live Site immediately to save to Cloud!');
+      }
       renderVisualProjectsCards();
     }
 
