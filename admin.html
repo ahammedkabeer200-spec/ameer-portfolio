@@ -1978,6 +1978,7 @@
       const found = allProjects.find(p => p.id === id);
       if (found) populateFormWithProject(found);
       renderVisualProjectsCards();
+      document.getElementById('projectEditorForm').scrollIntoView({ behavior: 'smooth' });
     }
 
     function togglePdfPresInput(val) {
@@ -2001,6 +2002,7 @@
       currentSelectedId = '_new';
       document.getElementById('currentModeLabel').textContent = 'Mode: + New Project';
       document.getElementById('deleteCurrentBtn').style.display = 'none';
+      document.getElementById('projectEditorForm').scrollIntoView({ behavior: 'smooth' });
 
       document.getElementById('projTitle').value = '';
       document.getElementById('projClient').value = '';
