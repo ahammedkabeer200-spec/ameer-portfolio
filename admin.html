@@ -2000,8 +2000,8 @@
       document.getElementById('projPresFormat').value = 'photos';
       document.getElementById('projPdfUrl').value = '';
       document.getElementById('projTimeline').value = '4-6 Weeks';
-      document.getElementById('projCoverUrl').value = 'assets/project-packaging.jpg';
-      updateCoverPreview('assets/project-packaging.jpg');
+      document.getElementById('projCoverUrl').value = '';
+      updateCoverPreview('');
       document.getElementById('projSummary').value = '';
       document.getElementById('projChallenge').value = '';
       document.getElementById('projSolution').value = '';
@@ -2046,7 +2046,15 @@
 
     function updateCoverPreview(src) {
       const img = document.getElementById('coverPreviewImg');
-      if (img) img.src = src || 'assets/project-packaging.jpg';
+      if (img) {
+        if (src) {
+          img.src = src;
+          img.style.display = 'block';
+        } else {
+          img.src = '';
+          img.style.display = 'none';
+        }
+      }
     }
 
     function handleCoverFileUpload(event) {
@@ -2076,7 +2084,6 @@
     function initDefaultMediaRows() {
       const container = document.getElementById('mediaRepeaterContainer');
       container.innerHTML = '';
-      addMediaRow('image', 'assets/project-packaging.jpg', 'Packaging Showcase');
     }
 
     function testPdfPreview() {
@@ -2217,7 +2224,7 @@
       const div = document.createElement('div');
       div.className = 'repeater-row';
       div.innerHTML = `
-        <img src="${url || 'assets/project-packaging.jpg'}" style="width: 50px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--admin-border-gold); cursor: pointer;" onclick="if(this.src) window.open(this.src, '_blank')" title="Click to view full slide" onerror="this.src='assets/project-packaging.jpg'">
+        <img src="${url || ''}" style="width: 50px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--admin-border-gold); cursor: pointer;" onclick="if(this.src) window.open(this.src, '_blank')" title="Click to view full slide" onerror="this.style.display='none'" onload="this.style.display='block'">
         <input type="text" class="form-input media-url-input" placeholder="Image file path or URL" value="${url}" oninput="this.parentElement.querySelector('img').src = this.value" style="flex: 2;" required>
         <input type="text" class="form-input media-caption-input" placeholder="Slide Caption" value="${caption}" style="flex: 1.5;">
         <button type="button" class="nav-pill-btn" onclick="const u=this.parentElement.querySelector('.media-url-input').value; if(u) window.open(u, '_blank')" title="Preview slide image" style="padding: 4px 10px; font-size: 0.72rem;">View</button>
@@ -2231,7 +2238,7 @@
       const id = currentSelectedId === '_new' ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `proj-${Date.now()}` : currentSelectedId;
       const presFormat = document.getElementById('projPresFormat').value;
       const pdfUrl = document.getElementById('projPdfUrl').value.trim();
-      const coverUrl = document.getElementById('projCoverUrl').value.trim() || 'assets/project-packaging.jpg';
+      const coverUrl = document.getElementById('projCoverUrl').value.trim();
 
       const gallery = [];
       document.querySelectorAll('#mediaRepeaterContainer .repeater-row').forEach(row => {
