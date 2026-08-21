@@ -2290,9 +2290,12 @@
         showToast(`Updated "${projectObj.title}"!`);
       } else {
         allProjects.unshift(projectObj);
-        currentSelectedId = projectObj.id;
         showToast(`Added "${projectObj.title}"!`);
       }
+
+      currentSelectedId = projectObj.id;
+      document.getElementById('currentModeLabel').textContent = `Mode: Editing "${projectObj.title}"`;
+      document.getElementById('deleteCurrentBtn').style.display = 'inline-flex';
 
       localStorage.setItem('ameer_portfolio_projects', JSON.stringify(allProjects));
       renderVisualProjectsCards();
@@ -2307,6 +2310,7 @@
         allProjects = allProjects.filter(p => p.id !== currentSelectedId);
         localStorage.setItem('ameer_portfolio_projects', JSON.stringify(allProjects));
         showToast(`Deleted "${proj.title}".`);
+        renderVisualProjectsCards();
         resetFormToNew();
       }
     }
@@ -2545,17 +2549,32 @@
       // 1. Get existing file SHA if exists
       let sha = null;
       try {
-        const getRes = await fetch(`${apiUrl}?ref=${branch}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
+        // Use Git Trees API to get SHA (bypasses 1MB contents API limit)
+        const branchRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' } });
+        if (branchRes.ok) {
+          const branchData = await branchRes.json();
+          const treeSha = branchData.commit.commit.tree.sha;
+          const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' } });
+          if (treeRes.ok) {
+            const treeData = await treeRes.json();
+            const fileNode = treeData.tree.find(t => t.path === path);
+            if (fileNode) sha = fileNode.sha;
           }
-        });
-        if (getRes.ok) {
-          const fileData = await getRes.json();
-          sha = fileData.sha;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Failed to get SHA via tree, trying contents API fallback...', e);
+      }
+
+      // Fallback to old method just in case
+      if (!sha) {
+        try {
+          const getRes = await fetch(`${apiUrl}?ref=${branch}`, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' } });
+          if (getRes.ok) {
+             const fileData = await getRes.json();
+             sha = fileData.sha;
+          }
+        } catch (e) {}
+      }
 
       // 2. Put updated content
       const payload = {
