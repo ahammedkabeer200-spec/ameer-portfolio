@@ -2198,6 +2198,7 @@
       if (e && e.target && e.target.classList.contains('admin-modal-card')) return;
       const modal = document.getElementById('adminProjectPreviewModal');
       if (modal) modal.classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     // =========================================================================
