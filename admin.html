@@ -839,13 +839,9 @@
                 </button>
               </div>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="projPdfUrl" class="form-input" placeholder="assets/presentation.pdf or web link">
-                <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display: none;" onchange="handlePdfFileUpload(event)">
-                <button type="button" class="nav-pill-btn" onclick="document.getElementById('pdfFileInput').click()" style="flex-shrink: 0;">
-                  Upload PDF
-                </button>
-                <button type="button" class="nav-pill-btn gold" onclick="testPdfPreview()" style="flex-shrink: 0;" title="Test PDF in new tab">
-                  Preview PDF
+                <input type="text" id="projPdfUrl" class="form-input" placeholder="Paste Google Drive Link here" style="flex: 1;">
+                <button type="button" class="nav-pill-btn" onclick="testPdfPreview()" style="flex-shrink: 0;">
+                  Test Link
                 </button>
               </div>
             </div>
@@ -1864,7 +1860,7 @@
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          callback(canvas.toDataURL('image/jpeg', 0.82));
+          callback(canvas.toDataURL('image/jpeg', 0.65));
         };
         img.src = e.target.result;
       };
@@ -2086,7 +2082,7 @@
     function handleCoverFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      compressImage(file, 1200, (dataUrl) => {
+      compressImage(file, 1000, (dataUrl) => {
         document.getElementById('projCoverUrl').value = dataUrl;
         updateCoverPreview(dataUrl);
         showToast("Cover image uploaded!");
@@ -2098,7 +2094,7 @@
       if (files.length === 0) return;
       let count = 0;
       files.forEach(file => {
-        compressImage(file, 1600, (dataUrl) => {
+        compressImage(file, 1000, (dataUrl) => {
           addMediaRow('image', dataUrl, file.name.replace(/\.[^/.]+$/, ''));
           count++;
           if(count === files.length) showToast(`Added ${files.length} slide image(s)!`);
