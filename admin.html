@@ -2120,13 +2120,28 @@
       previewCurrentProjectModal();
     }
 
+    function openImageModal(url) {
+      if (!url) return;
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '999999';
+      overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+      overlay.onclick = () => overlay.remove();
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.maxWidth = '90%'; img.style.maxHeight = '90%'; img.style.objectFit = 'contain'; img.style.borderRadius = '8px';
+      overlay.appendChild(img);
+      document.body.appendChild(overlay);
+    }
+
     function previewCoverFull() {
       const url = document.getElementById('projCoverUrl').value.trim();
       if (!url) {
         showToast('Please enter or select a cover image.');
         return;
       }
-      window.open(url, '_blank');
+      openImageModal(url);
     }
 
     function previewCurrentProjectModal() {
@@ -2249,10 +2264,10 @@
       const div = document.createElement('div');
       div.className = 'repeater-row';
       div.innerHTML = `
-        <img src="${url || ''}" style="width: 50px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--admin-border-gold); cursor: pointer;" onclick="if(this.src) window.open(this.src, '_blank')" title="Click to view full slide" onerror="this.style.display='none'" onload="this.style.display='block'">
+        <img src="${url || ''}" style="width: 50px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--admin-border-gold); cursor: pointer;" onclick="if(this.src) openImageModal(this.src)" title="Click to view full slide" onerror="this.style.display='none'" onload="this.style.display='block'">
         <input type="text" class="form-input media-url-input" placeholder="Image file path or URL" value="${url}" oninput="this.parentElement.querySelector('img').src = this.value" style="flex: 2;" required>
         <input type="text" class="form-input media-caption-input" placeholder="Slide Caption" value="${caption}" style="flex: 1.5;">
-        <button type="button" class="nav-pill-btn" onclick="const u=this.parentElement.querySelector('.media-url-input').value; if(u) window.open(u, '_blank')" title="Preview slide image" style="padding: 4px 10px; font-size: 0.72rem;">View</button>
+        <button type="button" class="nav-pill-btn" onclick="const u=this.parentElement.querySelector('.media-url-input').value; if(u) openImageModal(u)" title="Preview slide image" style="padding: 4px 10px; font-size: 0.72rem;">View</button>
         <button type="button" class="btn-icon-del" onclick="this.parentElement.remove()" title="Delete">&times;</button>
       `;
       container.appendChild(div);
