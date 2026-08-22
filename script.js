@@ -527,6 +527,8 @@ function openAllProjectsModal(e) {
   renderModalCategoryFilters();
   renderModalProjectsGrid('all');
 
+  modal.style.display = 'flex';
+  modal.offsetHeight; // force reflow
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -535,15 +537,20 @@ window.openAllProjectsModal = openAllProjectsModal;
 function closeAllProjectsModal(e) {
   if (e && e.target && e.target.classList.contains('presentation-modal-card')) return;
   const modal = document.getElementById('allProjectsModal');
-  if (!modal) return;
-
-  modal.classList.remove('active');
-  const csModal = document.getElementById('caseStudyModal');
-  if (!csModal || !csModal.classList.contains('active')) {
-    document.body.style.overflow = 'auto';
+  if (modal) {
+    modal.classList.remove('active');
+    setTimeout(() => {
+      if (!modal.classList.contains('active')) {
+        modal.style.display = 'none';
+      }
+    }, 300);
+    
+    const csModal = document.getElementById('caseStudyModal');
+    if (!csModal || !csModal.classList.contains('active')) {
+      document.body.style.overflow = '';
+    }
   }
-}
-window.closeAllProjectsModal = closeAllProjectsModal;
+}window.closeAllProjectsModal = closeAllProjectsModal;
 
 function renderModalCategoryFilters() {
   const container = document.getElementById('modalCategoryFilters');
@@ -739,6 +746,8 @@ function openCaseStudy(identifier) {
 
   const modal = document.getElementById('caseStudyModal');
   if (modal) {
+    modal.style.display = 'flex';
+    modal.offsetHeight; // force reflow
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');
     
@@ -788,6 +797,11 @@ function closeCaseStudy(e) {
   if (modal) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+      if (!modal.classList.contains('active')) {
+        modal.style.display = 'none';
+      }
+    }, 300);
     
     // 2. Unlock background scrolling when modal unmounts / closes
     document.body.style.overflow = originalBodyOverflow || '';
