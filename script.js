@@ -641,9 +641,13 @@ function renderProjectsGrid() {
     const numStr = (idx + 1).toString().padStart(2, '0');
     const catSubtitle = (p.categories && p.categories[0]) || getCategoryDisplayName(p.category);
 
+    let aspectStyle = "padding-top: 62.5%;"; // 16:10 fallback
+    if (p.aspectRatio === "1:1") aspectStyle = "padding-top: 100%;";
+    if (p.aspectRatio === "4:5") aspectStyle = "padding-top: 125%;";
+
     return `
       <article class="project-card-mini" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
-        <div class="proj-mini-img-wrap">
+        <div class="proj-mini-img-wrap" style="${aspectStyle}">
           <img src="${p.coverImage}" alt="${p.title}" loading="lazy" onerror="this.src='assets/project-packaging.jpg'">
         </div>
         <div class="proj-mini-info">
@@ -671,6 +675,51 @@ function openCaseStudy(identifier) {
 
   if (clientEl) clientEl.textContent = `${project.client || 'CREATIVE PROJECT'} • ${project.year || '2026'}`;
   if (titleEl) titleEl.textContent = project.title || 'PROJECT PRESENTATION';
+
+  // Inject Designer Project Info (Description, Deliverables, Colors)
+  const infoBlock = document.getElementById('csProjectInfoBlock');
+  const descEl = document.getElementById('csProjectDesc');
+  const delList = document.getElementById('csDeliverablesList');
+  const colList = document.getElementById('csColorPaletteList');
+  let hasInfo = false;
+  
+  if (descEl) {
+    if (project.description) {
+      descEl.textContent = project.description;
+      hasInfo = true;
+    } else {
+      descEl.textContent = project.summary || project.challenge || '';
+      if (descEl.textContent) hasInfo = true;
+    }
+  }
+
+  if (delList) {
+    if (project.deliverables && project.deliverables.length > 0) {
+      delList.innerHTML = project.deliverables.map(d => `<span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.85rem; color: #e5e5e5;">${d}</span>`).join('');
+      document.getElementById('csDeliverablesWrapper').style.display = 'block';
+      hasInfo = true;
+    } else {
+      document.getElementById('csDeliverablesWrapper').style.display = 'none';
+    }
+  }
+
+  if (colList) {
+    if (project.colorPalette && project.colorPalette.length > 0) {
+      colList.innerHTML = project.colorPalette.map(c => {
+        let hex = typeof c === 'object' ? c.hex : c;
+        let title = typeof c === 'object' ? c.name : c;
+        return `<div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background-color: ${hex}; border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" title="${title}"></div>`;
+      }).join('');
+      document.getElementById('csColorPaletteWrapper').style.display = 'block';
+      hasInfo = true;
+    } else {
+      document.getElementById('csColorPaletteWrapper').style.display = 'none';
+    }
+  }
+
+  if (infoBlock) {
+    infoBlock.style.display = hasInfo ? 'block' : 'none';
+  }
 
   // Check for PDF Presentation
   const pdfUrl = project.pdfUrl || (project.documents && project.documents.find(d => (d.url && d.url.endsWith('.pdf')) || (d.file && d.file.endsWith('.pdf')) || d.type === 'PDF'))?.url || '';
