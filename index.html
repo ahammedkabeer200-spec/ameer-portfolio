@@ -573,6 +573,26 @@
 
       <!-- Pure Presentation Scroll Body -->
       <div class="pres-body-container" id="csPresBody">
+      
+        <!-- Project Info Block (Designer Meta) -->
+        <div id="csProjectInfoBlock" style="padding: 2rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: none;">
+          <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 4rem;">
+            <div>
+              <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Project Overview</h3>
+              <p id="csProjectDesc" style="color: #a3a3a3; line-height: 1.8; font-size: 1.1rem; white-space: pre-wrap;"></p>
+            </div>
+            <div>
+              <div id="csDeliverablesWrapper" style="margin-bottom: 2rem;">
+                <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Deliverables</h3>
+                <div id="csDeliverablesList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+              </div>
+              <div id="csColorPaletteWrapper">
+                <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Color Palette</h3>
+                <div id="csColorPaletteList" style="display: flex; gap: 0.5rem;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <!-- 1. PDF Presentation Viewer -->
         <div class="pres-pdf-wrapper" id="csPdfContainer" style="display: none;">
