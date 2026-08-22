@@ -362,7 +362,7 @@
     // =========================================================================
     function checkAuth() {
       const pass = document.getElementById('authPassword').value;
-      if (pass === 'ameer 2026' || sessionStorage.getItem('ameer_admin_auth') === 'true') {
+      if (pass === 'ameer2026' || sessionStorage.getItem('ameer_admin_auth') === 'true') {
         sessionStorage.setItem('ameer_admin_auth', 'true');
         document.getElementById('authOverlay').classList.add('hidden');
       } else {
