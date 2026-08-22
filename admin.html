@@ -216,6 +216,17 @@
                   </div>
                 </div>
 
+                <div class="mb-6 bg-dark p-4 rounded-xl border border-border">
+                  <label>PDF Presentation Deck URL (Optional)</label>
+                  <div class="flex gap-4">
+                    <input type="text" id="p_pdfUrl" placeholder="assets/presentation.pdf" class="flex-1">
+                    <label class="cursor-pointer bg-surface border border-border px-4 flex items-center justify-center rounded-lg hover:bg-neutral-800 transition-colors whitespace-nowrap text-brand font-medium">
+                      <i class="ph ph-upload-simple mr-2"></i> Upload PDF
+                      <input type="file" class="hidden" accept="application/pdf" onchange="handlePdfUpload(event, 'p_pdfUrl')">
+                    </label>
+                  </div>
+                </div>
+
                 <div class="bg-dark p-4 rounded-xl border border-border">
                   <div class="flex justify-between items-end mb-4">
                     <label class="!mb-0">Multi-Image Showcase Gallery</label>
@@ -563,6 +574,7 @@
       document.getElementById('pfTitle').textContent = "Create New Project";
       document.getElementById('colorFieldsContainer').innerHTML = '';
       document.getElementById('galleryContainer').innerHTML = '';
+      document.getElementById('p_pdfUrl').value = '';
       
       const modal = document.getElementById('projectFormModal');
       const card = document.getElementById('pfCard');
@@ -589,6 +601,7 @@
       document.getElementById('p_year').value = p.year || '';
       document.getElementById('p_order').value = p.order || '0';
       document.getElementById('p_coverImage').value = p.coverImage || '';
+      document.getElementById('p_pdfUrl').value = p.pdfUrl || '';
       document.getElementById('p_description').value = p.description || '';
       document.getElementById('p_aspectRatio').value = p.aspectRatio || '16:10';
       document.getElementById('p_deliverables').value = (p.deliverables || []).join(', ');
@@ -627,6 +640,7 @@
         year: document.getElementById('p_year').value,
         order: parseInt(document.getElementById('p_order').value) || 0,
         coverImage: document.getElementById('p_coverImage').value,
+        pdfUrl: document.getElementById('p_pdfUrl').value,
         aspectRatio: document.getElementById('p_aspectRatio').value,
         deliverables: deliverablesArr,
         description: document.getElementById('p_description').value,
@@ -719,6 +733,29 @@
           await commitFileToGitHub(filePath, base64Data, "Upload new image", () => {}, true);
           document.getElementById(targetId).value = filePath;
           showToast("Image uploaded successfully!");
+        } catch(err) {
+          showToast("Upload failed: " + err.message, true);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function handlePdfUpload(event, targetId) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) return showToast("PDF too large. Max 10MB.", true);
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        const ext = file.name.split('.').pop();
+        const filePath = `assets/doc-${Date.now()}.${ext}`;
+
+        try {
+          showToast("Uploading PDF to GitHub...");
+          await commitFileToGitHub(filePath, base64Data, "Upload new PDF presentation", () => {}, true);
+          document.getElementById(targetId).value = filePath;
+          showToast("PDF uploaded successfully!");
         } catch(err) {
           showToast("Upload failed: " + err.message, true);
         }
