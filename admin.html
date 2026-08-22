@@ -743,7 +743,7 @@
     async function handlePdfUpload(event, targetId) {
       const file = event.target.files[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) return showToast("PDF too large. Max 10MB.", true);
+      if (file.size > 25 * 1024 * 1024) return showToast("PDF too large. Max 25MB.", true);
 
       const reader = new FileReader();
       reader.onload = async function(e) {
