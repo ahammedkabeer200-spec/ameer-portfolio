@@ -1459,6 +1459,10 @@ body {
   pointer-events: auto;
 }
 
+.case-study-overlay:not(.active) * {
+  pointer-events: none !important;
+}
+
 /* Minimalist Fullscreen Presentation Card */
 .presentation-modal-card {
   background: #121212;
