@@ -86,5 +86,35 @@
       "instagram": "https://instagram.com"
     },
     "copyright": "© 2026 AMEER SUHAIL. ALL RIGHTS RESERVED."
-  }
+  },
+  "categories": [
+    {
+      "id": "brand-identity",
+      "name": "Brand Identity & System"
+    },
+    {
+      "id": "logo-design",
+      "name": "Logo Architecture"
+    },
+    {
+      "id": "packaging",
+      "name": "Luxury Packaging & Dielines"
+    },
+    {
+      "id": "gov-tourism",
+      "name": "Government & Tourism"
+    },
+    {
+      "id": "print",
+      "name": "Print, Swiss Grid & Editorial"
+    },
+    {
+      "id": "digital",
+      "name": "Digital & Campaign Direction"
+    },
+    {
+      "id": "motion",
+      "name": "Motion Graphics & Video Creative"
+    }
+  ]
 }
