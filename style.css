@@ -1441,9 +1441,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.94);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 10000;
   display: flex;
   align-items: center;
@@ -1451,7 +1451,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
-  padding: 12px;
+  padding: 16px;
 }
 
 .case-study-overlay.active {
@@ -1461,12 +1461,12 @@ body {
 
 /* Minimalist Fullscreen Presentation Card */
 .presentation-modal-card {
-  background: #09090b;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  width: min(96vw, 1200px);
-  height: 94vh;
-  max-height: 94vh;
+  background: #121212;
+  border: 1px solid #262626; /* neutral-800 */
+  border-radius: 16px; /* rounded-2xl */
+  width: min(100%, 896px); /* max-w-4xl */
+  height: 90vh; /* max-h-[90vh] */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1481,11 +1481,9 @@ body {
 
 /* Top Sticky Header */
 .pres-header-bar {
-  background: rgba(12, 12, 15, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px 24px;
+  background: #121212;
+  border-bottom: 1px solid #262626;
+  padding: 24px; /* p-6 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1508,13 +1506,11 @@ body {
 }
 
 .pres-title {
-  font-family: var(--font-condensed);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1;
+  font-family: var(--font-body);
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700; /* font-bold */
+  color: #ffffff; /* text-white */
+  margin: 0;
 }
 
 .pres-header-right {
@@ -1556,25 +1552,18 @@ body {
 }
 
 .pres-close-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: none;
+  border: none;
   color: #ffffff;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  line-height: 1;
+  font-size: 1.25rem; /* text-xl */
+  padding: 8px; /* p-2 */
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: opacity 0.3s ease;
+  line-height: 1;
 }
 
 .pres-close-btn:hover {
-  background: var(--gold-primary);
-  color: #000000;
-  transform: rotate(90deg);
+  opacity: 0.7; /* hover:opacity-70 */
 }
 
 /* ==========================================================================
