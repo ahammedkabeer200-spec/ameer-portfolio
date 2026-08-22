@@ -5,8 +5,8 @@ export default async (request, context) => {
   const authHeader = request.headers.get("authorization");
 
   // Authorized Admin Credentials
-  const USERNAME = "admin";
-  const PASSWORD = "SuperSecretPassword2026!";
+  const USERNAME = "ameer";
+  const PASSWORD = "2026";
   const EXPECTED_AUTH = `Basic ${btoa(`${USERNAME}:${PASSWORD}`)}`;
 
   // If header is missing or does not match credentials
