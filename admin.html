@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Studio | Portfolio Platform</title>
+  <title>Admin Studio | Designer Platform</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Tailwind CSS for rapid modern styling -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +36,7 @@
     
     /* Input Styling */
     input, textarea, select { background: #121212; border: 1px solid #333; color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; width: 100%; transition: border-color 0.2s; outline: none; }
-    input:focus, textarea:focus { border-color: #DFBD69; }
+    input:focus, textarea:focus, select:focus { border-color: #DFBD69; }
     label { display: block; font-size: 0.875rem; font-weight: 500; color: #a3a3a3; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
     
     /* Scrollbar */
@@ -44,9 +44,25 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+    /* Password Overlay */
+    #authOverlay { position: fixed; inset: 0; z-index: 99999; background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease, visibility 0.4s ease; }
+    #authOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
   </style>
 </head>
 <body class="flex h-screen overflow-hidden antialiased">
+
+  <!-- Password Protection Overlay -->
+  <div id="authOverlay">
+    <div class="bg-surface border border-border p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl">
+      <i class="ph ph-lock-key text-5xl text-brand mb-4"></i>
+      <h2 class="text-2xl font-bold text-white mb-2 tracking-widest uppercase">Restricted</h2>
+      <p class="text-neutral-500 mb-6 text-sm">Enter master password to access Admin Studio.</p>
+      <input type="password" id="authPassword" class="mb-4 text-center tracking-widest" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkAuth()">
+      <button onclick="checkAuth()" class="w-full bg-brand text-black font-bold py-3 rounded-lg hover:bg-amber-400 transition-all">UNLOCK</button>
+      <p id="authError" class="text-red-500 text-sm mt-4 hidden">Incorrect password.</p>
+    </div>
+  </div>
 
   <!-- Sidebar Navigation -->
   <nav class="w-72 glass-panel flex flex-col h-full flex-shrink-0 z-20">
@@ -112,56 +128,110 @@
       
       <!-- Project Form Modal -->
       <div id="projectFormModal" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-6 opacity-0 transition-opacity">
-        <div class="bg-surface border border-border w-full max-w-4xl rounded-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl transform scale-95 transition-transform" id="pfCard">
-          <div class="p-6 border-b border-border flex justify-between items-center bg-dark">
-            <h3 class="text-xl font-bold text-white" id="pfTitle">Create Project</h3>
+        <div class="bg-surface border border-border w-full max-w-4xl rounded-2xl h-[90vh] flex flex-col shadow-2xl transform scale-95 transition-transform" id="pfCard">
+          <div class="p-6 border-b border-border flex justify-between items-center bg-dark shrink-0">
+            <h3 class="text-xl font-bold text-white tracking-widest uppercase" id="pfTitle">Create Project</h3>
             <button onclick="closeProjectForm()" class="text-neutral-500 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
           </div>
           
           <div class="p-8 overflow-y-auto flex-1">
-            <form id="projectForm" class="space-y-6">
+            <form id="projectForm" class="space-y-8">
               <input type="hidden" id="p_id">
               
-              <div class="grid grid-cols-2 gap-6">
-                <div>
-                  <label>Project Title</label>
-                  <input type="text" id="p_title" required placeholder="e.g. Velocity Magazine">
-                </div>
-                <div>
-                  <label>Client / Brand</label>
-                  <input type="text" id="p_client" required placeholder="e.g. Velocity Inc.">
-                </div>
-              </div>
-
-              <div class="grid grid-cols-3 gap-6">
-                <div>
-                  <label>Category</label>
-                  <input type="text" id="p_category" required placeholder="e.g. Brand Identity">
-                </div>
-                <div>
-                  <label>Year</label>
-                  <input type="text" id="p_year" required placeholder="e.g. 2026">
-                </div>
-                <div>
-                  <label>Display Order</label>
-                  <input type="number" id="p_order" required placeholder="1 (Lowest is first)">
-                </div>
-              </div>
-
+              <!-- Core Details -->
               <div>
-                <label>Cover Image URL</label>
-                <input type="text" id="p_coverImage" required placeholder="assets/image.jpg">
-                <p class="text-xs text-neutral-500 mt-2">Use relative path like `assets/file.jpg` or an external URL.</p>
+                <h4 class="text-brand font-bold border-b border-border pb-2 mb-4 uppercase tracking-widest text-sm"><i class="ph ph-info mr-2"></i>Core Details</h4>
+                <div class="grid grid-cols-2 gap-6 mb-4">
+                  <div>
+                    <label>Project Title</label>
+                    <input type="text" id="p_title" required placeholder="e.g. Aura & Lumina Botanics">
+                  </div>
+                  <div>
+                    <label>Client / Brand</label>
+                    <input type="text" id="p_client" required placeholder="e.g. Lumina Co.">
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-6 mb-4">
+                  <div>
+                    <label>Category</label>
+                    <input type="text" id="p_category" required placeholder="e.g. Brand Identity">
+                  </div>
+                  <div>
+                    <label>Year</label>
+                    <input type="text" id="p_year" required placeholder="e.g. 2026">
+                  </div>
+                  <div>
+                    <label>Display Order</label>
+                    <input type="number" id="p_order" required placeholder="1 (Lowest is first)">
+                  </div>
+                </div>
               </div>
 
+              <!-- Graphic Designer Specifics -->
               <div>
-                <label>Case Study Description (Supports HTML)</label>
-                <textarea id="p_description" rows="6" placeholder="Describe the project..."></textarea>
+                <h4 class="text-brand font-bold border-b border-border pb-2 mb-4 uppercase tracking-widest text-sm"><i class="ph ph-paint-brush mr-2"></i>Design Deliverables</h4>
+                <div class="grid grid-cols-2 gap-6 mb-4">
+                  <div>
+                    <label>Deliverables (Comma-Separated Tags)</label>
+                    <input type="text" id="p_deliverables" placeholder="e.g. Logo Design, Bottle Packaging, Vector Assets">
+                  </div>
+                  <div>
+                    <label>Card Aspect Ratio</label>
+                    <select id="p_aspectRatio">
+                      <option value="16:10">16:10 Landscape</option>
+                      <option value="1:1">1:1 Square</option>
+                      <option value="4:5">4:5 Portrait / Poster</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label>Case Study (Problem, Direction, Software used)</label>
+                  <textarea id="p_description" rows="4" placeholder="Describe the design problem, art direction, and software like Illustrator/Blender..."></textarea>
+                </div>
               </div>
+
+              <!-- Color Palette Builder -->
+              <div>
+                <div class="flex justify-between items-end border-b border-border pb-2 mb-4">
+                  <h4 class="text-brand font-bold uppercase tracking-widest text-sm"><i class="ph ph-palette mr-2"></i>Color Palette</h4>
+                  <button type="button" onclick="addColorField()" class="text-xs text-brand hover:text-white border border-border px-3 py-1 rounded bg-dark flex items-center gap-1"><i class="ph ph-plus"></i> Add Color</button>
+                </div>
+                <div id="colorFieldsContainer" class="flex flex-wrap gap-4">
+                  <!-- Rendered dynamically -->
+                </div>
+                <p class="text-xs text-neutral-500 mt-2">Add 3-5 HEX codes used in the branding.</p>
+              </div>
+
+              <!-- Visual Media Setup -->
+              <div>
+                <h4 class="text-brand font-bold border-b border-border pb-2 mb-4 uppercase tracking-widest text-sm"><i class="ph ph-image mr-2"></i>Visual Media</h4>
+                <div class="mb-6 bg-dark p-4 rounded-xl border border-border">
+                  <label>Primary Cover Image / Mockup URL</label>
+                  <div class="flex gap-4">
+                    <input type="text" id="p_coverImage" required placeholder="assets/image.jpg" class="flex-1">
+                    <label class="cursor-pointer bg-surface border border-border px-4 flex items-center justify-center rounded-lg hover:bg-neutral-800 transition-colors whitespace-nowrap text-brand font-medium">
+                      <i class="ph ph-upload-simple mr-2"></i> Upload
+                      <input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 'p_coverImage')">
+                    </label>
+                  </div>
+                </div>
+
+                <div class="bg-dark p-4 rounded-xl border border-border">
+                  <div class="flex justify-between items-end mb-4">
+                    <label class="!mb-0">Multi-Image Showcase Gallery</label>
+                    <button type="button" onclick="addGalleryImage()" class="text-xs text-brand hover:text-white border border-border px-3 py-1 rounded bg-dark flex items-center gap-1"><i class="ph ph-plus"></i> Add Gallery Image</button>
+                  </div>
+                  <div id="galleryContainer" class="space-y-3">
+                    <!-- Rendered dynamically -->
+                  </div>
+                  <p class="text-xs text-neutral-500 mt-3">Add unlimited images (e.g. typography sheets, stationary mockups) for the project modal.</p>
+                </div>
+              </div>
+
             </form>
           </div>
           
-          <div class="p-6 border-t border-border bg-dark flex justify-end gap-4">
+          <div class="p-6 border-t border-border bg-dark flex justify-end gap-4 shrink-0">
             <button onclick="closeProjectForm()" class="px-6 py-3 rounded-lg border border-border text-neutral-300 hover:bg-surface">Cancel</button>
             <button onclick="saveProject()" class="px-8 py-3 rounded-lg bg-brand text-black font-bold hover:bg-amber-400">Save Project</button>
           </div>
@@ -186,13 +256,14 @@
             <div><label>Brand Name</label><input type="text" id="c_brandName"></div>
             <div><label>Brand Role / Title</label><input type="text" id="c_brandRole"></div>
             <div><label>Hero Headline (Supports HTML like <span> for gold text)</label><input type="text" id="c_heroHeadline"></div>
+            <div><label>Hero Lead Text</label><textarea id="c_heroLead" rows="3"></textarea></div>
             <div>
               <label>Hero Portrait Image URL</label>
               <div class="flex gap-4">
                 <input type="text" id="c_heroImage" placeholder="assets/hero-portrait.png" class="flex-1">
                 <label class="cursor-pointer bg-surface border border-border px-4 flex items-center justify-center rounded-lg hover:bg-neutral-800 transition-colors whitespace-nowrap text-brand font-medium">
-                  <i class="ph ph-upload-simple mr-2"></i> Upload from PC
-                  <input type="file" class="hidden" accept="image/*" onchange="handleHeroUpload(event)">
+                  <i class="ph ph-upload-simple mr-2"></i> Upload
+                  <input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 'c_heroImage')">
                 </label>
               </div>
             </div>
@@ -207,6 +278,8 @@
             <div><label>Instagram URL</label><input type="text" id="c_instagram"></div>
             <div><label>Twitter/X URL</label><input type="text" id="c_twitter"></div>
             <div><label>LinkedIn URL</label><input type="text" id="c_linkedin"></div>
+            <div><label>Behance URL</label><input type="text" id="c_behance"></div>
+            <div><label>Dribbble URL</label><input type="text" id="c_dribbble"></div>
           </div>
         </div>
 
@@ -229,7 +302,6 @@
         </div>
       </div>
       <div class="w-full h-[calc(100vh-100px)] rounded-xl overflow-hidden border border-border shadow-2xl relative bg-dark">
-        <!-- Preview loads index.html with preview=true so script.js forces localStorage loading -->
         <iframe id="previewIframe" src="" class="w-full h-full border-0"></iframe>
       </div>
     </section>
@@ -286,7 +358,25 @@
   <!-- Javascript Logic -->
   <script>
     // =========================================================================
-    // 1. STATE MANAGEMENT (LOCAL STORAGE)
+    // 0. AUTHENTICATION
+    // =========================================================================
+    function checkAuth() {
+      const pass = document.getElementById('authPassword').value;
+      if (pass === 'ameer 2026' || sessionStorage.getItem('ameer_admin_auth') === 'true') {
+        sessionStorage.setItem('ameer_admin_auth', 'true');
+        document.getElementById('authOverlay').classList.add('hidden');
+      } else {
+        document.getElementById('authError').classList.remove('hidden');
+      }
+    }
+    
+    // Auto-check on load
+    if (sessionStorage.getItem('ameer_admin_auth') === 'true') {
+      document.getElementById('authOverlay').classList.add('hidden');
+    }
+
+    // =========================================================================
+    // 1. STATE MANAGEMENT
     // =========================================================================
     let allProjects = [];
     let siteContent = {};
@@ -302,7 +392,6 @@
         console.error("Error loading local data", e);
       }
       
-      // Enforce default content if empty
       if(!siteContent.about) siteContent = {
         about: { brandName: "AHAMMED", brandRole: "CREATIVE DIRECTOR", heroHeadline: "VISUALIZING <span style='color:#DFBD69'>FUTURES</span>", heroLead: "Crafting digital experiences.", heroImage: "assets/hero-portrait.png" },
         contact: { email: "hello@example.com" }
@@ -344,10 +433,7 @@
       toast.className = `toast ${isError ? 'border-red-500' : 'border-border'}`;
       toast.innerHTML = `<i class="ph ${isError ? 'ph-warning-circle text-red-500' : 'ph-check-circle text-brand'} text-2xl"></i> <span class="text-sm font-medium">${msg}</span>`;
       container.appendChild(toast);
-      
-      // Trigger animation
       setTimeout(() => toast.classList.add('show'), 10);
-      
       setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
@@ -355,42 +441,133 @@
     }
 
     // =========================================================================
-    // 3. PROJECT MANAGER LOGIC
+    // 3. DYNAMIC ARRAYS (COLORS & GALLERY)
+    // =========================================================================
+    function addColorField(hex = '') {
+      const container = document.getElementById('colorFieldsContainer');
+      const id = Date.now() + Math.random();
+      const div = document.createElement('div');
+      div.className = "flex items-center gap-2 bg-dark p-2 rounded-lg border border-border color-field-wrapper";
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded border border-neutral-700 color-swatch" style="background-color: ${hex || '#ffffff'}"></div>
+        <input type="text" class="color-input w-24 !p-2 !text-sm uppercase" placeholder="#FFFFFF" value="${hex}" oninput="this.previousElementSibling.style.backgroundColor = this.value">
+        <button type="button" onclick="this.parentElement.remove()" class="text-neutral-500 hover:text-red-500 px-1"><i class="ph ph-trash"></i></button>
+      `;
+      container.appendChild(div);
+    }
+
+    function getColorsArray() {
+      const inputs = document.querySelectorAll('.color-input');
+      return Array.from(inputs).map(inp => inp.value.trim()).filter(v => v !== '');
+    }
+
+    function addGalleryImage(url = '') {
+      const container = document.getElementById('galleryContainer');
+      const div = document.createElement('div');
+      div.className = "flex items-center gap-3 bg-surface p-2 rounded-lg border border-border gallery-item";
+      div.innerHTML = `
+        <div class="flex flex-col gap-1 text-neutral-500 shrink-0">
+          <button type="button" onclick="moveGalleryItem(this, -1)" class="hover:text-brand"><i class="ph ph-caret-up"></i></button>
+          <button type="button" onclick="moveGalleryItem(this, 1)" class="hover:text-brand"><i class="ph ph-caret-down"></i></button>
+        </div>
+        <div class="w-12 h-12 bg-dark rounded border border-border shrink-0 overflow-hidden">
+          <img src="${url}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%23262626\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>'" class="w-full h-full object-cover">
+        </div>
+        <input type="text" class="gallery-input flex-1 !p-2 !text-sm" placeholder="assets/gallery-1.jpg" value="${url}" oninput="this.previousElementSibling.firstElementChild.src = this.value">
+        <label class="cursor-pointer bg-dark border border-border px-3 h-full flex items-center justify-center rounded hover:bg-neutral-800 transition-colors text-brand shrink-0 text-sm">
+          <i class="ph ph-upload-simple"></i>
+          <input type="file" class="hidden" accept="image/*" onchange="handleGalleryUpload(event, this)">
+        </label>
+        <button type="button" onclick="this.parentElement.remove()" class="text-neutral-500 hover:text-red-500 px-2 shrink-0"><i class="ph ph-trash text-lg"></i></button>
+      `;
+      container.appendChild(div);
+    }
+
+    function moveGalleryItem(btn, dir) {
+      const item = btn.closest('.gallery-item');
+      if (dir === -1 && item.previousElementSibling) item.parentElement.insertBefore(item, item.previousElementSibling);
+      if (dir === 1 && item.nextElementSibling) item.parentElement.insertBefore(item, item.nextElementSibling.nextElementSibling);
+    }
+
+    function getGalleryArray() {
+      const inputs = document.querySelectorAll('.gallery-input');
+      return Array.from(inputs).map(inp => ({ type: "image", image: inp.value.trim() })).filter(g => g.image !== '');
+    }
+
+    async function handleGalleryUpload(event, inputElement) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) return showToast("File too large. Max 2MB.", true);
+
+      const wrapper = inputElement.closest('.gallery-item');
+      const textInput = wrapper.querySelector('.gallery-input');
+      const imgPreview = wrapper.querySelector('img');
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        const ext = file.name.split('.').pop();
+        const filePath = `assets/gal-${Date.now()}.${ext}`;
+
+        try {
+          showToast("Uploading gallery image...");
+          await commitFileToGitHub(filePath, base64Data, "Upload gallery image", () => {}, true);
+          textInput.value = filePath;
+          imgPreview.src = filePath;
+          showToast("Image uploaded successfully!");
+        } catch(err) {
+          showToast("Upload failed: " + err.message, true);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // =========================================================================
+    // 4. PROJECT MANAGER LOGIC
     // =========================================================================
     function renderProjects() {
       const grid = document.getElementById('projectListGrid');
-      grid.innerHTML = allProjects.map(p => `
-        <div class="bg-surface border border-border rounded-xl overflow-hidden group hover:border-brand/50 transition-all">
-          <div class="aspect-video w-full bg-dark overflow-hidden relative">
-            <img src="${p.coverImage || ''}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/800x450?text=No+Image'">
-            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-4">
+      grid.innerHTML = allProjects.map(p => {
+        let aspectClass = "aspect-video"; // fallback
+        if (p.aspectRatio === "1:1") aspectClass = "aspect-square";
+        if (p.aspectRatio === "4:5") aspectClass = "aspect-[4/5]";
+        if (p.aspectRatio === "16:10") aspectClass = "aspect-[16/10]";
+
+        return `
+        <div class="bg-surface border border-border rounded-xl overflow-hidden group hover:border-brand/50 transition-all flex flex-col">
+          <div class="${aspectClass} w-full bg-dark overflow-hidden relative">
+            <img src="${p.coverImage || ''}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.src='https://via.placeholder.com/800x450?text=No+Image'">
+            <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-4">
               <button onclick="editProject('${p.id}')" class="w-10 h-10 bg-brand text-black rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i class="ph ph-pencil-simple text-xl"></i></button>
               <button onclick="deleteProject('${p.id}')" class="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i class="ph ph-trash text-xl"></i></button>
             </div>
           </div>
-          <div class="p-5">
-            <div class="flex justify-between items-start mb-1">
-              <h4 class="font-bold text-lg text-white truncate pr-4">${p.title}</h4>
-              <span class="text-xs bg-dark px-2 py-1 rounded text-brand font-mono">${p.order}</span>
+          <div class="p-5 flex-1 flex flex-col">
+            <div class="flex justify-between items-start mb-2">
+              <h4 class="font-bold text-lg text-white pr-4 leading-tight">${p.title}</h4>
+              <span class="text-[10px] bg-dark px-2 py-1 rounded text-brand font-mono shrink-0">${p.order}</span>
             </div>
-            <p class="text-xs text-neutral-500 uppercase tracking-wider">${p.client} • ${p.category}</p>
+            <p class="text-xs text-neutral-500 uppercase tracking-wider mb-3">${p.client} • ${p.category}</p>
+            <div class="flex flex-wrap gap-1 mt-auto">
+              ${(p.deliverables || []).slice(0,3).map(d => `<span class="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded">${d}</span>`).join('')}
+              ${(p.deliverables && p.deliverables.length > 3) ? `<span class="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded">+${p.deliverables.length - 3}</span>` : ''}
+            </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     function openProjectForm() {
       document.getElementById('projectForm').reset();
       document.getElementById('p_id').value = '';
       document.getElementById('pfTitle').textContent = "Create New Project";
+      document.getElementById('colorFieldsContainer').innerHTML = '';
+      document.getElementById('galleryContainer').innerHTML = '';
       
       const modal = document.getElementById('projectFormModal');
       const card = document.getElementById('pfCard');
       modal.classList.remove('hidden');
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        card.classList.remove('scale-95');
-      }, 10);
+      setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
     }
 
     function closeProjectForm() {
@@ -413,16 +590,22 @@
       document.getElementById('p_order').value = p.order || '0';
       document.getElementById('p_coverImage').value = p.coverImage || '';
       document.getElementById('p_description').value = p.description || '';
+      document.getElementById('p_aspectRatio').value = p.aspectRatio || '16:10';
+      document.getElementById('p_deliverables').value = (p.deliverables || []).join(', ');
+      
+      // Render dynamic arrays
+      document.getElementById('colorFieldsContainer').innerHTML = '';
+      if(p.colorPalette) p.colorPalette.forEach(c => addColorField(c));
+      
+      document.getElementById('galleryContainer').innerHTML = '';
+      if(p.gallery) p.gallery.forEach(g => addGalleryImage(g.image));
       
       document.getElementById('pfTitle').textContent = "Edit Project";
       
       const modal = document.getElementById('projectFormModal');
       const card = document.getElementById('pfCard');
       modal.classList.remove('hidden');
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        card.classList.remove('scale-95');
-      }, 10);
+      setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
     }
 
     function saveProject() {
@@ -433,6 +616,9 @@
       }
 
       const idField = document.getElementById('p_id').value;
+      const deliverablesStr = document.getElementById('p_deliverables').value;
+      const deliverablesArr = deliverablesStr ? deliverablesStr.split(',').map(s => s.trim()).filter(s => s !== '') : [];
+
       const proj = {
         id: idField || 'proj_' + Date.now().toString(),
         title: document.getElementById('p_title').value,
@@ -441,7 +627,11 @@
         year: document.getElementById('p_year').value,
         order: parseInt(document.getElementById('p_order').value) || 0,
         coverImage: document.getElementById('p_coverImage').value,
+        aspectRatio: document.getElementById('p_aspectRatio').value,
+        deliverables: deliverablesArr,
         description: document.getElementById('p_description').value,
+        colorPalette: getColorsArray(),
+        gallery: getGalleryArray(),
         slug: document.getElementById('p_title').value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
       };
 
@@ -458,7 +648,6 @@
       closeProjectForm();
       showToast("Project saved locally.");
       
-      // Refresh iframe if open
       if(document.getElementById('tab-preview').classList.contains('active')) refreshPreview();
     }
 
@@ -472,7 +661,7 @@
     }
 
     // =========================================================================
-    // 4. GLOBAL CONTENT LOGIC
+    // 5. GLOBAL CONTENT & IMAGES
     // =========================================================================
     function renderContentForm() {
       const ab = siteContent.about || {};
@@ -488,6 +677,8 @@
       document.getElementById('c_instagram').value = ct.instagram || '';
       document.getElementById('c_twitter').value = ct.twitter || '';
       document.getElementById('c_linkedin').value = ct.linkedin || '';
+      document.getElementById('c_behance').value = ct.behance || '';
+      document.getElementById('c_dribbble').value = ct.dribbble || '';
     }
 
     function saveSiteContent() {
@@ -504,34 +695,30 @@
         instagram: document.getElementById('c_instagram').value,
         twitter: document.getElementById('c_twitter').value,
         linkedin: document.getElementById('c_linkedin').value,
+        behance: document.getElementById('c_behance').value,
+        dribbble: document.getElementById('c_dribbble').value,
       };
       
       saveLocalData();
       showToast("Global Content saved locally.");
     }
 
-    async function handleHeroUpload(event) {
+    async function handleImageUpload(event, targetId) {
       const file = event.target.files[0];
       if (!file) return;
-
-      if (file.size > 2 * 1024 * 1024) {
-        showToast("File is too large! Please use an image under 2MB.", true);
-        return;
-      }
+      if (file.size > 2 * 1024 * 1024) return showToast("File too large. Max 2MB.", true);
 
       const reader = new FileReader();
       reader.onload = async function(e) {
         const base64Data = e.target.result.split(',')[1];
         const ext = file.name.split('.').pop();
-        const filePath = `assets/hero-${Date.now()}.${ext}`;
+        const filePath = `assets/img-${Date.now()}.${ext}`;
 
         try {
-          showToast("Uploading image to live server...");
-          await commitFileToGitHub(filePath, base64Data, "Upload new hero image", () => {}, true);
-          document.getElementById('c_heroImage').value = filePath;
-          saveSiteContent();
-          showToast("Image uploaded and set successfully!");
-          if(document.getElementById('tab-preview').classList.contains('active')) refreshPreview();
+          showToast("Uploading image to GitHub...");
+          await commitFileToGitHub(filePath, base64Data, "Upload new image", () => {}, true);
+          document.getElementById(targetId).value = filePath;
+          showToast("Image uploaded successfully!");
         } catch(err) {
           showToast("Upload failed: " + err.message, true);
         }
@@ -540,30 +727,22 @@
     }
 
     // =========================================================================
-    // 5. LIVE PREVIEW
+    // 6. LIVE PREVIEW & BACKUP
     // =========================================================================
     function refreshPreview() {
       const iframe = document.getElementById('previewIframe');
       iframe.src = `index.html?preview=true&t=${Date.now()}`;
     }
 
-    // =========================================================================
-    // 6. BACKUP & RESTORE
-    // =========================================================================
     function downloadBackup() {
-      const backup = {
-        projects: allProjects,
-        siteContent: siteContent,
-        timestamp: new Date().toISOString()
-      };
-      
+      const backup = { projects: allProjects, siteContent: siteContent, timestamp: new Date().toISOString() };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href",     dataStr);
-      downloadAnchorNode.setAttribute("download", "portfolio_backup_" + Date.now() + ".json");
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", "portfolio_backup_" + Date.now() + ".json");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       showToast("Backup downloaded successfully.");
     }
 
@@ -575,18 +754,12 @@
       reader.onload = function(e) {
         try {
           const backup = JSON.parse(e.target.result);
-          if (backup.projects && Array.isArray(backup.projects)) {
-            allProjects = backup.projects;
-          }
-          if (backup.siteContent) {
-            siteContent = backup.siteContent;
-          }
-          
+          if (backup.projects && Array.isArray(backup.projects)) allProjects = backup.projects;
+          if (backup.siteContent) siteContent = backup.siteContent;
           saveLocalData();
           renderProjects();
           renderContentForm();
           showToast("Database restored successfully!");
-          
           event.target.value = '';
         } catch (error) {
           showToast("Invalid JSON backup file.", true);
@@ -641,17 +814,11 @@
       progressCb("Uploading " + path + "...");
       const putRes = await fetch(apiUrl, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyPayload)
       });
 
-      if (!putRes.ok) {
-        const errData = await putRes.json();
-        throw new Error(errData.message || "Failed to upload file");
-      }
+      if (!putRes.ok) throw new Error((await putRes.json()).message || "Failed to upload file");
     }
 
     async function publishAllToGitHub() {
@@ -669,16 +836,14 @@
         statusText.textContent = "Stringifying Projects Database...";
         const projJson = JSON.stringify(allProjects, null, 2);
         progBar.style.width = '30%';
-
         await commitFileToGitHub('data/projects.json', projJson, 'Auto-Publish: Update projects list via Admin Studio', (m) => statusText.textContent = m);
+        
         progBar.style.width = '60%';
-
         statusText.textContent = "Stringifying Global Content...";
         const contJson = JSON.stringify(siteContent, null, 2);
-        
         await commitFileToGitHub('data/siteContent.json', contJson, 'Auto-Publish: Update site content via Admin Studio', (m) => statusText.textContent = m);
+        
         progBar.style.width = '100%';
-
         statusText.textContent = "Deploying to Netlify Edge CDN...";
         setTimeout(() => {
           overlay.classList.add('opacity-0');
@@ -687,7 +852,6 @@
         }, 1500);
 
       } catch (err) {
-        console.error(err);
         statusText.textContent = "Error: " + err.message;
         progBar.classList.replace('bg-brand', 'bg-red-500');
         setTimeout(() => {
