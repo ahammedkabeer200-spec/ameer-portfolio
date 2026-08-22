@@ -790,7 +790,7 @@ function closeCaseStudy(e) {
     modal.setAttribute('aria-hidden', 'true');
     
     // 2. Unlock background scrolling when modal unmounts / closes
-    document.body.style.overflow = originalBodyOverflow || 'unset';
+    document.body.style.overflow = originalBodyOverflow || '';
   }
 
   if (window.location.hash.startsWith('#project=')) {
