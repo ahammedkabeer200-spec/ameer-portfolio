@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AMEER SUHAIL — SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
  * JavaScript Engine: Dynamic Site Content Hydration & Universal Case Study Engine
  */
@@ -616,6 +616,8 @@ function renderModalProjectsGrid(filterCat = 'all') {
   }).join('');
 }
 
+let originalBodyOverflow = '';
+
 function openCaseStudyFromModal(identifier) {
   openCaseStudy(identifier);
 }
@@ -739,6 +741,9 @@ function openCaseStudy(identifier) {
   if (modal) {
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');
+    
+    // 1. Lock background scrolling when modal mounts
+    originalBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
   }
 }
@@ -783,7 +788,9 @@ function closeCaseStudy(e) {
   if (modal) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = 'auto';
+    
+    // 2. Unlock background scrolling when modal unmounts / closes
+    document.body.style.overflow = originalBodyOverflow || 'unset';
   }
 
   if (window.location.hash.startsWith('#project=')) {
