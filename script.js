@@ -712,31 +712,64 @@ function openCaseStudy(identifier) {
     if (isPdfProject && pdfUrl) {
       // 1. Render PDF Deck Viewer
       let finalPdfUrl = pdfUrl;
+      
+      // Accurately resolve relative URLs against the current path (crucial for GitHub Pages /subpaths/)
       if (!finalPdfUrl.startsWith('http')) {
-        finalPdfUrl = window.location.origin + (finalPdfUrl.startsWith('/') ? '' : '/') + finalPdfUrl;
+        const baseHref = window.location.href.split('#')[0].split('?')[0];
+        const baseDir = baseHref.substring(0, baseHref.lastIndexOf('/') + 1);
+        finalPdfUrl = baseDir + finalPdfUrl.replace(/^\.?\//, '');
       }
       
-      let iframeSrc = '';
-      if (finalPdfUrl.includes('drive.google.com')) {
-        iframeSrc = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
-      } else {
-        const isMobile = window.innerWidth <= 768;
-        if (finalPdfUrl.toLowerCase().includes('.pdf') && (isMobile || navigator.maxTouchPoints > 0)) {
-          iframeSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
+      const renderIframe = () => {
+        let iframeSrc = '';
+        if (finalPdfUrl.includes('drive.google.com')) {
+          iframeSrc = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
         } else {
-          iframeSrc = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+          const isMobile = window.innerWidth <= 768;
+          if (finalPdfUrl.toLowerCase().includes('.pdf') && (isMobile || navigator.maxTouchPoints > 0)) {
+            iframeSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
+          } else {
+            iframeSrc = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+          }
         }
-      }
 
-      presBody.innerHTML = `
-        <div style="padding: 1rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <span style="color: #a3a3a3; font-size: 0.9rem; font-weight: 600;">PDF Case Study Deck</span>
-          <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Download / Open Fullscreen &#x2197;</a>
-        </div>
-        <div style="width: 100%; height: calc(100vh - 140px); background: #111;">
-          <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none;" title="${project.title} PDF Deck"></iframe>
-        </div>
-      `;
+        presBody.innerHTML = `
+          <div style="padding: 1rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span style="color: #a3a3a3; font-size: 0.9rem; font-weight: 600;">PDF Case Study Deck</span>
+            <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Download / Open Fullscreen &#x2197;</a>
+          </div>
+          <div style="width: 100%; height: calc(100vh - 140px); background: #111;">
+            <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none;" title="${project.title} PDF Deck"></iframe>
+          </div>
+        `;
+      };
+
+      const renderFallback = () => {
+        presBody.innerHTML = `
+          <div style="padding: 4rem 2rem; max-width: 600px; margin: 0 auto; text-align: center;">
+            <div style="background: #1a1a1a; border: 1px solid #333; padding: 3rem 2rem; border-radius: 12px;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" style="margin-bottom: 1rem; display: inline-block;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+              <h3 style="color: #d4af37; margin-bottom: 1rem;">Document Unavailable</h3>
+              <p style="color: #a3a3a3; margin-bottom: 2rem;">The requested case study document could not be loaded or may have been moved.</p>
+              <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-block;">Download / View Direct File &#x2197;</a>
+            </div>
+          </div>
+        `;
+      };
+
+      // Safely verify if local file exists to prevent rendering a GitHub Pages 404 screen inside the iframe
+      const isSameOrigin = finalPdfUrl.startsWith(window.location.origin);
+      if (isSameOrigin) {
+        presBody.innerHTML = `<div style="padding: 4rem; text-align: center; color: #a3a3a3;">Loading Presentation...</div>`;
+        fetch(finalPdfUrl, { method: 'HEAD' })
+          .then(res => {
+            if (!res.ok) throw new Error('File not found');
+            renderIframe();
+          })
+          .catch(() => renderFallback());
+      } else {
+        renderIframe();
+      }
     } else {
       // 2. Render Image Gallery (Slides)
       const allImages = [];
