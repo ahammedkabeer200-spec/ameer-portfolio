@@ -537,13 +537,26 @@
         </div>
       </div>
 
-      <!-- Categories Filter Bar inside Modal -->
-      <div class="modal-category-filters-bar" id="modalCategoryFilters">
-        <!-- Rendered dynamically by script.js -->
+      <!-- Modal Toolbar (Filters & View Toggle) -->
+      <div class="modal-toolbar" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 0 5%; flex-wrap: wrap; gap: 10px;">
+        <!-- Categories Filter Bar inside Modal -->
+        <div class="modal-category-filters-bar" id="modalCategoryFilters" style="border-bottom: none; padding: 1rem 0; flex: 1; min-width: 250px;">
+          <!-- Rendered dynamically by script.js -->
+        </div>
+
+        <!-- Grid / List View Toggle -->
+        <div class="view-mode-toggle" style="display: flex; gap: 4px; background: #141414; padding: 4px; border-radius: 6px; border: 1px solid var(--border); height: fit-content;">
+          <button class="view-mode-btn active" id="btnGridView" onclick="setArchiveViewMode('grid')" title="Grid View" aria-label="Grid View">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </button>
+          <button class="view-mode-btn" id="btnListView" onclick="setArchiveViewMode('list')" title="List View" aria-label="List View">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </button>
+        </div>
       </div>
 
       <!-- Scrollable Projects Grid -->
-      <div class="all-projects-modal-body" id="modalAllProjectsGrid">
+      <div class="all-projects-modal-body archive-container--grid" id="modalAllProjectsGrid">
         <!-- All projects rendered dynamically by script.js -->
       </div>
 
