@@ -332,8 +332,15 @@ async function loadAndApplySiteContent() {
       heroImg.style.display = 'block';
       
       if (ab.heroPhotoPosition) {
+        heroImg.style.objectFit = 'cover';
+        heroImg.style.transformOrigin = 'center center';
         heroImg.style.objectPosition = `${ab.heroPhotoPosition.posX}% ${ab.heroPhotoPosition.posY}%`;
         heroImg.style.transform = `scale(${ab.heroPhotoPosition.scale})`;
+      } else {
+        heroImg.style.objectFit = 'contain';
+        heroImg.style.transformOrigin = 'bottom center';
+        heroImg.style.objectPosition = 'bottom center';
+        heroImg.style.transform = 'scale(1)';
       }
     } else {
       heroImg.style.display = 'none';
