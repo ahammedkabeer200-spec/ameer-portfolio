@@ -392,15 +392,36 @@
     let allProjects = [];
     let siteContent = {};
 
-    function loadLocalData() {
+    async function loadLocalData() {
       try {
         const pData = localStorage.getItem('ameer_portfolio_projects');
         if (pData) allProjects = JSON.parse(pData);
         
         const cData = localStorage.getItem('ameer_portfolio_site_content');
         if (cData) siteContent = JSON.parse(cData);
+
+        // Fetch remote data to ensure synchronization if local is missing or has fewer projects
+        const resP = await fetch('data/projects.json?t=' + Date.now());
+        if (resP.ok) {
+            const remoteProjects = await resP.json();
+            if (Array.isArray(remoteProjects) && remoteProjects.length > allProjects.length) {
+                allProjects = remoteProjects;
+                saveLocalData();
+                renderProjects();
+            }
+        }
+        
+        const resC = await fetch('data/siteContent.json?t=' + Date.now());
+        if (resC.ok) {
+            const remoteContent = await resC.json();
+            if (remoteContent && Object.keys(siteContent).length === 0) {
+                siteContent = remoteContent;
+                saveLocalData();
+                renderContentForm();
+            }
+        }
       } catch (e) {
-        console.error("Error loading local data", e);
+        console.error("Error loading local or remote data", e);
       }
       
       if(!siteContent.about) siteContent = {
@@ -409,6 +430,8 @@
       };
 
       allProjects.sort((a,b) => (a.order||0) - (b.order||0));
+      renderProjects();
+      renderContentForm();
     }
 
     function saveLocalData() {
@@ -556,7 +579,7 @@
           <div class="p-5 flex-1 flex flex-col">
             <div class="flex justify-between items-start mb-2">
               <h4 class="font-bold text-lg text-white pr-4 leading-tight">${p.title}</h4>
-              <span class="text-[10px] bg-dark px-2 py-1 rounded text-brand font-mono shrink-0">${p.order}</span>
+              <span class="text-[10px] bg-dark px-2 py-1 rounded text-brand font-mono shrink-0">${p.order || 0}</span>
             </div>
             <p class="text-xs text-neutral-500 uppercase tracking-wider mb-3">${p.client} • ${p.category}</p>
             <div class="flex flex-wrap gap-1 mt-auto">
@@ -904,8 +927,6 @@
     // =========================================================================
     window.onload = () => {
       loadLocalData();
-      renderProjects();
-      renderContentForm();
     };
   </script>
 </body>
