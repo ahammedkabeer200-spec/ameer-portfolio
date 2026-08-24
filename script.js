@@ -763,12 +763,24 @@ function openCaseStudy(identifier) {
     if (galleryList) galleryList.style.display = 'none';
     
     let finalPdfUrl = pdfUrl;
+    
+    // Ensure absolute URL for Google Docs Viewer compatibility
+    if (!finalPdfUrl.startsWith('http')) {
+      finalPdfUrl = window.location.origin + (finalPdfUrl.startsWith('/') ? '' : '/') + finalPdfUrl;
+    }
+    
     if (finalPdfUrl.includes('drive.google.com')) {
       // Force preview mode for Google Drive links so they embed properly without an "Open" button
       finalPdfUrl = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
       if (pdfIframe) pdfIframe.src = finalPdfUrl;
     } else {
-      if (pdfIframe) pdfIframe.src = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+      // Use Google Docs Viewer for standard PDFs to bypass mobile 'Open' buttons
+      const isMobile = window.innerWidth <= 768;
+      if (finalPdfUrl.toLowerCase().includes('.pdf') && (isMobile || navigator.maxTouchPoints > 0)) {
+        if (pdfIframe) pdfIframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
+      } else {
+        if (pdfIframe) pdfIframe.src = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+      }
     }
   } else {
     // 2. Open High-Res Vertical List Gallery (Images)
