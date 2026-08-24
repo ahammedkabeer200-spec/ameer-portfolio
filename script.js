@@ -629,7 +629,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
 
     return `
       <article class="modal-project-card" onclick="openCaseStudyFromModal('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
-        <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" onerror="this.src='assets/project-packaging.jpg'">
+        <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
         <div class="modal-project-info">
           <div class="modal-project-meta-row">
             <span class="modal-project-num">${numStr}</span>
@@ -676,7 +676,7 @@ function renderProjectsGrid() {
     return `
       <article class="project-card-mini" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
         <div class="proj-mini-img-wrap" style="${aspectStyle}">
-          <img src="${p.coverImage}" alt="${p.title}" loading="lazy" onerror="this.src='assets/project-packaging.jpg'">
+          <img src="${p.coverImage}" alt="${p.title}" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
         </div>
         <div class="proj-mini-info">
           <div class="proj-mini-title-row">
@@ -749,45 +749,26 @@ function openCaseStudy(identifier) {
     infoBlock.style.display = hasInfo ? 'block' : 'none';
   }
 
-  // Check for PDF Presentation
-  const pdfUrl = project.pdfUrl || (project.documents && project.documents.find(d => (d.url && d.url.endsWith('.pdf')) || (d.file && d.file.endsWith('.pdf')) || d.type === 'PDF'))?.url || '';
-  const isPdfProject = (project.presentationType === 'pdf') || Boolean(pdfUrl && project.presentationType !== 'photos');
-
-  const pdfContainer = document.getElementById('csPdfContainer');
-  const galleryList = document.getElementById('csVerticalGalleryList');
-  const pdfIframe = document.getElementById('csPdfIframe');
-
-  if (isPdfProject && pdfUrl) {
-    // 1. Open PDF Presentation Directly
-    if (pdfContainer) pdfContainer.style.display = 'flex';
-    if (galleryList) galleryList.style.display = 'none';
-    
-    let finalPdfUrl = pdfUrl;
-    
-    // Ensure absolute URL for Google Docs Viewer compatibility
-    if (!finalPdfUrl.startsWith('http')) {
-      finalPdfUrl = window.location.origin + (finalPdfUrl.startsWith('/') ? '' : '/') + finalPdfUrl;
-    }
-    
-    if (finalPdfUrl.includes('drive.google.com')) {
-      // Force preview mode for Google Drive links so they embed properly without an "Open" button
-      finalPdfUrl = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
-      if (pdfIframe) pdfIframe.src = finalPdfUrl;
+  // Handle External Live Site Links (Often stored in pdfUrl or externalUrl)
+  const extBtn = document.getElementById('csExternalLinkBtn');
+  const externalLink = project.externalUrl || project.pdfUrl;
+  
+  if (extBtn) {
+    if (externalLink && externalLink.startsWith('http')) {
+      extBtn.href = externalLink;
+      extBtn.style.display = 'inline-flex';
     } else {
-      // Use Google Docs Viewer for standard PDFs to bypass mobile 'Open' buttons
-      const isMobile = window.innerWidth <= 768;
-      if (finalPdfUrl.toLowerCase().includes('.pdf') && (isMobile || navigator.maxTouchPoints > 0)) {
-        if (pdfIframe) pdfIframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
-      } else {
-        if (pdfIframe) pdfIframe.src = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
-      }
+      extBtn.style.display = 'none';
+      extBtn.href = '#';
     }
-  } else {
-    // 2. Open High-Res Vertical List Gallery (Images)
-    if (pdfContainer) pdfContainer.style.display = 'none';
-    if (galleryList) galleryList.style.display = 'flex';
+  }
 
+  // Render Image Gallery
+  const galleryList = document.getElementById('csVerticalGalleryList');
+  if (galleryList) {
+    galleryList.style.display = 'flex';
     const allGalleryImages = [];
+    
     if (project.coverImage) {
       allGalleryImages.push({ type: 'image', image: project.coverImage });
     }
@@ -809,12 +790,11 @@ function openCaseStudy(identifier) {
           <div class="pres-gallery-img-item">
             ${isVideo 
               ? `<video controls autoplay muted loop playsinline src="${srcUrl}"><p>Your browser does not support HTML5 video.</p></video>` 
-              : `<img src="${srcUrl}" alt="${project.title}" loading="lazy" onerror="this.src='assets/project-packaging.jpg'">`}
+              : `<img src="${srcUrl}" alt="${project.title}" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/><text x=\\'50%\\' y=\\'50%\\' font-family=\\'sans-serif\\' font-size=\\'20\\' fill=\\'%23555\\' text-anchor=\\'middle\\' dominant-baseline=\\'middle\\'>Image Not Found</text></svg>';">`}
           </div>
         `;
       }).join('');
     }
-  }
 
   // Reset scroll to top
   const presBody = document.getElementById('csPresBody');
