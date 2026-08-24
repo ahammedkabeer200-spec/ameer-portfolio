@@ -704,101 +704,28 @@ function openCaseStudy(identifier) {
   if (clientEl) clientEl.textContent = `${project.client || 'CREATIVE PROJECT'} • ${project.year || '2026'}`;
   if (titleEl) titleEl.textContent = project.title || 'PROJECT PRESENTATION';
 
-  // Inject Designer Project Info (Description, Deliverables, Colors)
-  const infoBlock = document.getElementById('csProjectInfoBlock');
-  const descEl = document.getElementById('csProjectDesc');
-  const delList = document.getElementById('csDeliverablesList');
-  const colList = document.getElementById('csColorPaletteList');
-  let hasInfo = false;
-  
-  if (descEl) {
-    if (project.description) {
-      descEl.textContent = project.description;
-      hasInfo = true;
-    } else {
-      descEl.textContent = project.summary || project.challenge || '';
-      if (descEl.textContent) hasInfo = true;
-    }
-  }
-
-  if (delList) {
-    if (project.deliverables && project.deliverables.length > 0) {
-      delList.innerHTML = project.deliverables.map(d => `<span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.85rem; color: #e5e5e5;">${d}</span>`).join('');
-      document.getElementById('csDeliverablesWrapper').style.display = 'block';
-      hasInfo = true;
-    } else {
-      document.getElementById('csDeliverablesWrapper').style.display = 'none';
-    }
-  }
-
-  if (colList) {
-    if (project.colorPalette && project.colorPalette.length > 0) {
-      colList.innerHTML = project.colorPalette.map(c => {
-        let hex = typeof c === 'object' ? c.hex : c;
-        let title = typeof c === 'object' ? c.name : c;
-        return `<div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background-color: ${hex}; border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" title="${title}"></div>`;
-      }).join('');
-      document.getElementById('csColorPaletteWrapper').style.display = 'block';
-      hasInfo = true;
-    } else {
-      document.getElementById('csColorPaletteWrapper').style.display = 'none';
-    }
-  }
-
-  if (infoBlock) {
-    infoBlock.style.display = hasInfo ? 'block' : 'none';
-  }
-
-  // Handle External Live Site Links (Often stored in pdfUrl or externalUrl)
-  const extBtn = document.getElementById('csExternalLinkBtn');
-  const externalLink = project.externalUrl || project.pdfUrl;
-  
-  if (extBtn) {
-    if (externalLink && externalLink.startsWith('http')) {
-      extBtn.href = externalLink;
-      extBtn.style.display = 'inline-flex';
-    } else {
-      extBtn.style.display = 'none';
-      extBtn.href = '#';
-    }
-  }
-
-  // Render Image Gallery
-  const galleryList = document.getElementById('csVerticalGalleryList');
-  if (galleryList) {
-    galleryList.style.display = 'flex';
-    const allGalleryImages = [];
-    
-    if (project.coverImage) {
-      allGalleryImages.push({ type: 'image', image: project.coverImage });
-    }
-    if (project.gallery && project.gallery.length > 0) {
-      project.gallery.forEach(g => {
-        const imgUrl = g.image || g.url;
-        if (imgUrl && imgUrl !== project.coverImage) {
-          allGalleryImages.push({ type: g.type || 'image', image: imgUrl });
-        }
-      });
-    }
-
-    if (galleryList) {
-      galleryList.innerHTML = allGalleryImages.map(item => {
-        const srcUrl = item.image || project.coverImage;
-        const isVideo = item.type === 'video' || srcUrl.endsWith('.mp4') || srcUrl.endsWith('.webm') || srcUrl.endsWith('.mov');
-        
-        return `
-          <div class="pres-gallery-img-item">
-            ${isVideo 
-              ? `<video controls autoplay muted loop playsinline src="${srcUrl}"><p>Your browser does not support HTML5 video.</p></video>` 
-              : `<img src="${srcUrl}" alt="${project.title}" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/><text x=\\'50%\\' y=\\'50%\\' font-family=\\'sans-serif\\' font-size=\\'20\\' fill=\\'%23555\\' text-anchor=\\'middle\\' dominant-baseline=\\'middle\\'>Image Not Found</text></svg>';">`}
-          </div>
-        `;
-      }).join('');
-    }
-
-  // Reset scroll to top
   const presBody = document.getElementById('csPresBody');
-  if (presBody) presBody.scrollTop = 0;
+  if (presBody) {
+    presBody.innerHTML = `
+      <div style="padding: 2rem 5%; max-width: 1200px; margin: 0 auto;">
+        <!-- Main Cover / Artwork -->
+        <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem;">
+          <img 
+            src="${project.coverImage || 'assets/placeholder.jpg'}" 
+            alt="${project.title}" 
+            style="width: 100%; height: auto; display: block; object-fit: cover;"
+            onerror="this.src='https://placehold.co/800x500/141414/d4af37?text=Image+Not+Found';"
+          />
+        </div>
+
+        <!-- Description & Details -->
+        <div style="color: #d4d4d4; line-height: 1.6; font-size: 0.95rem;">
+          <p>${project.description || project.summary || 'No description provided.'}</p>
+        </div>
+      </div>
+    `;
+    presBody.scrollTop = 0;
+  }
 
   // URL Hash
   const targetHash = `#project=${project.slug || project.id}`;
