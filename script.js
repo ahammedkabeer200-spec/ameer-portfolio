@@ -651,18 +651,18 @@ function openCaseStudyFromModal(identifier) {
 }
 window.openCaseStudyFromModal = openCaseStudyFromModal;
 
-// Render 4-Column Projects Grid on Homepage
+// Render Projects Grid on Homepage
 function renderProjectsGrid() {
-  const grid = document.getElementById('projectsGrid4Col');
+  const grid = document.getElementById('selectedProjectsGrid');
   if (!grid) return;
 
   const total = projectsData.length;
   const displayList = projectsData.slice(0, 4);
 
-  // Update Top Link
-  const topBtn = document.getElementById('viewAllProjectsLink');
+  // Update Top Link (Optional, if we want to change text dynamically)
+  const topBtn = document.getElementById('viewAllProjectsLinkText');
   if (topBtn) {
-    topBtn.innerHTML = `<span>VIEW ALL PROJECTS (${total}) &rarr;</span>`;
+    topBtn.innerHTML = `VIEW ALL PROJECTS (${total}) &rarr;`;
   }
 
   grid.innerHTML = displayList.map((p, idx) => {
