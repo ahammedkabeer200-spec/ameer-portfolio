@@ -943,3 +943,34 @@ function showToast(msg) {
   if (toastTimeout) clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => toast.classList.remove('show'), 3500);
 }
+
+// =========================================================================
+// ARCHIVE VIEW MODE (GRID VS LIST)
+// =========================================================================
+function setArchiveViewMode(mode) {
+  const container = document.getElementById('modalAllProjectsGrid');
+  const btnGrid = document.getElementById('btnGridView');
+  const btnList = document.getElementById('btnListView');
+  
+  if (!container || !btnGrid || !btnList) return;
+  
+  if (mode === 'list') {
+    container.classList.remove('archive-container--grid');
+    container.classList.add('archive-container--list');
+    btnGrid.classList.remove('active');
+    btnList.classList.add('active');
+  } else {
+    container.classList.remove('archive-container--list');
+    container.classList.add('archive-container--grid');
+    btnList.classList.remove('active');
+    btnGrid.classList.add('active');
+  }
+  
+  localStorage.setItem('portfolio_view_mode', mode);
+}
+
+// Initialize View Mode on Load
+document.addEventListener('DOMContentLoaded', () => {
+  const savedMode = localStorage.getItem('portfolio_view_mode') || 'grid';
+  setArchiveViewMode(savedMode);
+});
