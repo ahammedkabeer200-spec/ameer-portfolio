@@ -427,12 +427,26 @@ async function loadAndApplySiteContent() {
   setElementText('contactWebsiteText', ct.website);
   setElementText('contactLocationText', ct.location);
   setElementText('siteFooterCopyright', ct.copyright);
+  setElementText('contactEmailText', ct.email);
 
   if (ct.socials) {
     setLinkHref('socialLinkIn', ct.socials.linkedin);
+    setLinkHref('btnLinkedinLink', ct.socials.linkedin);
     setLinkHref('socialLinkBe', ct.socials.behance);
     setLinkHref('socialLinkDr', ct.socials.dribbble);
     setLinkHref('socialLinkIg', ct.socials.instagram);
+    
+    if (ct.socials.whatsapp) {
+      setLinkHref('btnWhatsappLink', ct.socials.whatsapp);
+      setLinkHref('socialLinkWa', ct.socials.whatsapp);
+    }
+  }
+  
+  if (ct.email) {
+    const mailto = ct.email.startsWith('mailto:') ? ct.email : `mailto:${ct.email}`;
+    setLinkHref('btnEmailLink', mailto);
+    setLinkHref('contactEmailLink', mailto);
+    setLinkHref('socialLinkEmail', mailto);
   }
 }
 
