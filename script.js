@@ -706,24 +706,70 @@ function openCaseStudy(identifier) {
 
   const presBody = document.getElementById('csPresBody');
   if (presBody) {
-    presBody.innerHTML = `
-      <div style="padding: 2rem 5%; max-width: 1200px; margin: 0 auto;">
-        <!-- Main Cover / Artwork -->
-        <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem;">
-          <img 
-            src="${project.coverImage || 'assets/placeholder.jpg'}" 
-            alt="${project.title}" 
-            style="width: 100%; height: auto; display: block; object-fit: cover;"
-            onerror="this.src='https://placehold.co/800x500/141414/d4af37?text=Image+Not+Found';"
-          />
-        </div>
+    const pdfUrl = project.pdfUrl || (project.documents && project.documents.find(d => (d.url && d.url.endsWith('.pdf')) || (d.file && d.file.endsWith('.pdf')) || d.type === 'PDF'))?.url || '';
+    const isPdfProject = (project.presentationType === 'pdf') || Boolean(pdfUrl && project.presentationType !== 'photos' && pdfUrl.toLowerCase().includes('.pdf'));
 
-        <!-- Description & Details -->
-        <div style="color: #d4d4d4; line-height: 1.6; font-size: 0.95rem;">
-          <p>${project.description || project.summary || 'No description provided.'}</p>
+    if (isPdfProject && pdfUrl) {
+      // 1. Render PDF Deck Viewer
+      let finalPdfUrl = pdfUrl;
+      if (!finalPdfUrl.startsWith('http')) {
+        finalPdfUrl = window.location.origin + (finalPdfUrl.startsWith('/') ? '' : '/') + finalPdfUrl;
+      }
+      
+      let iframeSrc = '';
+      if (finalPdfUrl.includes('drive.google.com')) {
+        iframeSrc = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
+      } else {
+        const isMobile = window.innerWidth <= 768;
+        if (finalPdfUrl.toLowerCase().includes('.pdf') && (isMobile || navigator.maxTouchPoints > 0)) {
+          iframeSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
+        } else {
+          iframeSrc = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+        }
+      }
+
+      presBody.innerHTML = `
+        <div style="padding: 1rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <span style="color: #a3a3a3; font-size: 0.9rem; font-weight: 600;">PDF Case Study Deck</span>
+          <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Download / Open Fullscreen &#x2197;</a>
         </div>
-      </div>
-    `;
+        <div style="width: 100%; height: calc(100vh - 140px); background: #111;">
+          <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none;" title="${project.title} PDF Deck"></iframe>
+        </div>
+      `;
+    } else {
+      // 2. Render Image Gallery (Slides)
+      const allImages = [];
+      if (project.coverImage) allImages.push(project.coverImage);
+      if (project.gallery) {
+        project.gallery.forEach(g => {
+          const imgUrl = g.image || g.url;
+          if (imgUrl && imgUrl !== project.coverImage) allImages.push(imgUrl);
+        });
+      }
+
+      const galleryHtml = allImages.map(url => `
+        <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem;">
+          <img src="${url}" alt="${project.title}" style="width: 100%; height: auto; display: block; object-fit: cover;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';" />
+        </div>
+      `).join('');
+
+      let externalBtnHtml = '';
+      const externalLink = project.externalUrl || (pdfUrl && !pdfUrl.toLowerCase().includes('.pdf') ? pdfUrl : null);
+      if (externalLink && externalLink.startsWith('http')) {
+        externalBtnHtml = `<div style="margin-bottom: 2rem;"><a href="${externalLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; text-decoration: none;">Visit Live Site &#x2197;</a></div>`;
+      }
+
+      const descHtml = project.description || project.summary ? `<div style="color: #d4d4d4; line-height: 1.6; font-size: 0.95rem; margin-bottom: 2rem;"><p>${project.description || project.summary}</p></div>` : '';
+
+      presBody.innerHTML = `
+        <div style="padding: 2rem 5%; max-width: 1200px; margin: 0 auto;">
+          ${externalBtnHtml}
+          ${descHtml}
+          ${galleryHtml}
+        </div>
+      `;
+    }
     presBody.scrollTop = 0;
   }
 
