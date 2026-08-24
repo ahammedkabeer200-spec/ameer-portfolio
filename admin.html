@@ -808,8 +808,11 @@
         imgEl.style.display = 'block';
         placeholder.style.display = 'none';
         
-        imgEl.style.objectPosition = `${posX}% ${posY}%`;
-        imgEl.style.transform = `scale(${scale})`;
+        const offsetX = (posX - 50) * 1.5;
+        const offsetY = (posY - 50) * 1.5;
+        imgEl.style.objectFit = 'cover';
+        imgEl.style.objectPosition = 'center';
+        imgEl.style.transform = `translate(${offsetX}%, ${offsetY}%) scale(${scale})`;
       } else {
         imgEl.style.display = 'none';
         placeholder.style.display = 'flex';
