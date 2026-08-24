@@ -1,39 +1,5 @@
 [
   {
-    "id": "untitled-project",
-    "title": "Untitled Project",
-    "client": "Private Client",
-    "category": "brand-identity",
-    "year": "2026",
-    "industry": "Luxury / Visual Design",
-    "timeline": "4-6 Weeks",
-    "coverImage": "",
-    "presentationType": "photos",
-    "pdfUrl": "",
-    "summary": "Bespoke brand identity and visual communication system.",
-    "challenge": "",
-    "solution": "",
-    "deliverables": [
-      "Full Logo Suite",
-      "Dielines",
-      "Brand Guidelines"
-    ],
-    "tags": [
-      "Brand Identity",
-      "Luxury",
-      "Visual Design"
-    ],
-    "gallery": [
-      {
-        "type": "image",
-        "image": "",
-        "caption": "Untitled Project Slide"
-      }
-    ],
-    "documents": [],
-    "results": "Successful launch with complete client satisfaction."
-  },
-  {
     "id": "luxora-watches",
     "slug": "luxora-watches",
     "title": "Luxora Horology Geneve",
