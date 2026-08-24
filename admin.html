@@ -281,11 +281,24 @@
           </div>
         </div>
 
+        <!-- About Me Section -->
+        <div>
+          <h3 class="text-xl font-bold text-brand border-b border-border pb-4 mb-6 mt-10"><i class="ph ph-identification-card"></i> About Me Section</h3>
+          <div class="space-y-4">
+            <div><label>About Headline</label><input type="text" id="c_aboutHeadline" placeholder="DELIVERING STRATEGIC, MARKET-DRIVEN DESIGNS..."></div>
+            <div><label>Biography Paragraph 1</label><textarea id="c_bioP1" rows="3"></textarea></div>
+            <div><label>Biography Paragraph 2</label><textarea id="c_bioP2" rows="3"></textarea></div>
+            <div><label>Pull Quote</label><textarea id="c_aboutQuote" rows="2"></textarea></div>
+          </div>
+        </div>
+
         <!-- Contact & Socials -->
         <div>
           <h3 class="text-xl font-bold text-brand border-b border-border pb-4 mb-6 mt-10"><i class="ph ph-envelope"></i> Contact & Social</h3>
           <div class="space-y-4">
             <div><label>Email Address</label><input type="email" id="c_email"></div>
+            <div><label>Location</label><input type="text" id="c_location" placeholder="Umm Al Quwain, UAE"></div>
+            <div><label>WhatsApp Link</label><input type="text" id="c_whatsapp" placeholder="https://wa.me/971561480139"></div>
             <div><label>Instagram URL</label><input type="text" id="c_instagram"></div>
             <div><label>Twitter/X URL</label><input type="text" id="c_twitter"></div>
             <div><label>LinkedIn URL</label><input type="text" id="c_linkedin"></div>
@@ -710,7 +723,14 @@
       document.getElementById('c_heroLead').value = ab.heroLead || '';
       document.getElementById('c_heroImage').value = ab.heroImage || '';
       
+      document.getElementById('c_aboutHeadline').value = ab.headline || '';
+      document.getElementById('c_bioP1').value = ab.bioP1 || '';
+      document.getElementById('c_bioP2').value = ab.bioP2 || '';
+      document.getElementById('c_aboutQuote').value = ab.quote || '';
+      
       document.getElementById('c_email').value = ct.email || '';
+      document.getElementById('c_location').value = ct.location || '';
+      document.getElementById('c_whatsapp').value = (ct.socials && ct.socials.whatsapp) ? ct.socials.whatsapp : '';
       document.getElementById('c_instagram').value = ct.instagram || '';
       document.getElementById('c_twitter').value = ct.twitter || '';
       document.getElementById('c_linkedin').value = ct.linkedin || '';
@@ -725,10 +745,18 @@
         heroHeadline: document.getElementById('c_heroHeadline').value,
         heroLead: document.getElementById('c_heroLead').value,
         heroImage: document.getElementById('c_heroImage').value,
+        headline: document.getElementById('c_aboutHeadline').value,
+        bioP1: document.getElementById('c_bioP1').value,
+        bioP2: document.getElementById('c_bioP2').value,
+        quote: document.getElementById('c_aboutQuote').value
       };
       
       siteContent.contact = {
         email: document.getElementById('c_email').value,
+        location: document.getElementById('c_location').value,
+        socials: {
+          whatsapp: document.getElementById('c_whatsapp').value
+        },
         instagram: document.getElementById('c_instagram').value,
         twitter: document.getElementById('c_twitter').value,
         linkedin: document.getElementById('c_linkedin').value,
