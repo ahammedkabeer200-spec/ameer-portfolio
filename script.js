@@ -330,6 +330,11 @@ async function loadAndApplySiteContent() {
     if (ab.heroPortrait && ab.heroPortrait.trim() !== '') {
       heroImg.src = ab.heroPortrait;
       heroImg.style.display = 'block';
+      
+      if (ab.heroPhotoPosition) {
+        heroImg.style.objectPosition = `${ab.heroPhotoPosition.posX}% ${ab.heroPhotoPosition.posY}%`;
+        heroImg.style.transform = `scale(${ab.heroPhotoPosition.scale})`;
+      }
     } else {
       heroImg.style.display = 'none';
     }
