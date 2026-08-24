@@ -1882,11 +1882,11 @@ body {
   
   .hero-backdrop-word {
     position: absolute;
-    top: 50%;
+    top: clamp(25px, 4vh, 50px);
     left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: clamp(4.2rem, 18vw, 6.5rem);
-    letter-spacing: 0.03em;
+    transform: translateX(-50%);
+    font-size: clamp(4.2rem, 17vw, 6.5rem);
+    letter-spacing: 0.04em;
     color: #dec39d;
     line-height: 0.85;
     z-index: 1;
@@ -2045,12 +2045,14 @@ body {
 
   .hero-backdrop-word {
     position: absolute;
-    top: 48%;
+    top: clamp(20px, 3vh, 40px);
     left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: clamp(3.6rem, 17vw, 4.8rem);
+    transform: translateX(-50%);
+    font-size: clamp(3rem, 15.5vw, 4.5rem);
+    letter-spacing: 0.05em;
     z-index: 1;
-    opacity: 0.85;
+    opacity: 0.9;
+    white-space: nowrap;
   }
 
   .hero-image-wrapper {
