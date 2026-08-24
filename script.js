@@ -725,11 +725,11 @@ function openCaseStudy(identifier) {
         if (finalPdfUrl.includes('drive.google.com')) {
           iframeSrc = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
         } else {
-          const isMobile = window.innerWidth <= 768;
-          if (finalPdfUrl.toLowerCase().includes('.pdf') && (isMobile || navigator.maxTouchPoints > 0)) {
+          // Use Google Docs Viewer universally for standard PDFs to guarantee rendering
+          if (finalPdfUrl.toLowerCase().includes('.pdf')) {
             iframeSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
           } else {
-            iframeSrc = `${finalPdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+            iframeSrc = finalPdfUrl;
           }
         }
 
@@ -757,19 +757,8 @@ function openCaseStudy(identifier) {
         `;
       };
 
-      // Safely verify if local file exists to prevent rendering a GitHub Pages 404 screen inside the iframe
-      const isSameOrigin = finalPdfUrl.startsWith(window.location.origin);
-      if (isSameOrigin) {
-        presBody.innerHTML = `<div style="padding: 4rem; text-align: center; color: #a3a3a3;">Loading Presentation...</div>`;
-        fetch(finalPdfUrl, { method: 'HEAD' })
-          .then(res => {
-            if (!res.ok) throw new Error('File not found');
-            renderIframe();
-          })
-          .catch(() => renderFallback());
-      } else {
-        renderIframe();
-      }
+      // Always render iframe directly (Google Docs viewer handles 404s gracefully with its own UI)
+      renderIframe();
     } else {
       // 2. Render Image Gallery (Slides)
       const allImages = [];
