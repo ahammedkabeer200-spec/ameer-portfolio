@@ -571,9 +571,14 @@
       
       <!-- Minimalist Presentation Top Bar -->
       <div class="pres-header-bar">
-        <div class="pres-header-left">
-          <span class="pres-client-meta" id="csClientName">CLIENT NAME</span>
-          <h2 class="pres-title" id="csProjectTitle">PROJECT TITLE</h2>
+        <div class="pres-header-left" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          <div>
+            <span class="pres-client-meta" id="csClientName">CLIENT NAME</span>
+            <h2 class="pres-title" id="csProjectTitle">PROJECT TITLE</h2>
+          </div>
+          <a href="#" id="csExternalLinkBtn" target="_blank" rel="noopener noreferrer" style="display: none; background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; text-decoration: none; transition: all 0.2s;">
+            Visit Live Site &#x2197;
+          </a>
         </div>
         <div class="pres-header-right">
           <button class="pres-close-btn" onclick="closeCaseStudy()" aria-label="Close Presentation">
@@ -596,23 +601,18 @@
             </div>
             <div>
               <div id="csDeliverablesWrapper" style="margin-bottom: 2rem;">
-                <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Deliverables</h3>
-                <div id="csDeliverablesList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;">Deliverables</h3>
+                <ul id="csDeliverablesList" style="list-style: none; color: #a3a3a3; font-size: 0.95rem; line-height: 1.6;"></ul>
               </div>
               <div id="csColorPaletteWrapper">
-                <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Color Palette</h3>
-                <div id="csColorPaletteList" style="display: flex; gap: 0.5rem;"></div>
+                <h3 style="color: var(--gold-sand); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;">Color Palette</h3>
+                <div id="csColorPaletteList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
               </div>
             </div>
           </div>
         </div>
         
-        <!-- 1. PDF Presentation Viewer -->
-        <div class="pres-pdf-wrapper" id="csPdfContainer" style="display: none;">
-          <iframe id="csPdfIframe" class="pres-pdf-frame" src="" title="PDF Presentation Deck" frameborder="0"></iframe>
-        </div>
-
-        <!-- 2. Vertical Image List Gallery -->
+        <!-- Vertical Image List Gallery -->
         <div class="pres-gallery-list" id="csVerticalGalleryList">
           <!-- All high-res presentation photos/slides rendered vertically -->
         </div>
