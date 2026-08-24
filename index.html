@@ -297,26 +297,26 @@
     <!-- ====================================================================
          4. 03 SELECTED WORK / PROJECTS (4-COLUMN CARD GRID)
          ==================================================================== -->
-    <section class="section-container" id="projects" style="margin-bottom: 30px;">
+    <section class="selected-projects-section" id="projects" style="padding: 3rem 1.5rem; max-width: 1280px; margin: 0 auto;">
       
-      <div class="section-title-bar">
-        <h2 class="section-title-gold" id="selectedWorkSectionTitle">SELECTED PROJECTS</h2>
-        <button type="button" class="view-all-link" id="viewAllProjectsLink" onclick="openAllProjectsModal()">
-          <span id="viewAllBtnText">VIEW ALL PROJECTS &rarr;</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.05em;">Selected Projects</h2>
+        <a href="javascript:void(0)" onclick="openAllProjectsModal()" id="viewAllProjectsLinkText" style="color: #a3a3a3; font-size: 0.85rem; text-decoration: none; font-weight: 600;">VIEW ALL PROJECTS &rarr;</a>
+      </div>
+
+      <!-- THE GRID CONTAINER (Must have this ID) -->
+      <div id="selectedProjectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+        <!-- JavaScript will dynamically insert project cards here -->
+      </div>
+
+      <!-- Archive Button -->
+      <div style="text-align: center; margin-bottom: 3rem;">
+        <button id="btnOpenArchive" onclick="openAllProjectsModal()" class="btn-archive" style="background: transparent; border: 1px solid #d4af37; color: #d4af37; padding: 0.75rem 2rem; border-radius: 8px; font-weight: 700; cursor: pointer;">
+          + EXPLORE ALL PROJECTS ARCHIVE &rarr;
         </button>
       </div>
 
-      <!-- 4-Column Grid -->
-      <div class="projects-4col-grid" id="projectsGrid4Col">
-        <!-- Rendered dynamically by script.js -->
-      </div>
-
-      <!-- Bottom Load More / View All Modal Button -->
-      <div id="projectsExpandBottomWrap" style="display: flex; justify-content: center; margin-top: -15px; margin-bottom: 30px;">
-        <button type="button" class="behance-cta-btn" onclick="openAllProjectsModal()" id="bottomViewAllBtn" style="cursor: pointer; border: 1px solid var(--gold-primary); background: rgba(223, 189, 105, 0.12); color: var(--gold-primary); padding: 12px 30px; font-family: var(--font-condensed); font-size: 0.88rem; font-weight: 700; letter-spacing: 0.08em; border-radius: 8px;">
-          <span id="bottomViewAllBtnText">&plus; EXPLORE ALL PROJECTS ARCHIVE &rarr;</span>
-        </button>
-      </div>
+    </section>
 
       <!-- Behance Portfolio Showcase Card -->
       <div class="behance-showcase-card">
