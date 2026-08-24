@@ -332,10 +332,12 @@ async function loadAndApplySiteContent() {
       heroImg.style.display = 'block';
       
       if (ab.heroPhotoPosition) {
+        const offsetX = (ab.heroPhotoPosition.posX - 50) * 1.5;
+        const offsetY = (ab.heroPhotoPosition.posY - 50) * 1.5;
         heroImg.style.objectFit = 'cover';
         heroImg.style.transformOrigin = 'center center';
-        heroImg.style.objectPosition = `${ab.heroPhotoPosition.posX}% ${ab.heroPhotoPosition.posY}%`;
-        heroImg.style.transform = `scale(${ab.heroPhotoPosition.scale})`;
+        heroImg.style.objectPosition = 'center';
+        heroImg.style.transform = `translate(${offsetX}%, ${offsetY}%) scale(${ab.heroPhotoPosition.scale})`;
       } else {
         heroImg.style.objectFit = 'contain';
         heroImg.style.transformOrigin = 'bottom center';
