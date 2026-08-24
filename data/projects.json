@@ -363,5 +363,21 @@
       }
     ],
     "results": "Voted #1 Best Restaurant Branding in the 2024 Epicurean Design Awards."
+  },
+  {
+    "id": "proj_1787594357059",
+    "title": "test",
+    "client": "test",
+    "category": "brand",
+    "year": "2026",
+    "order": 6,
+    "coverImage": "assets/img-1787594320928.png",
+    "pdfUrl": "assets/doc-1787594269033.pdf",
+    "aspectRatio": "16:10",
+    "deliverables": [],
+    "description": "",
+    "colorPalette": [],
+    "gallery": [],
+    "slug": "test"
   }
 ]
