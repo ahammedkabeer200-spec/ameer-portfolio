@@ -1,5 +1,5 @@
-/**
- * AMEER SUHAIL — SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
+﻿/**
+ * AMEER SUHAIL â€” SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
  * JavaScript Engine: Dynamic Site Content Hydration & Universal Case Study Engine
  */
 
@@ -14,14 +14,14 @@ const defaultSiteContent = {
   about: {
     brandName: "AMEER SUHAIL",
     brandRole: "SENIOR GRAPHIC DESIGNER & BRAND SPECIALIST",
-    yearPill: "UAE • 3 YRS EXP",
+    yearPill: "UAE â€¢ 3 YRS EXP",
     heroHeadline: "BRAND & VISUAL<br>COMMUNICATION",
     heroLead: "Senior Graphic Designer with 4 years of experience (3 years in UAE) delivering high-impact visual design, branding, and campaign solutions across government, tourism, and corporate sectors.",
     heroPortrait: "assets/hero-portrait.png",
     signatureScript: "Ameer Suhail",
     signatureSub: "AMEER SUHAIL",
     tagline: "DESIGN THAT RESONATES.<br>CAMPAIGNS THAT DELIVER.",
-    locationBadge: "📍 UMM AL QUWAIN, UAE • AVAILABLE GLOBALLY",
+    locationBadge: "ðŸ“ UMM AL QUWAIN, UAE â€¢ AVAILABLE GLOBALLY",
     tocTitle: "TABLE OF<br>CONTENTS",
     tocDesc: "Explore career milestones, government tourism case studies, AI creative workflows, and direct contact details.",
     tocLabels: {
@@ -69,7 +69,7 @@ const defaultSiteContent = {
   },
   selectedWork: {
     title: "SELECTED PROJECTS",
-    viewAllText: "VIEW ALL PROJECTS →"
+    viewAllText: "VIEW ALL PROJECTS â†’"
   },
   contact: {
     ctaHeading: "LET'S CREATE<br>SOMETHING AMAZING",
@@ -86,141 +86,7 @@ const defaultSiteContent = {
   }
 };
 
-// Embedded Fallback Data for Projects
-const fallbackProjects = [
-  {
-    id: "luxora-watches",
-    slug: "luxora-watches",
-    title: "LUXORA WATCHES",
-    client: "Luxora Timepieces AG",
-    year: "2025",
-    industry: "Swiss Luxury Timepieces & Horology",
-    category: "logo-design",
-    categories: ["Logo Design", "Brand Identity"],
-    tags: ["Logo Suite", "Luxury Branding", "Typography"],
-    coverImage: "assets/project-luxora.jpg",
-    featured: true,
-    deliverables: ["Crest & Wordmark Suite", "Watch Dial Submark", "Warranty Certificate Design", "Digital E-Commerce Design"],
-    timeline: "8 Weeks",
-    summary: "End-to-end luxury brand identity, horological dial crest, and digital flagship for a Swiss independent chronograph manufacture.",
-    challenge: "Stand out against legacy Swiss maisons with a contemporary, precision-engineered logomark that renders flawlessly across small-scale watch dials and large boutique signage.",
-    solution: "Engineered an iconic geometric watch crown emblem paired with high-contrast luxury serif letterforms, reinforced by a dark gold-and-graphite visual system.",
-    brandIdentity: {
-      primaryLogoType: "Crown Chronometer Emblem",
-      primaryLogoSvg: "<svg viewBox='0 0 120 120' fill='none' stroke='#DFBD69' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='60' cy='60' r='50'/><circle cx='60' cy='60' r='42' stroke-width='1'/><path d='M60 25V35M60 85V95M25 60H35M85 60H95'/><polygon points='60 38 68 58 88 60 72 74 76 94 60 84 44 94 48 74 32 60 52 58'/></svg>",
-      constructionNotes: "Precision 12-facet symmetry inspired by watch escapement wheels and mechanical chronometer gears.",
-      colors: [
-        { name: "Imperial Gold", hex: "#DFBD69", role: "Primary Accent" },
-        { name: "Chronograph Black", hex: "#0D0D0D", role: "Base Dark" },
-        { name: "Deep Titanium", hex: "#1E1E1E", role: "Surface" },
-        { name: "Silver Mist", hex: "#E0E0E0", role: "Dial Steel" }
-      ]
-    },
-    gallery: [
-      { type: "image", image: "assets/project-luxora.jpg", caption: "Flagship Luxury Chronograph Web Experience & Black Gold Watch Interface" }
-    ],
-    documents: [
-      { title: "Horology Dial Construction Blueprint", url: "assets/project-luxora.jpg", type: "PDF", size: "PDF (8.1 MB)" }
-    ],
-    results: "Achieved a 240% pre-order conversion rate on inaugural chronometer drop."
-  },
-  {
-    id: "interior-kanso",
-    slug: "interior-kanso",
-    title: "INTERIOR STUDIO",
-    client: "Kanso Interior Studio",
-    year: "2024",
-    industry: "Interior Architecture & Spatial Design",
-    category: "brand-identity",
-    categories: ["Brand Identity", "Visual System"],
-    tags: ["Brand Architecture", "Stationery Suite", "Signage"],
-    coverImage: "assets/project-interior.jpg",
-    featured: true,
-    deliverables: ["Brand Identity Guidelines", "Minimalist Logo Mark", "Stationery & Foil Letterheads", "Spatial Signage Guide"],
-    timeline: "5 Weeks",
-    summary: "Sophisticated brand system, custom typography, and architectural consultation collateral for a minimalist interior studio.",
-    challenge: "Establish a calming, refined visual tone that communicates architectural restraint and materials craftsmanship.",
-    solution: "Formulated a warm neutral color palette paired with an elegant geometric monogram that represents open floor plans and balanced negative space.",
-    brandIdentity: {
-      primaryLogoType: "Spatial Archway Monogram",
-      primaryLogoSvg: "<svg viewBox='0 0 120 120' fill='none' stroke='#DFBD69' stroke-width='2'><rect x='20' y='20' width='80' height='80' rx='2'/><path d='M40 80V45C40 34 50 25 60 25C70 25 80 34 80 45V80'/><line x1='30' y1='80' x2='90' y2='80'/></svg>",
-      colors: [
-        { name: "Limestone Cream", hex: "#EFEBE4", role: "Primary Surface" },
-        { name: "Dark Walnut", hex: "#2B2520", role: "Primary Dark" },
-        { name: "Champagne Muted", hex: "#DEC39D", role: "Accent Warmth" },
-        { name: "Travertine Stone", hex: "#D7C4B7", role: "Tertiary Soft" }
-      ]
-    },
-    gallery: [
-      { type: "image", image: "assets/project-interior.jpg", caption: "Digital Flagship & Brand Editorial Presentation for Atelier Kanso" }
-    ],
-    results: "Helped the studio secure $1.2M in luxury residential design contracts in Q1."
-  },
-  {
-    id: "fitzone-gym",
-    slug: "fitzone-gym",
-    title: "FITZONE GYM",
-    client: "FitZone Global Athletics",
-    year: "2024",
-    industry: "Performance Athletics & Fitness Clubs",
-    category: "brand-identity",
-    categories: ["Brand Identity", "Kinetic Emblem"],
-    tags: ["Visual Identity", "Apparel Graphics", "Environmental Murals"],
-    coverImage: "assets/project-fitzone.jpg",
-    featured: true,
-    deliverables: ["Dynamic Kinetic Logomark", "Apparel Graphics Kit", "Environmental Wall Murals"],
-    timeline: "6 Weeks",
-    summary: "High-octane visual identity, kinetic emblem, and multi-channel campaign assets for a premium athletic club brand.",
-    challenge: "Modernize the club's look to appeal to serious athletes and high-performance lifestyle enthusiasts.",
-    solution: "Engineered an energetic kinetic 'F' monogram with forward-leaning angles, supported by a high-contrast dark gold and obsidian identity.",
-    brandIdentity: {
-      primaryLogoType: "Kinetic Speed Emblem",
-      primaryLogoSvg: "<svg viewBox='0 0 120 120' fill='none' stroke='#DFBD69' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><path d='M30 90L60 30H90L60 90H30Z'/><path d='M45 60H85'/></svg>",
-      colors: [
-        { name: "Kinetic Gold", hex: "#FFD700", role: "Primary Spark" },
-        { name: "Carbon Black", hex: "#111111", role: "Main Backdrop" },
-        { name: "Graphite Grey", hex: "#242424", role: "Card Surface" },
-        { name: "Pure White", hex: "#FFFFFF", role: "Contrast Type" }
-      ]
-    },
-    gallery: [
-      { type: "image", image: "assets/project-fitzone.jpg", caption: "Digital Campaign Interface & Member Conversion Landing Page" }
-    ],
-    results: "Drove a 180% surge in online membership trials across 12 club locations."
-  },
-  {
-    id: "cafe-aurora",
-    slug: "cafe-aurora",
-    title: "CAF AURORA",
-    client: "Aurora Hospitality Group",
-    year: "2024",
-    industry: "Fine Dining & Artisanal Gastronomy",
-    category: "packaging",
-    categories: ["Packaging & Dielines", "Logo Design"],
-    tags: ["Heritage Logo", "Leather Menus", "Foil Stamping"],
-    coverImage: "assets/project-cafe.jpg",
-    featured: true,
-    deliverables: ["Heritage Sunburst Emblem", "Leather Menu Suite", "Custom Coaster & Packaging Series"],
-    timeline: "4 Weeks",
-    summary: "Artisanal brand identity, hand-drawn sunburst logomark, and tactile print collateral for a Michelin-starred culinary destination.",
-    challenge: "Translate culinary craftsmanship and seasonal European farm-to-table ethics into a tactile visual identity.",
-    solution: "Crafted a delicate monoline sunburst emblem with vintage copperplate typography and blind-embossed linen menu covers.",
-    brandIdentity: {
-      primaryLogoType: "Monoline Sunburst Seal",
-      primaryLogoSvg: "<svg viewBox='0 0 120 120' fill='none' stroke='#DFBD69' stroke-width='2' stroke-linecap='round'><circle cx='60' cy='60' r='48'/><circle cx='60' cy='60' r='38' stroke-dasharray='2 4'/><path d='M60 20V28M60 92V100M20 60H28M92 60H100M32 32L38 38M82 82L88 88M32 88L38 82M82 38L88 32'/><circle cx='60' cy='60' r='18'/><text x='60' y='65' font-family='serif' font-size='14' text-anchor='middle' fill='#DFBD69'>CA</text></svg>",
-      colors: [
-        { name: "Sunburst Gold", hex: "#DFBD69", role: "Primary Foil" },
-        { name: "Espresso Roast", hex: "#1C1410", role: "Deep Ground" },
-        { name: "Linen Cream", hex: "#F8F5EE", role: "Paper Stock" },
-        { name: "Sage Herb", hex: "#63705C", role: "Accent Botanical" }
-      ]
-    },
-    gallery: [
-      { type: "image", image: "assets/project-cafe.jpg", caption: "Digital Dining Portal & Tasting Menu Visual System" }
-    ],
-    results: "Voted #1 Best Restaurant Branding in the 2024 Epicurean Design Awards."
-  }
-];
+
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', async () => {
@@ -264,7 +130,7 @@ function calculateCareerMilestones() {
   if (currentMonth < careerStartMonth) totalYears--;
   totalYears = Math.max(4, totalYears);
 
-  // 2. UAE & Current Company Experience (UAQ Next — Started in August 2023)
+  // 2. UAE & Current Company Experience (UAQ Next â€” Started in August 2023)
   const uaeStartYear = 2023;
   const uaeStartMonth = 7; // August
   let uaeYears = currentYear - uaeStartYear;
@@ -282,8 +148,8 @@ function calculateCareerMilestones() {
     totalYearsText: `${totalYears}+`,
     uaeYears,
     uaeYearsText: `${uaeYears} YRS`,
-    uaePillText: `UAE • ${uaeYears} YRS EXP`,
-    uaqPeriodText: `2023 – PRESENT (${uaeYears} YRS)`,
+    uaePillText: `UAE â€¢ ${uaeYears} YRS EXP`,
+    uaqPeriodText: `2023 â€“ PRESENT (${uaeYears} YRS)`,
     adobeYears,
     aeYears,
     idYears,
@@ -304,7 +170,7 @@ async function loadAndApplySiteContent() {
 
   if (!loaded) {
     try {
-      const res = await fetch('data/siteContent.json?t=' + Date.now());
+      const res = await fetch('data/siteContent.json?v=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         siteContent = await res.json();
         loaded = true;
@@ -503,7 +369,7 @@ async function loadProjectsData() {
   }
 
   try {
-    const res = await fetch('data/projects.json?t=' + Date.now());
+    const res = await fetch('data/projects.json?v=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -520,7 +386,7 @@ async function loadProjectsData() {
   }
   
   if (!projectsData || projectsData.length === 0) {
-    projectsData = fallbackProjects;
+    projectsData = [];
   }
 }
 
@@ -698,7 +564,7 @@ function renderProjectsGrid() {
 
 // Open Universal Presentation Modal (PDF Document or Pure Vertical Image Gallery)
 function openCaseStudy(identifier) {
-  const project = projectsData.find(p => p.id === identifier || p.slug === identifier) || fallbackProjects.find(p => p.id === identifier || p.slug === identifier);
+  const project = projectsData.find(p => p.id === identifier || p.slug === identifier) ;
   if (!project) return;
 
   currentProjectIndex = projectsData.findIndex(p => p.id === project.id);
@@ -707,7 +573,7 @@ function openCaseStudy(identifier) {
   const clientEl = document.getElementById('csClientName');
   const titleEl = document.getElementById('csProjectTitle');
 
-  if (clientEl) clientEl.textContent = `${project.client || 'CREATIVE PROJECT'} • ${project.year || '2026'}`;
+  if (clientEl) clientEl.textContent = `${project.client || 'CREATIVE PROJECT'} â€¢ ${project.year || '2026'}`;
   if (titleEl) titleEl.textContent = project.title || 'PROJECT PRESENTATION';
 
   const presBody = document.getElementById('csPresBody');
@@ -831,7 +697,7 @@ function handleBehanceAppreciate() {
     btn.style.background = '#003db3';
     btn.style.transform = 'scale(1.12)';
     hasAppreciated = true;
-    showToast('💙 Project Appreciated! Thank you.');
+    showToast('ðŸ’™ Project Appreciated! Thank you.');
     setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
   } else {
     showToast('You have already appreciated this project!');
@@ -842,9 +708,9 @@ function handleBehanceAppreciate() {
 function copyCaseStudyLink() {
   const url = window.location.href;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(() => showToast('🔗 Project permalink copied to clipboard!')).catch(() => showToast('Copied!'));
+    navigator.clipboard.writeText(url).then(() => showToast('ðŸ”— Project permalink copied to clipboard!')).catch(() => showToast('Copied!'));
   } else {
-    showToast('🔗 Permalink copied!');
+    showToast('ðŸ”— Permalink copied!');
   }
 }
 
@@ -967,3 +833,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedMode = localStorage.getItem('portfolio_view_mode') || 'grid';
   setArchiveViewMode(savedMode);
 });
+
+
+
