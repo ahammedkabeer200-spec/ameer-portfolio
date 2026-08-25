@@ -2296,3 +2296,67 @@ body {
     margin-bottom: 4px;
   }
 }
+
+/* Mobile Adjustments for Grid View */
+@media (max-width: 768px) {
+  .archive-container--grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+  
+  .archive-container--grid .modal-project-card {
+    height: auto !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+  }
+  
+  .archive-container--grid .modal-project-thumb {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/10 !important;
+    object-fit: cover !important;
+    border-radius: 14px 14px 0 0 !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .archive-container--grid .modal-project-info {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 12px !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  
+  .archive-container--grid .modal-project-meta-row {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .archive-container--grid .modal-project-title {
+    font-size: 0.95rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .archive-container--grid .modal-project-client,
+  .archive-container--grid .modal-project-cat {
+    font-size: 0.7rem !important;
+    width: auto !important;
+    text-align: left !important;
+  }
+  
+  .archive-container--grid .modal-project-format {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-project-thumb {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/10 !important;
+    object-fit: cover !important;
+  }
+}
