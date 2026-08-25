@@ -1,5 +1,5 @@
-/* ==========================================================================
-   AMEER SUHAIL — SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
+﻿/* ==========================================================================
+   AMEER SUHAIL â€” SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
    Luxury Poster Layout & Design System matching Reference Poster
    Deep Obsidian (#0a0a0a), Charcoal Surface (#141414), Champagne Gold (#DFBD69)
    ========================================================================== */
@@ -1308,7 +1308,7 @@ body {
 }
 
 .ai-features-list li::before {
-  content: '✦';
+  content: 'âœ¦';
   position: absolute;
   left: 0;
   color: var(--gold-primary);
@@ -1690,7 +1690,7 @@ body {
   color: #e2e8f0;
 }
 
-.modal-project-title {
+.modal-project-title { display: block; color: #ffffff !important; opacity: 1 !important; visibility: visible !important; 
   font-family: var(--font-condensed);
   font-size: 1.1rem;
   font-weight: 700;
@@ -1700,12 +1700,12 @@ body {
   margin: 0;
 }
 
-.modal-project-client {
+.modal-project-client { display: block; color: #a3a3a3 !important; opacity: 1 !important; visibility: visible !important; 
   font-size: 0.74rem;
   color: var(--text-muted);
 }
 
-.modal-project-cat {
+.modal-project-cat { display: block; color: #dfbd69 !important; opacity: 1 !important; visibility: visible !important; 
   font-size: 0.68rem;
   font-weight: 600;
   color: var(--gold-primary);
@@ -2213,6 +2213,8 @@ body {
 }
 
 /* Grid View (Default) */
+.archive-container--grid .modal-project-card { height: auto !important; min-height: 100% !important; display: flex !important; flex-direction: column !important; }
+.archive-container--grid .modal-project-info { flex: 1 1 auto !important; }
 .archive-container--grid {
   display: grid !important;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -2255,16 +2257,16 @@ body {
   min-width: 60px;
 }
 
-.archive-container--list .modal-project-title {
+.archive-container--list .modal-project-title { display: block; color: #ffffff !important; opacity: 1 !important; visibility: visible !important; 
   flex: 1;
   font-size: 1.1rem;
 }
 
-.archive-container--list .modal-project-client {
+.archive-container--list .modal-project-client { display: block; color: #a3a3a3 !important; opacity: 1 !important; visibility: visible !important; 
   width: 160px;
 }
 
-.archive-container--list .modal-project-cat {
+.archive-container--list .modal-project-cat { display: block; color: #dfbd69 !important; opacity: 1 !important; visibility: visible !important; 
   width: 120px;
   text-align: right;
 }
@@ -2286,7 +2288,7 @@ body {
     gap: 4px;
   }
   .archive-container--list .modal-project-client,
-  .archive-container--list .modal-project-cat {
+  .archive-container--list .modal-project-cat { display: block; color: #dfbd69 !important; opacity: 1 !important; visibility: visible !important; 
     width: auto;
     text-align: left;
   }
@@ -2334,13 +2336,13 @@ body {
     margin-bottom: 2px !important;
   }
   
-  .archive-container--grid .modal-project-title {
+  .archive-container--grid .modal-project-title { display: block; color: #ffffff !important; opacity: 1 !important; visibility: visible !important; 
     font-size: 0.95rem !important;
     line-height: 1.2 !important;
   }
   
   .archive-container--grid .modal-project-client,
-  .archive-container--grid .modal-project-cat {
+  .archive-container--grid .modal-project-cat { display: block; color: #dfbd69 !important; opacity: 1 !important; visibility: visible !important; 
     font-size: 0.7rem !important;
     width: auto !important;
     text-align: left !important;
@@ -2360,3 +2362,8 @@ body {
     object-fit: cover !important;
   }
 }
+
+
+
+
+
