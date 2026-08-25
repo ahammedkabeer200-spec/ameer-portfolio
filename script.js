@@ -573,7 +573,7 @@ function openCaseStudy(identifier) {
   const clientEl = document.getElementById('csClientName');
   const titleEl = document.getElementById('csProjectTitle');
 
-  if (clientEl) clientEl.textContent = `${project.client || 'CREATIVE PROJECT'} â€¢ ${project.year || '2026'}`;
+  if (clientEl) clientEl.innerHTML = `${project.client || 'CREATIVE PROJECT'} &bull; ${project.year || '2026'}`;
   if (titleEl) titleEl.textContent = project.title || 'PROJECT PRESENTATION';
 
   const presBody = document.getElementById('csPresBody');
@@ -833,6 +833,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedMode = localStorage.getItem('portfolio_view_mode') || 'grid';
   setArchiveViewMode(savedMode);
 });
+
+
 
 
 
