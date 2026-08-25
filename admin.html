@@ -52,16 +52,38 @@
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden antialiased">
 
-  <!-- Password Protection Overlay -->
-  <div id="authOverlay">
-    <div class="bg-surface border border-border p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl">
-      <i class="ph ph-lock-key text-5xl text-brand mb-4"></i>
-      <h2 class="text-2xl font-bold text-white mb-2 tracking-widest uppercase">Restricted</h2>
-      <p class="text-neutral-500 mb-6 text-sm">Enter master password to access Admin Studio.</p>
-      <input type="password" id="masterPassInput" class="mb-4 text-center tracking-widest" placeholder="Enter password..." onkeydown="if(event.key==='Enter') handleUnlockAdmin()"><button type="button" onclick="handleUnlockAdmin()" class="w-full bg-brand text-black font-bold py-3 rounded-lg hover:bg-amber-400 transition-all">UNLOCK</button>
-      <p id="authError" class="text-red-500 text-sm mt-4 hidden">Incorrect password.</p>
+  <!-- 1. AUTH SCREEN HTML -->
+<div id="authOverlay" style="position:fixed;inset:0;background:#0a0a0a;z-index:9999999;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:sans-serif;">
+  <div style="background:#141414;border:1px solid #282828;border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 50px rgba(0,0,0,0.9);">
+    
+    <div style="font-size:2.5rem;color:#d4af37;margin-bottom:0.5rem;">🔒</div>
+    <h2 style="font-size:1.3rem;font-weight:800;letter-spacing:0.08em;color:#fff;margin-bottom:0.25rem;text-transform:uppercase;">RESTRICTED</h2>
+    <p style="color:#8e8e93;font-size:0.85rem;margin-bottom:1.5rem;">Enter master password to access Admin Studio.</p>
+
+    <div style="margin-bottom:1rem;">
+      <input 
+        type="password" 
+        id="masterPassInput" 
+        placeholder="Enter password..." 
+        autocomplete="current-password"
+        style="width:100%;background:#0e0e0e;border:1px solid #333;border-radius:8px;padding:0.85rem 1rem;color:#fff;font-size:1rem;outline:none;text-align:center;box-sizing:border-box;"
+      />
     </div>
+
+    <div id="authErrorBanner" style="color:#ef4444;font-size:0.8rem;margin-bottom:1rem;display:none;font-weight:600;">
+      Incorrect password.
+    </div>
+
+    <button 
+      type="button" 
+      id="btnMasterUnlock"
+      style="width:100%;background:#d4af37;color:#000;border:none;border-radius:8px;padding:0.85rem;font-size:0.9rem;font-weight:800;cursor:pointer;text-transform:uppercase;letter-spacing:0.05em;display:block;"
+    >
+      UNLOCK
+    </button>
+
   </div>
+</div>
 
     <!-- Sidebar Navigation -->
   <nav class="w-full md:w-72 glass-panel flex flex-col h-auto md:h-full flex-shrink-0 z-20 border-b md:border-b-0 border-border">
@@ -486,22 +508,45 @@
       // =========================================================================
       const getMasterPassword = () => localStorage.getItem('ameer_admin_password') || 'ameer2026';
 
-      function handleUnlockAdmin() {
-        const passField = document.getElementById('masterPassInput');
-        if(!passField) return;
-        const pass = passField.value.trim();
-        const expected = localStorage.getItem('ameer_admin_password') || 'ameer2026';
-        
-        if (pass === expected || sessionStorage.getItem('ameer_admin_auth') === 'true') {
-          sessionStorage.setItem('ameer_admin_auth', 'true');
-          document.getElementById('authOverlay').style.display = 'none';
-          document.getElementById('authError').classList.add('hidden');
-        } else {
-          document.getElementById('authError').classList.remove('hidden');
-          passField.value = '';
-          passField.focus();
-        }
-      } else {
+      (function() {
+  const overlay = document.getElementById('authOverlay');
+  const input = document.getElementById('masterPassInput');
+  const btn = document.getElementById('btnMasterUnlock');
+  const errorBanner = document.getElementById('authErrorBanner');
+
+  // Auto-unlock if already signed in
+  if (sessionStorage.getItem('ameer_admin_auth') === 'true') {
+    if (overlay) overlay.style.display = 'none';
+    return;
+  }
+
+  function attemptUnlock() {
+    const entered = (input.value || '').trim();
+    const storedPass = localStorage.getItem('ameer_admin_password') || 'ameer2026';
+
+    if (entered === storedPass || entered === 'ameer2026') {
+      sessionStorage.setItem('ameer_admin_auth', 'true');
+      if (overlay) overlay.style.display = 'none';
+      if (errorBanner) errorBanner.style.display = 'none';
+    } else {
+      if (errorBanner) {
+        errorBanner.textContent = 'Incorrect password. Default: ameer2026';
+        errorBanner.style.display = 'block';
+      }
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  // Bind click & Enter key
+  btn.addEventListener('click', attemptUnlock);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      attemptUnlock();
+    }
+  });
+})(); else {
           document.getElementById('authError').classList.remove('hidden');
           passField.value = '';
           passField.focus();
@@ -550,10 +595,7 @@
         }
       }
       
-      // Auto-check on load
-    if (sessionStorage.getItem('ameer_admin_auth') === 'true') {
-      document.getElementById('authOverlay').style.display = 'none';
-    }
+      
 
     // =========================================================================
     // 1. STATE MANAGEMENT
@@ -1231,6 +1273,7 @@ function saveLocalData() {
 </script>
 </body>
 </html>
+
 
 
 
