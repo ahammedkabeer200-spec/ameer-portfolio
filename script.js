@@ -656,13 +656,18 @@ function renderProjectsGrid() {
 
   const total = projectsData.length;
   
-  // Try to find featured projects, otherwise fallback to first 6 projects
+  // Filter for featured projects
   let displayList = projectsData.filter(p => p.featured === true);
-  if (displayList.length === 0) {
-    displayList = projectsData.slice(0, 6);
-  } else {
-    displayList = displayList.slice(0, 6);
+  
+  // Ensure we display a minimum of 4 projects by padding with non-featured ones
+  if (displayList.length < 4) {
+    const nonFeatured = projectsData.filter(p => !p.featured);
+    const needed = 4 - displayList.length;
+    displayList = [...displayList, ...nonFeatured.slice(0, needed)];
   }
+  
+  // Cap at a maximum of 6 projects
+  displayList = displayList.slice(0, 6);
 
   // Update Top Link (Optional, if we want to change text dynamically)
   const topBtn = document.getElementById('viewAllProjectsLinkText');
