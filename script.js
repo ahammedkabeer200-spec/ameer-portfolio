@@ -636,7 +636,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
             <span class="modal-project-format">${isPdf ? '&#128196; PDF Deck' : '&#128444;&#65039; Slides'}</span>
           </div>
           <h3 class="modal-project-title">${p.title}</h3>
-          <span class="modal-project-client">${p.client || 'Client'} • ${p.year || '2026'}</span>
+          <span class="modal-project-client">${p.client || 'Client'} &bull; ${p.year || '2026'}</span>
           <span class="modal-project-cat">${catName}</span>
         </div>
       </article>
@@ -681,12 +681,11 @@ function renderProjectsGrid() {
       <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
         <img src="${p.coverImage || ''}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
         <div class="modal-project-info">
-          <div class="modal-project-meta-row">
+          <div class="modal-project-meta-row" style="margin-bottom: 8px;">
             <span class="modal-project-num">${numStr}</span>
-            <span class="modal-project-format">${isPdf ? '&#128196; PDF Deck' : '&#128444;&#65039; Slides'}</span>
           </div>
           <h3 class="modal-project-title">${p.title || 'Untitled'}</h3>
-          <span class="modal-project-client">${p.client || 'Client'} • ${p.year || '2026'}</span>
+          <span class="modal-project-client">${p.client || 'Client'} &bull; ${p.year || '2026'}</span>
           <span class="modal-project-cat">${catSubtitle}</span>
         </div>
       </article>
