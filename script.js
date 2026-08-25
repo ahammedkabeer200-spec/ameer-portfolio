@@ -667,23 +667,16 @@ function renderProjectsGrid() {
 
   grid.innerHTML = displayList.map((p, idx) => {
     const numStr = (idx + 1).toString().padStart(2, '0');
-    const catSubtitle = (p.categories && p.categories[0]) || getCategoryDisplayName(p.category);
-
-    let aspectStyle = "padding-top: 62.5%;"; // 16:10 fallback
-    if (p.aspectRatio === "1:1") aspectStyle = "padding-top: 100%;";
-    if (p.aspectRatio === "4:5") aspectStyle = "padding-top: 125%;";
+    const isPdf = p.presentationType === 'pdf' || (p.pdfUrl && p.pdfUrl.length > 0);
 
     return `
-      <article class="project-card-mini" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
-        <div class="proj-mini-img-wrap" style="${aspectStyle}">
-          <img src="${p.coverImage}" alt="${p.title}" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
-        </div>
-        <div class="proj-mini-info">
-          <div class="proj-mini-title-row">
-            <span class="proj-mini-num">${numStr}</span>
-            <h3 class="proj-mini-title">${p.title}</h3>
+      <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
+        <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+        <div class="modal-project-info">
+          <div class="modal-project-meta-row">
+            <span class="modal-project-num">${numStr}</span>
+            <span class="modal-project-format">${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}</span>
           </div>
-          <span class="proj-mini-cat">${catSubtitle}</span>
         </div>
       </article>
     `;
