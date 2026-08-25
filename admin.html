@@ -484,13 +484,13 @@
     // =========================================================================
       // 0. AUTHENTICATION
       // =========================================================================
-      const getMasterPassword = () => localStorage.getItem('ameer_admin_password') || 'ameer 2026';
+      const getMasterPassword = () => localStorage.getItem('ameer_admin_password') || 'ameer2026';
 
       function handleUnlockAdmin() {
         const passField = document.getElementById('masterPassInput');
         if(!passField) return;
         const pass = passField.value.trim();
-        const expected = localStorage.getItem('ameer_admin_password') || 'ameer 2026';
+        const expected = localStorage.getItem('ameer_admin_password') || 'ameer2026';
         
         if (pass === expected || sessionStorage.getItem('ameer_admin_auth') === 'true') {
           sessionStorage.setItem('ameer_admin_auth', 'true');
@@ -539,7 +539,7 @@
       }
 
       function resetDefaultPassword() {
-        if (confirm("Are you sure you want to reset the master password back to default (ameer 2026)?")) {
+        if (confirm("Are you sure you want to reset the master password back to default (ameer2026)?")) {
           localStorage.removeItem('ameer_admin_password');
           
           document.getElementById('currentPassword').value = '';
@@ -1231,6 +1231,7 @@ function saveLocalData() {
 </script>
 </body>
 </html>
+
 
 
 
