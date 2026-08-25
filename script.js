@@ -633,7 +633,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
         <div class="modal-project-info">
           <div class="modal-project-meta-row">
             <span class="modal-project-num">${numStr}</span>
-            <span class="modal-project-format">${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}</span>
+            <span class="modal-project-format">${isPdf ? '&#128196; PDF Deck' : '&#128444;&#65039; Slides'}</span>
           </div>
           <h3 class="modal-project-title">${p.title}</h3>
           <span class="modal-project-client">${p.client || 'Client'} • ${p.year || '2026'}</span>
@@ -675,8 +675,11 @@ function renderProjectsGrid() {
         <div class="modal-project-info">
           <div class="modal-project-meta-row">
             <span class="modal-project-num">${numStr}</span>
-            <span class="modal-project-format">${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}</span>
+            <span class="modal-project-format">${isPdf ? '&#128196; PDF Deck' : '&#128444;&#65039; Slides'}</span>
           </div>
+          <h3 class="modal-project-title">${p.title}</h3>
+          <span class="modal-project-client">${p.client || 'Client'} • ${p.year || '2026'}</span>
+          <span class="modal-project-cat">${catSubtitle}</span>
         </div>
       </article>
     `;
