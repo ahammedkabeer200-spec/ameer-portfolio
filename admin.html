@@ -58,8 +58,10 @@
       <i class="ph ph-lock-key text-5xl text-brand mb-4"></i>
       <h2 class="text-2xl font-bold text-white mb-2 tracking-widest uppercase">Restricted</h2>
       <p class="text-neutral-500 mb-6 text-sm">Enter master password to access Admin Studio.</p>
-      <input type="password" id="authPassword" class="mb-4 text-center tracking-widest" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" onkeydown="if(event.key==='Enter') checkAuth()">
-      <button onclick="checkAuth()" class="w-full bg-brand text-black font-bold py-3 rounded-lg hover:bg-amber-400 transition-all">UNLOCK</button>
+      <form id="authForm" onsubmit="event.preventDefault(); checkAuth();">
+        <input type="password" id="authPassword" class="mb-4 text-center tracking-widest" placeholder="Enter password..." autocomplete="current-password">
+        <button type="submit" class="w-full bg-brand text-black font-bold py-3 rounded-lg hover:bg-amber-400 transition-all">UNLOCK</button>
+      </form>
       <p id="authError" class="text-red-500 text-sm mt-4 hidden">Incorrect password.</p>
     </div>
   </div>
@@ -444,18 +446,23 @@
     // 0. AUTHENTICATION
     // =========================================================================
     function checkAuth() {
-      const pass = document.getElementById('authPassword').value;
-      if (pass === 'ameer2026' || sessionStorage.getItem('ameer_admin_auth') === 'true') {
+      const passField = document.getElementById('authPassword');
+      const pass = passField.value.trim();
+      
+      if (pass === 'ameer 2026' || sessionStorage.getItem('ameer_admin_auth') === 'true') {
         sessionStorage.setItem('ameer_admin_auth', 'true');
-        document.getElementById('authOverlay').classList.add('hidden');
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('authError').classList.add('hidden');
       } else {
         document.getElementById('authError').classList.remove('hidden');
+        passField.value = '';
+        passField.focus();
       }
     }
     
     // Auto-check on load
     if (sessionStorage.getItem('ameer_admin_auth') === 'true') {
-      document.getElementById('authOverlay').classList.add('hidden');
+      document.getElementById('authOverlay').style.display = 'none';
     }
 
     // =========================================================================
@@ -1134,6 +1141,7 @@ function saveLocalData() {
 </script>
 </body>
 </html>
+
 
 
 
