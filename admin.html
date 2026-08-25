@@ -425,6 +425,48 @@
       </div>
     </section>
 
+  
+    <!-- ==============================================
+         TAB: SECURITY
+         ============================================== -->
+    <section id="tab-security" class="tab-content p-4 md:p-10 max-w-4xl mx-auto">
+      <div class="mb-10 border-b border-border pb-6">
+        <h2 class="text-4xl font-bold text-white mb-2">Security Settings</h2>
+        <p class="text-neutral-400">Manage your master password for the Admin Studio.</p>
+      </div>
+
+      <div class="bg-surface p-8 rounded-2xl border border-border shadow-2xl max-w-xl">
+        <h3 class="text-brand font-bold uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
+          <i class="ph ph-shield-check text-xl"></i> Change Master Password
+        </h3>
+        
+        <form id="changePasswordForm" onsubmit="event.preventDefault(); updateMasterPassword();">
+          <div class="space-y-4 mb-6">
+            <div>
+              <label>Current Password</label>
+              <input type="password" id="currentPassword" placeholder="Enter current password..." autocomplete="current-password" required>
+            </div>
+            <div>
+              <label>New Password</label>
+              <input type="password" id="newPassword" placeholder="Enter new password..." autocomplete="new-password" required>
+            </div>
+            <div>
+              <label>Confirm New Password</label>
+              <input type="password" id="confirmNewPassword" placeholder="Confirm new password..." autocomplete="new-password" required>
+            </div>
+          </div>
+          
+          <div class="flex flex-col gap-3">
+            <button type="submit" class="w-full bg-brand text-black font-bold py-3 rounded-lg hover:bg-amber-400 transition-all flex justify-center items-center gap-2">
+              <i class="ph ph-floppy-disk text-lg"></i> Update Password
+            </button>
+            <button type="button" onclick="resetDefaultPassword()" class="w-full bg-transparent border border-border text-neutral-400 font-bold py-3 rounded-lg hover:bg-red-900/30 hover:text-red-400 hover:border-red-900/50 transition-all">
+              Reset to Default Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
   </main>
 
   <!-- Toast Notification Container -->
@@ -443,24 +485,68 @@
   <!-- Javascript Logic -->
   <script>
     // =========================================================================
-    // 0. AUTHENTICATION
-    // =========================================================================
-    function checkAuth() {
-      const passField = document.getElementById('authPassword');
-      const pass = passField.value.trim();
-      
-      if (pass === 'ameer 2026' || sessionStorage.getItem('ameer_admin_auth') === 'true') {
-        sessionStorage.setItem('ameer_admin_auth', 'true');
-        document.getElementById('authOverlay').style.display = 'none';
-        document.getElementById('authError').classList.add('hidden');
-      } else {
-        document.getElementById('authError').classList.remove('hidden');
-        passField.value = '';
-        passField.focus();
+      // 0. AUTHENTICATION
+      // =========================================================================
+      const getMasterPassword = () => localStorage.getItem('ameer_admin_password') || 'ameer 2026';
+
+      function checkAuth() {
+        const passField = document.getElementById('authPassword');
+        const pass = passField.value.trim();
+        
+        if (pass === getMasterPassword() || sessionStorage.getItem('ameer_admin_auth') === 'true') {
+          sessionStorage.setItem('ameer_admin_auth', 'true');
+          document.getElementById('authOverlay').style.display = 'none';
+          document.getElementById('authError').classList.add('hidden');
+        } else {
+          document.getElementById('authError').classList.remove('hidden');
+          passField.value = '';
+          passField.focus();
+        }
       }
-    }
-    
-    // Auto-check on load
+
+      function updateMasterPassword() {
+        const currentPass = document.getElementById('currentPassword').value.trim();
+        const newPass = document.getElementById('newPassword').value.trim();
+        const confirmPass = document.getElementById('confirmNewPassword').value.trim();
+
+        if (currentPass !== getMasterPassword()) {
+          showToast("Current password is incorrect.", true);
+          return;
+        }
+
+        if (newPass !== confirmPass) {
+          showToast("New passwords do not match.", true);
+          return;
+        }
+
+        if (newPass.length === 0) {
+          showToast("Password cannot be empty.", true);
+          return;
+        }
+
+        localStorage.setItem('ameer_admin_password', newPass);
+        
+        // Clear form
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+        
+        showToast("Master Password updated successfully!");
+      }
+
+      function resetDefaultPassword() {
+        if (confirm("Are you sure you want to reset the master password back to default (ameer 2026)?")) {
+          localStorage.removeItem('ameer_admin_password');
+          
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmNewPassword').value = '';
+          
+          showToast("Password reset to default successfully.");
+        }
+      }
+      
+      // Auto-check on load
     if (sessionStorage.getItem('ameer_admin_auth') === 'true') {
       document.getElementById('authOverlay').style.display = 'none';
     }
@@ -1141,6 +1227,9 @@ function saveLocalData() {
 </script>
 </body>
 </html>
+
+
+
 
 
 
