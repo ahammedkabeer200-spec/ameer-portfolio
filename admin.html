@@ -546,12 +546,7 @@
       attemptUnlock();
     }
   });
-})(); else {
-          document.getElementById('authError').classList.remove('hidden');
-          passField.value = '';
-          passField.focus();
-        }
-      }
+})();
 
       function updateMasterPassword() {
         const currentPass = document.getElementById('currentPassword').value.trim();
@@ -1273,6 +1268,8 @@ function saveLocalData() {
 </script>
 </body>
 </html>
+
+
 
 
 
