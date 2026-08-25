@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -50,7 +50,7 @@
     #authOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
   </style>
 </head>
-<body class="flex h-screen overflow-hidden antialiased">
+<body class="flex flex-col md:flex-row h-screen overflow-hidden antialiased">
 
   <!-- Password Protection Overlay -->
   <div id="authOverlay">
@@ -58,45 +58,50 @@
       <i class="ph ph-lock-key text-5xl text-brand mb-4"></i>
       <h2 class="text-2xl font-bold text-white mb-2 tracking-widest uppercase">Restricted</h2>
       <p class="text-neutral-500 mb-6 text-sm">Enter master password to access Admin Studio.</p>
-      <input type="password" id="authPassword" class="mb-4 text-center tracking-widest" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkAuth()">
+      <input type="password" id="authPassword" class="mb-4 text-center tracking-widest" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" onkeydown="if(event.key==='Enter') checkAuth()">
       <button onclick="checkAuth()" class="w-full bg-brand text-black font-bold py-3 rounded-lg hover:bg-amber-400 transition-all">UNLOCK</button>
       <p id="authError" class="text-red-500 text-sm mt-4 hidden">Incorrect password.</p>
     </div>
   </div>
 
-  <!-- Sidebar Navigation -->
-  <nav class="w-72 glass-panel flex flex-col h-full flex-shrink-0 z-20">
-    <div class="p-8 border-b border-border">
-      <h1 class="text-2xl font-bold text-brand tracking-widest uppercase flex items-center gap-3">
-        <i class="ph ph-command"></i> STUDIO OS
-      </h1>
-      <p class="text-xs text-neutral-500 mt-2 font-mono" id="syncStatus">● Local Sync Active</p>
+    <!-- Sidebar Navigation -->
+  <nav class="w-full md:w-72 glass-panel flex flex-col h-auto md:h-full flex-shrink-0 z-20 border-b md:border-b-0 border-border">
+    <div class="p-4 md:p-8 border-b border-border flex justify-between items-center md:items-start md:flex-col">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-brand tracking-widest uppercase flex items-center gap-3">
+          <i class="ph ph-command"></i> STUDIO OS
+        </h1>
+        <p class="text-[10px] md:text-xs text-neutral-500 mt-1 md:mt-2 font-mono hidden md:block" id="syncStatus">● Local Sync Active</p>
+      </div>
+      <button onclick="publishAllToGitHub()" class="md:hidden bg-brand text-black font-bold py-2 px-4 rounded-lg hover:bg-amber-400 transition-all flex items-center gap-2 text-sm" id="publishBtnMobile">
+        <i class="ph ph-cloud-arrow-up text-lg"></i> PUBLISH
+      </button>
     </div>
     
-    <ul class="flex-1 p-4 space-y-2 overflow-y-auto" id="nav-tabs">
+    <ul class="flex-none md:flex-1 p-2 md:p-4 flex flex-row md:flex-col space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-y-auto whitespace-nowrap" id="nav-tabs">
       <li>
-        <button onclick="switchTab('projects')" data-tab="projects" class="nav-btn w-full flex items-center gap-3 text-left p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all bg-surface text-white">
-          <i class="ph ph-cards text-xl"></i> Project Manager
+        <button onclick="switchTab('projects')" data-tab="projects" class="nav-btn w-full flex items-center gap-2 md:gap-3 text-left p-3 md:p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all bg-surface text-white text-sm md:text-base">
+          <i class="ph ph-cards text-lg md:text-xl"></i> Project Manager
         </button>
       </li>
       <li>
-        <button onclick="switchTab('content')" data-tab="content" class="nav-btn w-full flex items-center gap-3 text-left p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all">
-          <i class="ph ph-text-aa text-xl"></i> Global Content
+        <button onclick="switchTab('content')" data-tab="content" class="nav-btn w-full flex items-center gap-2 md:gap-3 text-left p-3 md:p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all text-sm md:text-base">
+          <i class="ph ph-text-aa text-lg md:text-xl"></i> Global Content
         </button>
       </li>
       <li>
-        <button onclick="switchTab('preview')" data-tab="preview" class="nav-btn w-full flex items-center gap-3 text-left p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all">
-          <i class="ph ph-monitor-play text-xl"></i> Live Preview
+        <button onclick="switchTab('preview')" data-tab="preview" class="nav-btn w-full flex items-center gap-2 md:gap-3 text-left p-3 md:p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all text-sm md:text-base">
+          <i class="ph ph-monitor-play text-lg md:text-xl"></i> Live Preview
         </button>
       </li>
       <li>
-        <button onclick="switchTab('backup')" data-tab="backup" class="nav-btn w-full flex items-center gap-3 text-left p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all">
-          <i class="ph ph-database text-xl"></i> Data Backup
+        <button onclick="switchTab('backup')" data-tab="backup" class="nav-btn w-full flex items-center gap-2 md:gap-3 text-left p-3 md:p-4 rounded-xl text-neutral-400 hover:bg-surface hover:text-white transition-all text-sm md:text-base">
+          <i class="ph ph-database text-lg md:text-xl"></i> Data Backup
         </button>
       </li>
     </ul>
 
-    <div class="p-6 border-t border-border bg-dark/50">
+    <div class="p-6 border-t border-border bg-dark/50 hidden md:block">
       <button onclick="publishAllToGitHub()" class="w-full bg-brand text-black font-bold py-4 rounded-xl hover:bg-amber-400 transition-all shadow-[0_0_20px_rgba(223,189,105,0.2)] flex items-center justify-center gap-2" id="publishBtn">
         <i class="ph ph-cloud-arrow-up text-xl"></i> PUBLISH LIVE
       </button>
@@ -105,13 +110,13 @@
   </nav>
 
   <!-- Main Content Area -->
-  <main class="flex-1 h-full overflow-y-auto bg-[#0a0a0a] relative" id="mainContent">
+  <main class="flex-1 overflow-y-auto bg-[#0a0a0a] relative" id="mainContent">
     
     <!-- ==============================================
          TAB: PROJECT MANAGER
          ============================================== -->
-    <section id="tab-projects" class="tab-content active p-10 max-w-7xl mx-auto">
-      <div class="flex justify-between items-end mb-10">
+    <section id="tab-projects" class="tab-content active p-4 md:p-10 max-w-7xl mx-auto">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-10 gap-4">
         <div>
           <h2 class="text-4xl font-bold text-white mb-2">Project Manager</h2>
           <p class="text-neutral-400">Add, edit, or delete case studies from your portfolio.</p>
@@ -141,7 +146,7 @@
               <!-- Core Details -->
               <div>
                 <h4 class="text-brand font-bold border-b border-border pb-2 mb-4 uppercase tracking-widest text-sm"><i class="ph ph-info mr-2"></i>Core Details</h4>
-                <div class="grid grid-cols-2 gap-6 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                   <div>
                     <label>Project Title</label>
                     <input type="text" id="p_title" required placeholder="e.g. Aura & Lumina Botanics">
@@ -151,7 +156,7 @@
                     <input type="text" id="p_client" required placeholder="e.g. Lumina Co.">
                   </div>
                 </div>
-                <div class="grid grid-cols-3 gap-6 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                   <div>
                     <label>Category</label>
                     <input type="text" id="p_category" required placeholder="e.g. Brand Identity">
@@ -170,7 +175,7 @@
               <!-- Graphic Designer Specifics -->
               <div>
                 <h4 class="text-brand font-bold border-b border-border pb-2 mb-4 uppercase tracking-widest text-sm"><i class="ph ph-paint-brush mr-2"></i>Design Deliverables</h4>
-                <div class="grid grid-cols-2 gap-6 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                   <div>
                     <label>Deliverables (Comma-Separated Tags)</label>
                     <input type="text" id="p_deliverables" placeholder="e.g. Logo Design, Bottle Packaging, Vector Assets">
@@ -254,7 +259,7 @@
     <!-- ==============================================
          TAB: GLOBAL CONTENT
          ============================================== -->
-    <section id="tab-content" class="tab-content p-10 max-w-4xl mx-auto">
+    <section id="tab-content" class="tab-content p-4 md:p-10 max-w-4xl mx-auto">
       <h2 class="text-4xl font-bold text-white mb-2">Global Content</h2>
       <p class="text-neutral-400 mb-10">Update your website's main text, hero section, and social links.</p>
       
@@ -362,7 +367,7 @@
     <!-- ==============================================
          TAB: LIVE PREVIEW
          ============================================== -->
-    <section id="tab-preview" class="tab-content h-full p-6">
+    <section id="tab-preview" class="tab-content h-full p-2 md:p-6">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-bold text-white">Live Website Preview</h2>
         <div class="flex gap-4">
@@ -378,7 +383,7 @@
     <!-- ==============================================
          TAB: BACKUP & RESTORE
          ============================================== -->
-    <section id="tab-backup" class="tab-content p-10 max-w-4xl mx-auto">
+    <section id="tab-backup" class="tab-content p-4 md:p-10 max-w-4xl mx-auto">
       <h2 class="text-4xl font-bold text-white mb-2">Backup & Restore</h2>
       <p class="text-neutral-400 mb-10">Safely backup your JSON database and restore it if needed.</p>
 
@@ -639,7 +644,7 @@
               <h4 class="font-bold text-lg text-white pr-4 leading-tight">${p.title}</h4>
               <span class="text-[10px] bg-dark px-2 py-1 rounded text-brand font-mono shrink-0">${p.order || 0}</span>
             </div>
-            <p class="text-xs text-neutral-500 uppercase tracking-wider mb-3">${p.client} • ${p.category}</p>
+            <p class="text-xs text-neutral-500 uppercase tracking-wider mb-3">${p.client} â€¢ ${p.category}</p>
             <div class="flex flex-wrap gap-1 mt-auto">
               ${(p.deliverables || []).slice(0,3).map(d => `<span class="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded">${d}</span>`).join('')}
               ${(p.deliverables && p.deliverables.length > 3) ? `<span class="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded">+${p.deliverables.length - 3}</span>` : ''}
@@ -1053,3 +1058,9 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
