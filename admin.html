@@ -101,15 +101,19 @@
 
   function attemptUnlock() {
     const entered = (input.value || "").trim();
-    const storedPass = localStorage.getItem("ameer_admin_password") || "ameer 2026";
+    const normalizedEntered = entered.replace(/\s+/g, "").toLowerCase();
+    
+    // Also normalize stored password just in case they saved it with spaces
+    let storedPass = localStorage.getItem("ameer_admin_password") || "ameer2026";
+    let normalizedStored = storedPass.replace(/\s+/g, "").toLowerCase();
 
-    if (entered === storedPass || entered === "ameer 2026") {
+    if (normalizedEntered === normalizedStored || normalizedEntered === "ameer2026") {
       sessionStorage.setItem("ameer_admin_auth", "true");
       if (overlay) overlay.style.display = "none";
       if (errorBanner) errorBanner.style.display = "none";
     } else {
       if (errorBanner) {
-        errorBanner.textContent = "Incorrect password. Default: ameer 2026";
+        errorBanner.textContent = "Incorrect password. Default: ameer2026";
         errorBanner.style.display = "block";
       }
       input.value = "";
@@ -550,7 +554,7 @@
   <script>
     // =========================================================================
       // 0. AUTHENTICATION (Logic moved to head/inline script below overlay)
-        const getMasterPassword = () => localStorage.getItem('ameer_admin_password') || 'ameer 2026';
+        const getMasterPassword = () => localStorage.getItem('ameer_admin_password') || 'ameer2026';
 
       function updateMasterPassword() {
         const currentPass = document.getElementById('currentPassword').value.trim();
@@ -1272,6 +1276,7 @@ function saveLocalData() {
 </script>
 </body>
 </html>
+
 
 
 
