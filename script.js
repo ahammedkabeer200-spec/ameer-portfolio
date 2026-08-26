@@ -491,17 +491,29 @@ function renderModalProjectsGrid(filterCat = 'all') {
   container.innerHTML = filtered.map((p, idx) => {
     const numStr = (idx + 1).toString().padStart(2, '0');
     const catName = getCategoryDisplayName(p.category);
+    const isPdf = p.presentationType === 'pdf' || (p.pdfUrl && p.pdfUrl.length > 0);
 
     return `
       <article class="modal-project-card" onclick="openCaseStudyFromModal('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
         <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
-        <div class="modal-project-info">
-          <div class="modal-project-meta-row" style="margin-bottom: 8px;">
-            <span class="modal-project-num">${numStr}</span>
+        <div class="modal-project-info" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
+          
+          <div class="modal-project-meta-row" style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 class="modal-project-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem;">${numStr}</span>
+              <span style="overflow: hidden; text-overflow: ellipsis;">${p.title}</span>
+            </h3>
+            <span class="modal-project-format" style="font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; flex-shrink: 0; margin-left: 12px; color: #d4d4d4;">
+              ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+            </span>
           </div>
-          <h3 class="modal-project-title">${p.title}</h3>
-          <span class="modal-project-client">${p.client || 'Client'} &bull; ${p.year || '2026'}</span>
-          <span class="modal-project-cat">${catName}</span>
+
+          <div style="font-size: 0.75rem; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <span class="modal-project-client">${p.client || 'Client'}</span> &bull; 
+            <span>${p.year || '2026'}</span> &bull; 
+            <span class="modal-project-cat" style="color: #dfbd69; font-weight: 600;">${catName}</span>
+          </div>
+          
         </div>
       </article>
     `;
@@ -549,13 +561,24 @@ function renderProjectsGrid() {
     return `
       <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
         <img src="${p.coverImage || ''}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
-        <div class="modal-project-info">
-          <div class="modal-project-meta-row" style="margin-bottom: 8px;">
-            <span class="modal-project-num">${numStr}</span>
+        <div class="modal-project-info" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
+          
+          <div class="modal-project-meta-row" style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 class="modal-project-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem;">${numStr}</span>
+              <span style="overflow: hidden; text-overflow: ellipsis;">${p.title || 'Untitled'}</span>
+            </h3>
+            <span class="modal-project-format" style="font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; flex-shrink: 0; margin-left: 12px; color: #d4d4d4;">
+              ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+            </span>
           </div>
-          <h3 class="modal-project-title">${p.title || 'Untitled'}</h3>
-          <span class="modal-project-client">${p.client || 'Client'} &bull; ${p.year || '2026'}</span>
-          <span class="modal-project-cat">${catSubtitle}</span>
+
+          <div style="font-size: 0.75rem; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <span class="modal-project-client">${p.client || 'Client'}</span> &bull; 
+            <span>${p.year || '2026'}</span> &bull; 
+            <span class="modal-project-cat" style="color: #dfbd69; font-weight: 600;">${catSubtitle}</span>
+          </div>
+          
         </div>
       </article>
     `;
@@ -833,6 +856,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedMode = localStorage.getItem('portfolio_view_mode') || 'grid';
   setArchiveViewMode(savedMode);
 });
+
+
 
 
 
