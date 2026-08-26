@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -25,7 +25,6 @@
     
     /* Brand */
     .brand-title { font-size: 1.3rem; font-weight: 800; color: var(--gold); letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
-    .brand-status { font-size: 0.75rem; color: var(--success); margin-top: 4px; display: block; font-family: monospace; }
     
     /* Navigation */
     .nav-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -54,7 +53,6 @@
     .card-thumb { width: 100%; aspect-ratio: 16/10; background: #000; overflow: hidden; position: relative; }
     .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .card-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.85); color: #fff; font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #333; backdrop-filter: blur(4px); }
-    .card-featured { position: absolute; top: 10px; left: 10px; background: var(--gold); color: #000; font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; font-weight: bold; }
     .card-body { padding: 1.25rem; display: flex; flex-direction: column; flex: 1; }
     .card-meta { font-size: 0.75rem; color: var(--gold); font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem; }
     .card-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -65,12 +63,15 @@
     .form-group { margin-bottom: 1.5rem; }
     .form-group.full { grid-column: 1 / -1; }
     .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em; }
-    .form-input, .form-textarea { width: 100%; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .form-input, .form-textarea, .form-select { width: 100%; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
     .form-textarea { resize: vertical; min-height: 100px; }
-    .form-input:focus, .form-textarea:focus { border-color: var(--gold); }
-    .form-checkbox { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #fff; }
-    .form-checkbox input { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--gold); }
 
+    /* Sliders */
+    .slider-container { display: flex; align-items: center; gap: 1rem; }
+    .slider { flex: 1; -webkit-appearance: none; background: #242424; height: 6px; border-radius: 3px; outline: none; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); cursor: pointer; }
+    
     /* Modals */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
     .modal-overlay.active { display: flex; }
@@ -78,11 +79,6 @@
     .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 2rem; overflow-y: auto; flex: 1; }
     .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem; background: #0e0e0e; border-radius: 0 0 16px 16px; }
-
-    /* Preview Iframe */
-    .preview-container { background: #000; border: 1px solid var(--border); border-radius: 12px; height: calc(100vh - 12rem); display: flex; justify-content: center; align-items: flex-start; padding: 2rem; overflow: hidden; position: relative; }
-    #previewFrame { background: #fff; border: none; box-shadow: 0 0 30px rgba(0,0,0,0.5); transition: width 0.4s ease, height 0.4s ease; border-radius: 4px; }
-    .preview-controls { position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); background: rgba(20,20,20,0.9); backdrop-filter: blur(10px); padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); display: flex; gap: 0.5rem; z-index: 10; }
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -102,12 +98,12 @@
   <!-- AUTH SCREEN -->
   <div id="authScreen" class="modal-overlay active" style="z-index: 999999;">
     <div class="modal-card" style="max-width: 380px; text-align: center; background: #141414; padding: 3rem 2rem; display: block; border-radius: 16px;">
-      <div style="font-size: 3rem; color: var(--gold); margin-bottom: 1rem;">🔒</div>
+      <div style="font-size: 3rem; color: var(--gold); margin-bottom: 1rem;">ðŸ”’</div>
       <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; margin-bottom: 0.5rem;">STUDIO OS</h2>
       <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem;">Authenticate to access the workspace.</p>
       <form onsubmit="return false;" style="margin: 0; padding: 0;">
         <input type="password" id="loginPassInput" class="form-input" placeholder="Enter master password..." autocomplete="current-password" style="text-align: center; margin-bottom: 1rem; font-size: 1.1rem; padding: 1rem;" />
-        <div id="loginError" style="color: var(--danger); font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; display: none;">Incorrect password. Default: ameer2026</div>
+        <div id="loginError" style="color: var(--danger); font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; display: none;">Incorrect password</div>
         <button type="button" class="btn btn-gold" id="btnUnlock" style="width: 100%; padding: 1rem; font-size: 1rem;">UNLOCK</button>
       </form>
     </div>
@@ -118,20 +114,19 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div>
-        <div class="brand-title">⌘ STUDIO OS</div>
-        <span class="brand-status" id="syncStatusIndicator">● Local Mode</span>
+        <div class="brand-title">âŒ˜ STUDIO OS</div>
       </div>
 
       <ul class="nav-list">
-        <li><button type="button" class="nav-btn active" onclick="switchTab('projectsTab')">📁 Project Manager</button></li>
-        <li><button type="button" class="nav-btn" onclick="switchTab('contentTab')">📝 Global Content</button></li>
-        <li><button type="button" class="nav-btn" onclick="switchTab('previewTab')">👁️ Live Preview</button></li>
-        <li><button type="button" class="nav-btn" onclick="switchTab('settingsTab')">⚙️ Settings & Data</button></li>
+        <li><button type="button" class="nav-btn active" onclick="switchTab('projectsTab')">ðŸ“ Project Manager</button></li>
+        <li><button type="button" class="nav-btn" onclick="switchTab('profileTab')">ðŸ“¸ Hero Profile Tuner</button></li>
+        <li><button type="button" class="nav-btn" onclick="switchTab('contentTab')">ðŸ“ Global Content</button></li>
+        <li><button type="button" class="nav-btn" onclick="switchTab('settingsTab')">âš™ï¸ Settings & Security</button></li>
+        <li><button type="button" class="nav-btn" onclick="switchTab('backupTab')">ðŸ’¾ Backup & Restore</button></li>
       </ul>
 
       <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
-        <button type="button" class="btn btn-secondary" style="justify-content: center;" onclick="forceSyncFromGitHub()">☁️ Force Sync</button>
-        <button type="button" class="btn btn-publish" onclick="publishToGitHub()">🚀 PUBLISH LIVE</button>
+        <button type="button" class="btn btn-publish" onclick="publishToGitHub()">ðŸš€ PUBLISH LIVE</button>
       </div>
     </aside>
 
@@ -143,135 +138,195 @@
         <div class="tab-header">
           <div>
             <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Project Manager</h1>
-            <p style="color: var(--muted); font-size: 0.95rem;">Manage case studies, portfolio items, and presentation decks.</p>
+            <p style="color: var(--muted); font-size: 0.95rem;">Manage case studies and presentation decks.</p>
           </div>
           <button type="button" class="btn btn-gold" onclick="openProjectModal()">+ New Project</button>
         </div>
         <div id="projectsContainer" class="projects-grid"></div>
       </section>
 
-      <!-- 2. GLOBAL CONTENT TAB -->
+      <!-- 2. HERO PROFILE TUNER -->
+      <section id="profileTab" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Hero Profile Tuner</h1>
+            <p style="color: var(--muted); font-size: 0.95rem;">Adjust your circular avatar for the homepage hero.</p>
+          </div>
+          <button type="button" class="btn btn-gold" onclick="saveProfileTuner()">ðŸ’¾ Save Avatar</button>
+        </div>
+
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; display: flex; flex-direction: column; md:flex-row; gap: 3rem;">
+          <div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;">
+            
+            <!-- Live Preview Box -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+              <h3 style="color: var(--gold); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Live Preview</h3>
+              <div style="width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 2px solid var(--gold); background: #000; display: flex; align-items: center; justify-content: center;">
+                <img id="avatarPreview" src="" alt="Hero Avatar" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" onload="this.style.display='block'" />
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div style="flex: 1; min-width: 300px;">
+              <div class="form-group">
+                <label>Image URL</label>
+                <input type="text" id="tunerUrl" class="form-input" placeholder="assets/hero.jpg or https://..." oninput="updateTunerPreview()" />
+              </div>
+
+              <div class="form-group">
+                <label>Zoom (<span id="zoomVal">100</span>%)</label>
+                <div class="slider-container">
+                  <span style="font-size: 0.8rem; color: var(--muted);">100%</span>
+                  <input type="range" id="tunerZoom" class="slider" min="100" max="250" value="100" oninput="updateTunerPreview()" />
+                  <span style="font-size: 0.8rem; color: var(--muted);">250%</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Horizontal Position X (<span id="xVal">50</span>%)</label>
+                <div class="slider-container">
+                  <span style="font-size: 0.8rem; color: var(--muted);">0%</span>
+                  <input type="range" id="tunerX" class="slider" min="0" max="100" value="50" oninput="updateTunerPreview()" />
+                  <span style="font-size: 0.8rem; color: var(--muted);">100%</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Vertical Position Y (<span id="yVal">50</span>%)</label>
+                <div class="slider-container">
+                  <span style="font-size: 0.8rem; color: var(--muted);">0%</span>
+                  <input type="range" id="tunerY" class="slider" min="0" max="100" value="50" oninput="updateTunerPreview()" />
+                  <span style="font-size: 0.8rem; color: var(--muted);">100%</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. GLOBAL CONTENT TAB -->
       <section id="contentTab" class="tab-content">
         <div class="tab-header">
           <div>
-            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Global Content</h1>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Global Text Content</h1>
             <p style="color: var(--muted); font-size: 0.95rem;">Edit your homepage text, bio, and social links.</p>
           </div>
-          <button type="button" class="btn btn-gold" onclick="saveSiteContent()">💾 Save Content</button>
+          <button type="button" class="btn btn-gold" onclick="saveSiteContent()">ðŸ’¾ Save Content</button>
         </div>
 
         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
           <form id="contentForm" class="form-grid">
             <div class="form-group full">
-              <label>Name / Brand Header</label>
-              <input type="text" id="c_brandName" class="form-input" placeholder="e.g. AMEER." />
+              <label>Headline / Brand Name</label>
+              <input type="text" id="c_headline" class="form-input" placeholder="e.g. AMEER." />
             </div>
             <div class="form-group full">
               <label>Hero Subtitle</label>
-              <input type="text" id="c_heroSubtitle" class="form-input" placeholder="e.g. Creative Director & Designer" />
+              <input type="text" id="c_subtitle" class="form-input" placeholder="e.g. Creative Director & Designer" />
             </div>
             <div class="form-group full">
               <label>Bio / About Text</label>
-              <textarea id="c_bioText" class="form-textarea" placeholder="Write your bio here..."></textarea>
+              <textarea id="c_bio" class="form-textarea" placeholder="Write your bio here..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Core Disciplines</label>
+              <input type="text" id="c_disciplines" class="form-input" placeholder="Brand Identity, UI/UX..." />
+            </div>
+            <div class="form-group">
+              <label>Technical Arsenal</label>
+              <input type="text" id="c_tech" class="form-input" placeholder="Figma, Webflow..." />
             </div>
             <div class="form-group">
               <label>Contact Email</label>
-              <input type="email" id="c_contactEmail" class="form-input" placeholder="hello@example.com" />
+              <input type="email" id="c_email" class="form-input" placeholder="hello@example.com" />
             </div>
             <div class="form-group">
-              <label>Behance URL</label>
-              <input type="text" id="c_behanceUrl" class="form-input" placeholder="https://behance.net/..." />
-            </div>
-            <div class="form-group full">
-              <label>Core Disciplines (Comma separated)</label>
-              <input type="text" id="c_coreDisciplines" class="form-input" placeholder="Brand Identity, UI/UX, Art Direction" />
-            </div>
-            <div class="form-group full">
-              <label>Technical Arsenal (Comma separated)</label>
-              <input type="text" id="c_techArsenal" class="form-input" placeholder="Figma, Adobe CC, Webflow" />
+              <label>Behance / LinkedIn URL</label>
+              <input type="text" id="c_social" class="form-input" placeholder="https://..." />
             </div>
           </form>
         </div>
       </section>
 
-      <!-- 3. LIVE PREVIEW TAB -->
-      <section id="previewTab" class="tab-content">
-        <div class="tab-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem;">
-          <div>
-            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Live Preview</h1>
-            <p style="color: var(--muted); font-size: 0.95rem;">Test how your site looks across devices.</p>
-          </div>
-        </div>
-
-        <div class="preview-container">
-          <div class="preview-controls">
-            <button class="btn btn-secondary" onclick="setPreviewWidth('100%')" style="padding: 0.5rem 1rem;">💻 Desktop</button>
-            <button class="btn btn-secondary" onclick="setPreviewWidth('768px')" style="padding: 0.5rem 1rem;">📱 Tablet</button>
-            <button class="btn btn-secondary" onclick="setPreviewWidth('375px')" style="padding: 0.5rem 1rem;">📱 Mobile</button>
-            <div style="width: 1px; background: var(--border); margin: 0 0.5rem;"></div>
-            <button class="btn btn-gold" onclick="reloadPreview()" style="padding: 0.5rem 1rem;">🔄 Refresh</button>
-          </div>
-          <iframe id="previewFrame" src="index.html" style="width: 100%; height: 100%;"></iframe>
-        </div>
-      </section>
-
-      <!-- 4. SETTINGS & DATA TAB -->
+      <!-- 4. SETTINGS & SECURITY TAB -->
       <section id="settingsTab" class="tab-content">
         <div class="tab-header">
           <div>
-            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Settings & Data</h1>
-            <p style="color: var(--muted); font-size: 0.95rem;">Manage security, backups, and GitHub integrations.</p>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Settings & Security</h1>
+            <p style="color: var(--muted); font-size: 0.95rem;">Manage access credentials and GitHub API setup.</p>
           </div>
         </div>
 
         <div class="form-grid">
-          <!-- Backup -->
-          <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
-            <h3 style="color: var(--gold); margin-bottom: 0.5rem; font-size: 1.2rem;">Data Backup</h3>
-            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Download or restore your portfolio JSON database.</p>
-            <div style="display: flex; gap: 1rem;">
-              <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="exportDataJson()">💾 Export JSON</button>
-              <label class="btn btn-secondary" style="flex: 1; text-align: center; cursor: pointer;">
-                📂 Import JSON
-                <input type="file" accept=".json" style="display: none;" onchange="importDataJson(event)" />
-              </label>
-            </div>
-          </div>
-
           <!-- Security -->
           <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
-            <h3 style="color: var(--gold); margin-bottom: 0.5rem; font-size: 1.2rem;">Security</h3>
-            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Change your Admin Studio master password.</p>
-            <div class="form-group" style="margin-bottom: 1rem;">
-              <input type="password" id="newPassInput" class="form-input" placeholder="Enter new password" />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="color: var(--gold); font-size: 1.05rem;">🔐 Master Password Management</h3>
+              <button type="button" onclick="resetPasswordToDefault()" style="background: none; border: none; color: var(--muted); font-size: 0.75rem; cursor: pointer; text-decoration: underline;">Reset Default</button>
             </div>
-            <button type="button" class="btn btn-gold" style="width: 100%;" onclick="saveNewPassword()">Update Password</button>
+            
+            <div class="form-group">
+              <label>Current Password</label>
+              <input type="password" id="passCurrent" class="form-input" placeholder="Current password" />
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" id="passNew" class="form-input" placeholder="New password" />
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <input type="password" id="passConfirm" class="form-input" placeholder="Repeat new password" />
+            </div>
+            
+            <button type="button" class="btn btn-gold" onclick="updateMasterPassword()" style="width: 100%;">Update Password</button>
           </div>
 
           <!-- GitHub Config -->
-          <div class="form-group full" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
-            <h3 style="color: var(--gold); margin-bottom: 0.5rem; font-size: 1.2rem;">GitHub REST API Configuration</h3>
-            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Required for publishing changes directly to your live website.</p>
+          <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
+            <h3 style="color: var(--gold); margin-bottom: 0.5rem; font-size: 1.2rem;">GitHub API Configuration</h3>
+            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Required to use the PUBLISH LIVE button.</p>
             
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Personal Access Token (PAT)</label>
-                <input type="password" id="ghToken" class="form-input" placeholder="ghp_..." />
-              </div>
-              <div class="form-group">
-                <label>Target Branch</label>
-                <input type="text" id="ghBranch" class="form-input" placeholder="main" value="main" />
-              </div>
-              <div class="form-group">
-                <label>Repository Owner</label>
-                <input type="text" id="ghOwner" class="form-input" placeholder="e.g. ahammedkabeer200-spec" />
-              </div>
-              <div class="form-group">
-                <label>Repository Name</label>
-                <input type="text" id="ghRepo" class="form-input" placeholder="e.g. ameer-portfolio" />
-              </div>
+            <div class="form-group">
+              <label>Personal Access Token (PAT)</label>
+              <input type="password" id="ghToken" class="form-input" placeholder="ghp_..." />
             </div>
-            <button type="button" class="btn btn-secondary" onclick="saveGitHubConfig()">Save Configuration</button>
+            <div class="form-group">
+              <label>Repository Owner</label>
+              <input type="text" id="ghOwner" class="form-input" placeholder="e.g. username" />
+            </div>
+            <div class="form-group">
+              <label>Repository Name</label>
+              <input type="text" id="ghRepo" class="form-input" placeholder="e.g. portfolio" />
+            </div>
+            <div class="form-group">
+              <label>Target Branch</label>
+              <input type="text" id="ghBranch" class="form-input" placeholder="main" value="main" />
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="saveGitHubConfig()" style="width: 100%;">Save GitHub Settings</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. BACKUP & RESTORE TAB -->
+      <section id="backupTab" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Backup & Restore</h1>
+            <p style="color: var(--muted); font-size: 0.95rem;">Export your databases or restore from a snapshot.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
+            <h3 style="color: var(--gold); margin-bottom: 1rem; font-size: 1.05rem;">💾 Data Backup & Restore</h3>
+            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Download your current data or upload an existing backup to replace the current state.</p>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex-direction: column;">
+              <button type="button" class="btn btn-secondary" onclick="exportFullBackup()">📥 Download Full Backup</button>
+              <button type="button" class="btn btn-gold" onclick="document.getElementById('restoreFileInput').click()">📤 Restore from JSON</button>
+              <input type="file" id="restoreFileInput" accept=".json" style="display: none;" onchange="handleRestoreFile(event)" />
+            </div>
           </div>
         </div>
       </section>
@@ -291,10 +346,6 @@
         <form id="projectForm" class="form-grid">
           <input type="hidden" id="editProjectIndex" value="-1" />
           
-          <label class="form-checkbox full" style="margin-bottom: 0.5rem;">
-            <input type="checkbox" id="inpFeatured" /> Featured Project (Shows on Homepage)
-          </label>
-
           <div class="form-group full">
             <label>Project Title</label>
             <input type="text" id="inpTitle" class="form-input" placeholder="e.g. Velocity Architecture Review" required />
@@ -317,9 +368,9 @@
 
           <div class="form-group">
             <label>Format Type</label>
-            <select id="inpType" class="form-input">
-              <option value="slides">🖼️ Slides (Gallery / Image)</option>
-              <option value="pdf">📄 PDF Deck (Document)</option>
+            <select id="inpType" class="form-select">
+              <option value="slides">ðŸ–¼ï¸ Slides (Gallery / Image)</option>
+              <option value="pdf">ðŸ“„ PDF Deck (Document)</option>
             </select>
           </div>
 
@@ -331,11 +382,6 @@
           <div class="form-group full">
             <label>PDF / Document URL (Required if PDF Deck)</label>
             <input type="text" id="inpPdf" class="form-input" placeholder="assets/document.pdf" />
-          </div>
-
-          <div class="form-group full">
-            <label>Deliverables / Tags (Comma separated)</label>
-            <input type="text" id="inpDeliverables" class="form-input" placeholder="UI Design, Strategy, Print" />
           </div>
         </form>
       </div>
@@ -351,33 +397,39 @@
   <script>
     // --- STATE ---
     let projectsData = [];
-    let siteContent = {};
+    let siteContent = {
+      profile: { url: '', zoom: 100, x: 50, y: 50 },
+      text: {}
+    };
+    
     const DB_KEY_PROJ = 'ameer_portfolio_projects';
-    const DB_KEY_CONT = 'ameer_portfolio_site_content';
+    const DB_KEY_CONT = 'ameer_portfolio_content';
     const GH_CONF_KEY = 'ameer_github_config';
+    const AUTH_KEY = 'ameer_admin_password';
+    const DEFAULT_PASS = 'ameer2026';
 
-    // --- 1. AUTHENTICATION ---
-    const getStoredPass = () => localStorage.getItem('ameer_admin_password') || 'ameer 2026';
+    // --- 1. AUTHENTICATION & SECURITY ---
+    const STORAGE_PASS = 'ameer_admin_password';
+    const getMasterPassword = () => localStorage.getItem(STORAGE_PASS) || 'ameer2026';
 
     function initAuth() {
       if (sessionStorage.getItem('ameer_admin_auth') === 'true') {
         document.getElementById('authScreen').classList.remove('active');
         bootstrapData();
       }
-      document.getElementById('btnUnlock').addEventListener('click', attemptLogin);
+      document.getElementById('btnUnlock').addEventListener('click', attemptUnlock);
       document.getElementById('loginPassInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); attemptLogin(); }
+        if (e.key === 'Enter') { e.preventDefault(); attemptUnlock(); }
       });
     }
 
-    function attemptLogin() {
+    function attemptUnlock() {
       const input = document.getElementById('loginPassInput');
       const err = document.getElementById('loginError');
-      const val = (input.value || '').trim().replace(/\s+/g, '').toLowerCase();
-      
-      const stored = getStoredPass().replace(/\s+/g, '').toLowerCase();
+      const val = (input.value || '').trim();
+      const normalized = val.replace(/\s+/g, '').toLowerCase();
 
-      if (val === 'ameer2026' || val === stored) {
+      if (normalized === 'ameer2026' || val === 'ameer 2026' || val === getMasterPassword()) {
         sessionStorage.setItem('ameer_admin_auth', 'true');
         document.getElementById('authScreen').classList.remove('active');
         err.style.display = 'none';
@@ -389,46 +441,55 @@
       }
     }
 
-    function saveNewPassword() {
-      const p = document.getElementById('newPassInput').value.trim();
-      if (p.length < 3) return alert('Password too short!');
-      localStorage.setItem('ameer_admin_password', p);
-      alert('Master Password updated successfully!');
-      document.getElementById('newPassInput').value = '';
+    function updateMasterPassword() {
+      const cur = document.getElementById('passCurrent').value.trim();
+      const nxt = document.getElementById('passNew').value.trim();
+      const conf = document.getElementById('passConfirm').value.trim();
+
+      if (cur !== getMasterPassword() && cur !== 'ameer2026') {
+        return alert('Current password is incorrect.');
+      }
+      if (nxt !== conf) {
+        return alert('New passwords do not match.');
+      }
+      if (nxt.length < 4) {
+        return alert('New password must be at least 4 characters.');
+      }
+
+      localStorage.setItem(STORAGE_PASS, nxt);
+      alert('✓ Master password updated successfully!');
+      document.getElementById('passCurrent').value = '';
+      document.getElementById('passNew').value = '';
+      document.getElementById('passConfirm').value = '';
     }
 
-    // --- 2. DATA MANAGEMENT & SYNC ---
-    async function bootstrapData() {
-      loadGitHubConfig();
-      // Remote-First Auto-Sync
-      try {
-        const pRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (pRes.ok) {
-          projectsData = await pRes.json();
-          localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-        }
-        const cRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (cRes.ok) {
-          siteContent = await cRes.json();
-          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-        }
-        document.getElementById('syncStatusIndicator').textContent = "● Synced with Cloud";
-      } catch (e) {
-        console.warn("Offline or fetch failed, falling back to local cache.");
-        document.getElementById('syncStatusIndicator').textContent = "● Offline (Local Cache)";
-        const pLocal = localStorage.getItem(DB_KEY_PROJ);
-        const cLocal = localStorage.getItem(DB_KEY_CONT);
-        if (pLocal) try { projectsData = JSON.parse(pLocal); } catch(err){}
-        if (cLocal) try { siteContent = JSON.parse(cLocal); } catch(err){}
+    function resetPasswordToDefault() {
+      if (confirm('Reset password to default ("ameer2026")?')) {
+        localStorage.removeItem(STORAGE_PASS);
+        alert('Password reset to: ameer2026');
       }
-      
-      if (!Array.isArray(projectsData)) projectsData = [];
-      
+    }
+
+    // --- 2. BOOTSTRAP DATA ---
+    function bootstrapData() {
+      // Load Local Storage
+      try { projectsData = JSON.parse(localStorage.getItem(DB_KEY_PROJ)) || []; } catch(e) { projectsData = []; }
+      try { 
+        const c = JSON.parse(localStorage.getItem(DB_KEY_CONT)); 
+        if (c) siteContent = c; 
+      } catch(e) { }
+
+      // Enforce structure
+      if (!siteContent.profile) siteContent.profile = { url: '', zoom: 100, x: 50, y: 50 };
+      if (!siteContent.text) siteContent.text = {};
+
+      loadGitHubConfig();
       renderProjectsGrid();
+      populateTuner();
       populateContentForm();
     }
 
-    // --- 3. PROJECT CRUD ---
+    // --- 3. PROJECT MANAGER ---
     function renderProjectsGrid() {
       const container = document.getElementById('projectsContainer');
       if (!container) return;
@@ -436,7 +497,7 @@
       if (projectsData.length === 0) {
         container.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 4rem 1rem; background: var(--card-bg); border: 1px dashed var(--border); border-radius: 12px;">
-            <div style="font-size: 2.5rem; margin-bottom: 1rem;">📁</div>
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">ðŸ“</div>
             <h3 style="color: #fff; margin-bottom: 0.5rem;">No Projects Found</h3>
             <p style="color: var(--muted); margin-bottom: 1.5rem;">Your portfolio is currently empty.</p>
             <button type="button" class="btn btn-gold" onclick="openProjectModal()">+ Add Your First Project</button>
@@ -447,14 +508,12 @@
 
       container.innerHTML = projectsData.map((proj, idx) => {
         const cover = proj.coverImage || 'https://placehold.co/600x375/141414/d4af37?text=No+Cover';
-        const isPdf = proj.type === 'pdf' || proj.pdfUrl || proj.presentationType === 'pdf';
-        const badge = isPdf ? '📄 PDF Deck' : '🖼️ Slides';
-        const featuredBadge = proj.featured ? `<div class="card-featured">★ FEATURED</div>` : '';
+        const isPdf = proj.type === 'pdf' || proj.pdfUrl;
+        const badge = isPdf ? 'ðŸ“„ PDF Deck' : 'ðŸ–¼ï¸ Slides';
         
         return `
           <div class="project-card">
             <div class="card-thumb">
-              ${featuredBadge}
               <img src="${cover}" alt="${proj.title || ''}" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
               <div class="card-badge">${badge}</div>
             </div>
@@ -462,9 +521,6 @@
               <div class="card-meta">${proj.client || 'Client'} &bull; ${proj.year || '2026'}</div>
               <div class="card-title">${proj.title || 'Untitled'}</div>
               <p style="color: var(--muted); font-size: 0.8rem; margin-bottom: 0.5rem;">${proj.category || 'Design'}</p>
-              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom: 10px;">
-                ${(proj.deliverables || []).slice(0,3).map(d => `<span style="font-size:0.65rem; background:#222; color:#aaa; padding:2px 6px; border-radius:4px;">${d}</span>`).join('')}
-              </div>
               <div class="card-actions">
                 <button type="button" class="btn btn-secondary" style="flex:1;" onclick="editProject(${idx})">Edit</button>
                 <button type="button" class="btn btn-danger" onclick="deleteProject(${idx})">Delete</button>
@@ -477,21 +533,18 @@
 
     function openProjectModal(index = -1) {
       document.getElementById('editProjectIndex').value = index;
-      const form = document.getElementById('projectForm');
-      form.reset();
+      document.getElementById('projectForm').reset();
 
       if (index >= 0) {
         const p = projectsData[index];
         document.getElementById('modalTitle').textContent = 'Edit Project';
-        document.getElementById('inpFeatured').checked = !!p.featured;
         document.getElementById('inpTitle').value = p.title || '';
         document.getElementById('inpClient').value = p.client || '';
         document.getElementById('inpCategory').value = p.category || '';
         document.getElementById('inpYear').value = p.year || '2026';
         document.getElementById('inpCover').value = p.coverImage || '';
-        document.getElementById('inpType').value = (p.type === 'pdf' || p.presentationType === 'pdf') ? 'pdf' : 'slides';
+        document.getElementById('inpType').value = p.type || 'slides';
         document.getElementById('inpPdf').value = p.pdfUrl || '';
-        document.getElementById('inpDeliverables').value = Array.isArray(p.deliverables) ? p.deliverables.join(', ') : '';
       } else {
         document.getElementById('modalTitle').textContent = 'Add New Project';
       }
@@ -504,22 +557,14 @@
 
     function saveProjectForm() {
       const idx = parseInt(document.getElementById('editProjectIndex').value, 10);
-      const delivStr = document.getElementById('inpDeliverables').value;
-      const deliverables = delivStr.split(',').map(s => s.trim()).filter(Boolean);
-      const typeVal = document.getElementById('inpType').value;
-
       const projectObj = {
-        id: idx >= 0 && projectsData[idx].id ? projectsData[idx].id : 'proj_' + Date.now(),
-        featured: document.getElementById('inpFeatured').checked,
         title: document.getElementById('inpTitle').value.trim() || 'Untitled Project',
         client: document.getElementById('inpClient').value.trim() || 'Client',
         category: document.getElementById('inpCategory').value.trim() || 'General',
         year: document.getElementById('inpYear').value.trim() || '2026',
         coverImage: document.getElementById('inpCover').value.trim(),
-        type: typeVal,
-        presentationType: typeVal,
-        pdfUrl: document.getElementById('inpPdf').value.trim(),
-        deliverables: deliverables
+        type: document.getElementById('inpType').value,
+        pdfUrl: document.getElementById('inpPdf').value.trim()
       };
 
       if (idx >= 0) {
@@ -531,7 +576,6 @@
       localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
       renderProjectsGrid();
       closeProjectModal();
-      reloadPreview(); // Update preview
     }
 
     function editProject(idx) { openProjectModal(idx); }
@@ -540,46 +584,77 @@
         projectsData.splice(idx, 1);
         localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
         renderProjectsGrid();
-        reloadPreview();
       }
     }
 
-    // --- 4. GLOBAL CONTENT CRUD ---
+    // --- 4. HERO PROFILE TUNER ---
+    function populateTuner() {
+      const p = siteContent.profile;
+      document.getElementById('tunerUrl').value = p.url || '';
+      document.getElementById('tunerZoom').value = p.zoom || 100;
+      document.getElementById('tunerX').value = p.x || 50;
+      document.getElementById('tunerY').value = p.y || 50;
+      updateTunerPreview();
+    }
+
+    function updateTunerPreview() {
+      const url = document.getElementById('tunerUrl').value.trim();
+      const zoom = document.getElementById('tunerZoom').value;
+      const x = document.getElementById('tunerX').value;
+      const y = document.getElementById('tunerY').value;
+
+      document.getElementById('zoomVal').textContent = zoom;
+      document.getElementById('xVal').textContent = x;
+      document.getElementById('yVal').textContent = y;
+
+      const img = document.getElementById('avatarPreview');
+      if (url) {
+        img.src = url;
+        img.style.transform = `scale(${zoom / 100})`;
+        img.style.objectPosition = `${x}% ${y}%`;
+      } else {
+        img.src = '';
+      }
+    }
+
+    function saveProfileTuner() {
+      siteContent.profile = {
+        url: document.getElementById('tunerUrl').value.trim(),
+        zoom: parseInt(document.getElementById('tunerZoom').value, 10),
+        x: parseInt(document.getElementById('tunerX').value, 10),
+        y: parseInt(document.getElementById('tunerY').value, 10)
+      };
+      localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+      alert("Hero profile avatar saved!");
+    }
+
+    // --- 5. GLOBAL TEXT EDITOR ---
     function populateContentForm() {
-      document.getElementById('c_brandName').value = siteContent.brandName || '';
-      document.getElementById('c_heroSubtitle').value = siteContent.heroSubtitle || '';
-      document.getElementById('c_bioText').value = siteContent.bioText || '';
-      document.getElementById('c_contactEmail').value = siteContent.contactEmail || '';
-      document.getElementById('c_behanceUrl').value = siteContent.behanceUrl || '';
-      document.getElementById('c_coreDisciplines').value = Array.isArray(siteContent.coreDisciplines) ? siteContent.coreDisciplines.join(', ') : '';
-      document.getElementById('c_techArsenal').value = Array.isArray(siteContent.techArsenal) ? siteContent.techArsenal.join(', ') : '';
+      const t = siteContent.text || {};
+      document.getElementById('c_headline').value = t.headline || '';
+      document.getElementById('c_subtitle').value = t.subtitle || '';
+      document.getElementById('c_bio').value = t.bio || '';
+      document.getElementById('c_disciplines').value = t.disciplines || '';
+      document.getElementById('c_tech').value = t.tech || '';
+      document.getElementById('c_email').value = t.email || '';
+      document.getElementById('c_social').value = t.social || '';
     }
 
     function saveSiteContent() {
-      siteContent = {
-        brandName: document.getElementById('c_brandName').value.trim(),
-        heroSubtitle: document.getElementById('c_heroSubtitle').value.trim(),
-        bioText: document.getElementById('c_bioText').value.trim(),
-        contactEmail: document.getElementById('c_contactEmail').value.trim(),
-        behanceUrl: document.getElementById('c_behanceUrl').value.trim(),
-        coreDisciplines: document.getElementById('c_coreDisciplines').value.split(',').map(s=>s.trim()).filter(Boolean),
-        techArsenal: document.getElementById('c_techArsenal').value.split(',').map(s=>s.trim()).filter(Boolean)
+      siteContent.text = {
+        headline: document.getElementById('c_headline').value.trim(),
+        subtitle: document.getElementById('c_subtitle').value.trim(),
+        bio: document.getElementById('c_bio').value.trim(),
+        disciplines: document.getElementById('c_disciplines').value.trim(),
+        tech: document.getElementById('c_tech').value.trim(),
+        email: document.getElementById('c_email').value.trim(),
+        social: document.getElementById('c_social').value.trim()
       };
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      alert('Global Content saved successfully!');
-      reloadPreview();
+      alert('Global text content saved!');
     }
 
-    // --- 5. LIVE PREVIEW ---
-    function setPreviewWidth(w) {
-      document.getElementById('previewFrame').style.width = w;
-    }
-    function reloadPreview() {
-      const f = document.getElementById('previewFrame');
-      f.src = f.src;
-    }
-
-    // --- 6. GITHUB SYNC & BACKUP ---
+    // --- 6. GITHUB REST API SYNC ---
     function loadGitHubConfig() {
       const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
       if (conf.token) document.getElementById('ghToken').value = conf.token;
@@ -596,7 +671,7 @@
         branch: document.getElementById('ghBranch').value.trim() || 'main'
       };
       localStorage.setItem(GH_CONF_KEY, JSON.stringify(conf));
-      alert("GitHub Configuration saved locally!");
+      alert("GitHub API Configuration saved locally!");
     }
 
     function encodeBase64Unicode(str) {
@@ -605,42 +680,11 @@
       }));
     }
 
-    async function forceSyncFromGitHub() {
-      const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
-      if (!conf.token || !conf.owner || !conf.repo) return alert("Configure GitHub settings in Settings tab first.");
-      
-      try {
-        // Fetch Projects
-        let res = await fetch(`https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/data/projects.json?ref=${conf.branch || 'main'}`, { headers: { "Authorization": `Bearer ${conf.token}`, "Accept": "application/vnd.github.v3+json", "Cache-Control": "no-cache" } });
-        if (res.ok) {
-          const data = await res.json();
-          projectsData = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-          localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-        }
-
-        // Fetch Content
-        res = await fetch(`https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/data/siteContent.json?ref=${conf.branch || 'main'}`, { headers: { "Authorization": `Bearer ${conf.token}`, "Accept": "application/vnd.github.v3+json", "Cache-Control": "no-cache" } });
-        if (res.ok) {
-          const data = await res.json();
-          siteContent = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-        }
-
-        renderProjectsGrid();
-        populateContentForm();
-        reloadPreview();
-        alert("Successfully synced live data from GitHub!");
-      } catch (err) {
-        alert("Force sync failed: " + err.message);
-      }
-    }
-
     async function _commitFile(path, contentObj, conf) {
       const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${path}`;
       const base64Content = encodeBase64Unicode(JSON.stringify(contentObj, null, 2));
       let sha = null;
       
-      // Get SHA to avoid conflict
       try {
         const branchRes = await fetch(`https://api.github.com/repos/${conf.owner}/${conf.repo}/branches/${conf.branch}`, { headers: { 'Authorization': `Bearer ${conf.token}` } });
         if(branchRes.ok) {
@@ -673,12 +717,12 @@
 
       const btn = document.querySelector('.btn-publish');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '⏳ PUBLISHING...';
+      btn.innerHTML = 'â³ PUBLISHING...';
       btn.style.opacity = '0.5';
 
       try {
         await _commitFile('data/projects.json', projectsData, conf);
-        await _commitFile('data/siteContent.json', siteContent, conf);
+        await _commitFile('data/content.json', siteContent, conf);
         alert("Successfully published live! Allow a minute for GitHub Pages/Netlify to deploy.");
       } catch (err) {
         alert("Publish failed: " + err.message);
@@ -688,41 +732,60 @@
       }
     }
 
-    // --- 7. UTILS ---
-    function exportDataJson() {
-      const blob = new Blob([JSON.stringify({ projects: projectsData, siteContent: siteContent }, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `studio_os_backup_${Date.now()}.json`;
-      a.click(); URL.revokeObjectURL(url);
-    }
-    
-    function importDataJson(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const data = JSON.parse(ev.target.result);
-          if (data.projects) projectsData = data.projects;
-          if (data.siteContent) siteContent = data.siteContent;
-          localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-          renderProjectsGrid();
-          populateContentForm();
-          reloadPreview();
-          alert("Backup restored successfully!");
-        } catch(err) { alert("Invalid JSON file."); }
+    // --- 7. BACKUP & RESTORE ---
+    function exportFullBackup() {
+      const backupData = {
+        projects: projectsData,
+        siteContent: siteContent,
+        timestamp: new Date().toISOString()
       };
-      reader.readAsText(file);
-      e.target.value = '';
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `studio-backup-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
 
+    function handleRestoreFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          
+          if (data.projects && Array.isArray(data.projects)) {
+            projectsData = data.projects;
+            localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+          } else if (Array.isArray(data)) {
+            projectsData = data;
+            localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+          }
+
+          if (data.siteContent) {
+            siteContent = data.siteContent;
+            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+          }
+
+          renderProjectsGrid();
+          populateContentForm();
+          populateTuner();
+          alert('✓ Backup successfully restored!');
+        } catch (err) {
+          alert('Invalid backup JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // --- 8. UTILS ---
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       event.currentTarget.classList.add('active');
-      if (tabId === 'previewTab') reloadPreview();
     }
 
     // Startup Init
@@ -730,3 +793,5 @@
   </script>
 </body>
 </html>
+
+
