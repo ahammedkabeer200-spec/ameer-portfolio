@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -80,10 +80,10 @@
   <!-- AUTH SCREEN -->
   <div id="authScreen" class="modal-overlay active" style="z-index: 999999;">
     <div class="modal-card" style="max-width: 360px; text-align: center;">
-      <div style="font-size: 2.2rem; color: var(--gold); margin-bottom: 0.5rem;">🔒</div>
+      <div style="font-size: 2.2rem; color: var(--gold); margin-bottom: 0.5rem;">ðŸ”’</div>
       <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem;">RESTRICTED</h2>
       <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter password to unlock Studio OS.</p>
-      <input type="password" id="loginPassInput" class="form-input" placeholder="••••••••••••" style="text-align: center; margin-bottom: 1rem;" />
+      <input type="password" id="loginPassInput" class="form-input" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" style="text-align: center; margin-bottom: 1rem;" />
       <div id="loginError" style="color: var(--danger); font-size: 0.8rem; margin-bottom: 1rem; display: none;">Incorrect password</div>
       <button type="button" class="btn btn-gold" id="btnUnlock" style="width: 100%; justify-content: center;">UNLOCK</button>
     </div>
@@ -93,16 +93,20 @@
   <div class="admin-wrapper">
     <aside class="sidebar">
       <div>
-        <div class="brand-title">⌘ STUDIO OS</div>
-        <span class="brand-status">● Storage Sync Active</span>
+        <div class="brand-title">âŒ˜ STUDIO OS</div>
+        <span class="brand-status">â— Storage Sync Active</span>
       </div>
 
       <ul class="nav-list">
         <li><button type="button" class="nav-btn active" onclick="switchTab('projectsTab')">📁 Project Manager</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('settingsTab')">⚙️ Settings & Auth</button></li>
+        <li><button type="button" class="nav-btn" onclick="forceSyncFromGitHub()">☁️ Force Sync from GitHub</button></li>
       </ul>
 
-      <button type="button" class="btn btn-publish" onclick="exportProjectsJson()">💾 Save & Backup JSON</button>
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="exportProjectsJson()">💾 Download JSON</button>
+        <button type="button" class="btn btn-gold" style="width: 100%; justify-content: center;" onclick="publishToGitHub()">🚀 Publish Changes</button>
+      </div>
     </aside>
 
     <main class="main-workspace">
@@ -128,13 +132,32 @@
           </div>
         </div>
 
-        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; max-width: 480px;">
-          <h3 style="color: var(--gold); margin-bottom: 1rem; font-size: 1.1rem;">Change Master Password</h3>
-          <div class="form-group">
-            <label>New Password</label>
-            <input type="password" id="newPassInput" class="form-input" placeholder="Enter new password" />
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+            <h3 style="color: var(--gold); margin-bottom: 1rem; font-size: 1.1rem;">Change Master Password</h3>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" id="newPassInput" class="form-input" placeholder="Enter new password" />
+            </div>
+            <button type="button" class="btn btn-gold" onclick="saveNewPassword()">Update Password</button>
           </div>
-          <button type="button" class="btn btn-gold" onclick="saveNewPassword()">Update Password</button>
+
+          <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+            <h3 style="color: var(--gold); margin-bottom: 1rem; font-size: 1.1rem;">GitHub Sync Configuration</h3>
+            <div class="form-group">
+              <label>Personal Access Token (PAT)</label>
+              <input type="password" id="ghToken" class="form-input" placeholder="ghp_..." />
+            </div>
+            <div class="form-group">
+              <label>Repository Owner</label>
+              <input type="text" id="ghOwner" class="form-input" placeholder="e.g. ahammedkabeer200-spec" />
+            </div>
+            <div class="form-group">
+              <label>Repository Name</label>
+              <input type="text" id="ghRepo" class="form-input" placeholder="e.g. ameer-portfolio" />
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="saveGitHubConfig()">Save Config</button>
+          </div>
         </div>
       </section>
     </main>
@@ -174,8 +197,8 @@
       <div class="form-group">
         <label>Format Type</label>
         <select id="inpType" class="form-input">
-          <option value="slides">🖼️ Slides (Gallery)</option>
-          <option value="pdf">📄 PDF Deck (Document)</option>
+          <option value="slides">ðŸ–¼ï¸ Slides (Gallery)</option>
+          <option value="pdf">ðŸ“„ PDF Deck (Document)</option>
         </select>
       </div>
 
@@ -237,20 +260,31 @@
 
     // --- 2. DATA MANAGEMENT ---
     async function loadAllProjects() {
-      const local = localStorage.getItem('ameer_portfolio_projects');
-      if (local) {
-        try { projectsData = JSON.parse(local); } catch(e) { projectsData = []; }
-      } else {
-        try {
-          const res = await fetch(`data/projects.json?t=${Date.now()}`);
-          if (res.ok) {
-            projectsData = await res.json();
-            localStorage.setItem('ameer_portfolio_projects', JSON.stringify(projectsData));
-          }
-        } catch (e) {
+      // Remote-First Auto-Sync: Fetch live data directly to bypass stale mobile caches
+      try {
+        const res = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          projectsData = await res.json();
+          localStorage.setItem('ameer_portfolio_projects', JSON.stringify(projectsData));
+        } else {
+          throw new Error("Failed to fetch remote JSON");
+        }
+      } catch (e) {
+        console.warn("Offline or fetch failed, falling back to local cache.");
+        const local = localStorage.getItem('ameer_portfolio_projects');
+        if (local) {
+          try { projectsData = JSON.parse(local); } catch(err) { projectsData = []; }
+        } else {
           projectsData = [];
         }
       }
+      
+      // Load GitHub Config
+      const ghConf = JSON.parse(localStorage.getItem('ameer_github_config') || '{}');
+      if (ghConf.token) document.getElementById('ghToken').value = ghConf.token;
+      if (ghConf.owner) document.getElementById('ghOwner').value = ghConf.owner;
+      if (ghConf.repo) document.getElementById('ghRepo').value = ghConf.repo;
+
       renderGrid();
     }
 
@@ -276,7 +310,7 @@
             <div class="card-thumb">
               <img src="${cover}" alt="${proj.title || ''}" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
               <span style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.8);font-size:0.7rem;padding:3px 7px;border-radius:4px;border:1px solid #333;">
-                ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+                ${isPdf ? 'ðŸ“„ PDF Deck' : 'ðŸ–¼ï¸ Slides'}
               </span>
             </div>
             <div class="card-body">
@@ -375,8 +409,96 @@
       event.currentTarget.classList.add('active');
     }
 
+    
+
+    // --- 4. GITHUB SYNC ENGINE ---
+    function saveGitHubConfig() {
+      const conf = {
+        token: document.getElementById('ghToken').value.trim(),
+        owner: document.getElementById('ghOwner').value.trim(),
+        repo: document.getElementById('ghRepo').value.trim()
+      };
+      localStorage.setItem('ameer_github_config', JSON.stringify(conf));
+      alert("GitHub configuration saved locally!");
+    }
+
+    async function forceSyncFromGitHub() {
+      const conf = JSON.parse(localStorage.getItem('ameer_github_config') || '{}');
+      if (!conf.token || !conf.owner || !conf.repo) {
+        return alert("Please configure GitHub settings in the Settings tab first.");
+      }
+      
+      try {
+        const url = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/data/projects.json`;
+        const res = await fetch(url, { headers: { "Authorization": `Bearer ${conf.token}`, "Accept": "application/vnd.github.v3+json", "Cache-Control": "no-cache" } });
+        if (!res.ok) throw new Error("GitHub fetch failed.");
+        const data = await res.json();
+        const decoded = decodeURIComponent(escape(atob(data.content)));
+        projectsData = JSON.parse(decoded);
+        localStorage.setItem('ameer_portfolio_projects', JSON.stringify(projectsData));
+        renderGrid();
+        alert("Successfully synced live data from GitHub!");
+      } catch (err) {
+        alert("Force sync failed: " + err.message);
+      }
+    }
+
+    async function publishToGitHub() {
+      const conf = JSON.parse(localStorage.getItem('ameer_github_config') || '{}');
+      if (!conf.token || !conf.owner || !conf.repo) {
+        return alert("Please configure GitHub settings in the Settings tab first.");
+      }
+
+      if (!confirm("Are you sure you want to publish these changes live?")) return;
+
+      const path = "data/projects.json";
+      const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${path}`;
+      const contentStr = JSON.stringify(projectsData, null, 2);
+      const base64Content = btoa(encodeURIComponent(contentStr).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+          return String.fromCharCode('0x' + p1);
+      }));
+
+      try {
+        // Get SHA of current file
+        let sha = null;
+        const branchRes = await fetch(`https://api.github.com/repos/${conf.owner}/${conf.repo}/branches/main`, { headers: { 'Authorization': `Bearer ${conf.token}` } });
+        if(branchRes.ok) {
+          const bData = await branchRes.json();
+          const treeSha = bData.commit.commit.tree.sha;
+          const treeRes = await fetch(`https://api.github.com/repos/${conf.owner}/${conf.repo}/git/trees/${treeSha}?recursive=1`, { headers: { 'Authorization': `Bearer ${conf.token}` } });
+          if(treeRes.ok) {
+            const tData = await treeRes.json();
+            const fileNode = tData.tree.find(t => t.path === path);
+            if(fileNode) sha = fileNode.sha;
+          }
+        }
+
+        const bodyPayload = {
+          message: "Auto-Publish: Update projects list via Admin Studio",
+          content: base64Content,
+          branch: "main"
+        };
+        if (sha) bodyPayload.sha = sha;
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${conf.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyPayload)
+        });
+
+        if (!putRes.ok) throw new Error((await putRes.json()).message || "Failed to upload file");
+        alert("Successfully published live! Allow a minute for deployment.");
+      } catch (err) {
+        alert("Publish failed: " + err.message);
+      }
+    }
+
+
     // Startup
     document.addEventListener('DOMContentLoaded', initAuth);
   </script>
 </body>
 </html>
+
+
+
