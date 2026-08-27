@@ -126,6 +126,7 @@
       </ul>
 
       <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="forceSyncFromGitHub()" style="width: 100%;">Sync From Live</button>
         <button type="button" class="btn btn-publish" onclick="publishToGitHub()">PUBLISH LIVE</button>
       </div>
     </aside>
@@ -471,13 +472,44 @@
     }
 
     // --- 2. BOOTSTRAP DATA ---
-    function bootstrapData() {
-      // Load Local Storage
-      try { projectsData = JSON.parse(localStorage.getItem(DB_KEY_PROJ)) || []; } catch(e) { projectsData = []; }
-      try { 
-        const c = JSON.parse(localStorage.getItem(DB_KEY_CONT)); 
-        if (c) siteContent = c; 
-      } catch(e) { }
+    async function bootstrapData() {
+      // Show loading states or fetch data from remote first (Remote-first auto-sync on startup)
+      try {
+        const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (projRes.ok) {
+          const remoteProj = await projRes.ok ? await projRes.json() : null;
+          if (remoteProj && Array.isArray(remoteProj)) {
+            projectsData = remoteProj;
+            localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+          }
+        }
+      } catch (err) {
+        console.warn("Could not auto-sync projects from server, using local data", err);
+      }
+
+      try {
+        const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (contRes.ok) {
+          const remoteCont = await contRes.json();
+          if (remoteCont) {
+            siteContent = remoteCont;
+            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+          }
+        }
+      } catch (err) {
+        console.warn("Could not auto-sync content from server, using local data", err);
+      }
+
+      // Fallback to local storage if remote fetch was skipped or failed
+      if (projectsData.length === 0) {
+        try { projectsData = JSON.parse(localStorage.getItem(DB_KEY_PROJ)) || []; } catch(e) { projectsData = []; }
+      }
+      if (!siteContent.profile || !siteContent.text || Object.keys(siteContent.text).length === 0) {
+        try { 
+          const c = JSON.parse(localStorage.getItem(DB_KEY_CONT)); 
+          if (c) siteContent = c; 
+        } catch(e) { }
+      }
 
       // Enforce structure
       if (!siteContent.profile) siteContent.profile = { url: '', zoom: 100, x: 50, y: 50 };
@@ -487,6 +519,43 @@
       renderProjectsGrid();
       populateTuner();
       populateContentForm();
+    }
+
+    async function forceSyncFromGitHub() {
+      if (!confirm("Overwrite local cache and force download live data from the server?")) return;
+      
+      const btn = document.querySelector('[onclick="forceSyncFromGitHub()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Syncing...';
+      btn.disabled = true;
+
+      try {
+        const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (projRes.ok) {
+          projectsData = await projRes.json();
+          localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+        } else {
+          throw new Error("Failed to load projects.json");
+        }
+
+        const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (contRes.ok) {
+          siteContent = await contRes.json();
+          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+        } else {
+          throw new Error("Failed to load siteContent.json");
+        }
+
+        renderProjectsGrid();
+        populateTuner();
+        populateContentForm();
+        alert("✓ Auto-sync complete! All columns successfully updated with live data.");
+      } catch (err) {
+        alert("Sync failed: " + err.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
     }
 
     // --- 3. PROJECT MANAGER ---
@@ -721,7 +790,7 @@
 
       try {
         await _commitFile('data/projects.json', projectsData, conf);
-        await _commitFile('data/content.json', siteContent, conf);
+        await _commitFile('data/siteContent.json', siteContent, conf);
         alert("Successfully published live! Allow a minute for GitHub Pages/Netlify to deploy.");
       } catch (err) {
         alert("Publish failed: " + err.message);
