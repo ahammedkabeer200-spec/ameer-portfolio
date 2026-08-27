@@ -80,6 +80,43 @@
       document.getElementById('loginPassInput').value = '';
     }
 
+    function resolveAssetUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('assets/uploads/')) {
+        try {
+          const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
+          if (conf.owner && conf.repo) {
+            return `https://raw.githubusercontent.com/${conf.owner}/${conf.repo}/${conf.branch || 'main'}/${url}`;
+          }
+        } catch (e) {}
+      }
+      return url;
+    }
+
+    function updateCoverTunerPreview() {
+      const url = document.getElementById('inpCover').value.trim();
+      const zoom = document.getElementById('inpCoverZoom').value;
+      const x = document.getElementById('inpCoverX').value;
+      const y = document.getElementById('inpCoverY').value;
+
+      document.getElementById('coverZoomVal').textContent = zoom;
+      document.getElementById('coverXVal').textContent = x;
+      document.getElementById('coverYVal').textContent = y;
+
+      const img = document.getElementById('coverPreviewImage');
+      const container = document.getElementById('coverPreviewContainer');
+
+      if (url) {
+        img.src = resolveAssetUrl(url);
+        img.style.transform = `scale(${zoom / 100})`;
+        img.style.objectPosition = `${x}% ${y}%`;
+        container.style.display = 'block';
+      } else {
+        img.src = '';
+        container.style.display = 'none';
+      }
+    }
+
     function toggleModalFields() {
       const type = document.getElementById('inpType').value;
       const groupPdf = document.getElementById('groupPdf');
@@ -162,6 +199,9 @@
         document.getElementById(targetInputId).value = path;
         progressEl.textContent = "✓ Uploaded!";
         progressEl.style.color = "var(--success)";
+        if (targetInputId === 'inpCover') {
+          updateCoverTunerPreview();
+        }
       } catch (err) {
         alert("Failed to upload: " + err.message);
         progressEl.textContent = "Upload failed";
@@ -350,8 +390,8 @@
         
         return `
           <div class="project-card">
-            <div class="card-thumb">
-              <img src="${cover}" alt="${proj.title || ''}" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
+            <div class="card-thumb" style="overflow: hidden; position: relative;">
+              <img src="${resolveAssetUrl(cover)}" alt="${proj.title || ''}" style="width: 100%; height: 100%; object-fit: cover; object-position: ${proj.coverX || 50}% ${proj.coverY || 50}%; transform: scale(${(proj.coverZoom || 100)/100}); transition: transform 0.2s;" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
               <div class="card-badge">${badge}</div>
             </div>
             <div class="card-body">
@@ -388,10 +428,18 @@
         document.getElementById('inpType').value = p.type || 'slides';
         document.getElementById('inpPdf').value = p.pdfUrl || '';
         document.getElementById('inpGallery').value = (p.images && Array.isArray(p.images)) ? p.images.join('\n') : '';
+        
+        document.getElementById('inpCoverZoom').value = p.coverZoom || 100;
+        document.getElementById('inpCoverX').value = p.coverX || 50;
+        document.getElementById('inpCoverY').value = p.coverY || 50;
       } else {
         document.getElementById('modalTitle').textContent = 'Add New Project';
+        document.getElementById('inpCoverZoom').value = 100;
+        document.getElementById('inpCoverX').value = 50;
+        document.getElementById('inpCoverY').value = 50;
       }
       toggleModalFields();
+      updateCoverTunerPreview();
       document.getElementById('projectModal').classList.add('active');
     }
 
@@ -413,7 +461,10 @@
         coverImage: document.getElementById('inpCover').value.trim(),
         type: document.getElementById('inpType').value,
         pdfUrl: document.getElementById('inpPdf').value.trim(),
-        images: imagesArray
+        images: imagesArray,
+        coverZoom: parseInt(document.getElementById('inpCoverZoom').value, 10),
+        coverX: parseInt(document.getElementById('inpCoverX').value, 10),
+        coverY: parseInt(document.getElementById('inpCoverY').value, 10)
       };
 
       if (idx >= 0) {
