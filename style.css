@@ -1308,7 +1308,7 @@ body {
 }
 
 .ai-features-list li::before {
-  content: 'âœ¦';
+  content: '\2728';
   position: absolute;
   left: 0;
   color: var(--gold-primary);
