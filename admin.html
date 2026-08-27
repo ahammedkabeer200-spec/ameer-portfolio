@@ -361,6 +361,11 @@
             <label>PDF / Document URL (Required if PDF Deck)</label>
             <input type="text" id="inpPdf" class="form-input" placeholder="assets/document.pdf" />
           </div>
+
+          <div class="form-group full">
+            <label>Gallery Images (Optional - One URL per line)</label>
+            <textarea id="inpGallery" class="form-textarea" placeholder="assets/img1.jpg&#10;assets/img2.jpg" style="min-height: 80px;"></textarea>
+          </div>
         </form>
       </div>
 
@@ -590,18 +595,20 @@
         document.getElementById('inpCover').value = p.coverImage || '';
         document.getElementById('inpType').value = p.type || 'slides';
         document.getElementById('inpPdf').value = p.pdfUrl || '';
+        document.getElementById('inpGallery').value = (p.images && Array.isArray(p.images)) ? p.images.join('\n') : '';
       } else {
         document.getElementById('modalTitle').textContent = 'Add New Project';
       }
-      document.getElementById('projectModal').classList.add('active');
-    }
-
     function closeProjectModal() {
       document.getElementById('projectModal').classList.remove('active');
     }
 
     function saveProjectForm() {
       const idx = parseInt(document.getElementById('editProjectIndex').value, 10);
+      
+      const galleryText = document.getElementById('inpGallery').value.trim();
+      const imagesArray = galleryText ? galleryText.split('\n').map(l => l.trim()).filter(l => l !== '') : [];
+
       const projectObj = {
         title: document.getElementById('inpTitle').value.trim() || 'Untitled Project',
         client: document.getElementById('inpClient').value.trim() || 'Client',
@@ -609,7 +616,8 @@
         year: document.getElementById('inpYear').value.trim() || '2026',
         coverImage: document.getElementById('inpCover').value.trim(),
         type: document.getElementById('inpType').value,
-        pdfUrl: document.getElementById('inpPdf').value.trim()
+        pdfUrl: document.getElementById('inpPdf').value.trim(),
+        images: imagesArray
       };
 
       if (idx >= 0) {
