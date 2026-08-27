@@ -495,25 +495,26 @@ function renderModalProjectsGrid(filterCat = 'all') {
 
     return `
       <article class="modal-project-card" onclick="openCaseStudyFromModal('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
-        <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
-        <div class="modal-project-info" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
-          
-          <div class="modal-project-meta-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 class="modal-project-title" style="margin: 0; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;">
-              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem; margin-right: 6px;">${numStr}</span>
-              ${p.title}
-            </h3>
-            <span class="modal-project-format" style="font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; flex-shrink: 0; margin-left: 12px; color: #d4d4d4;">
-              ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
-            </span>
-          </div>
+        <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
+          <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2;">
+            ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+          </span>
+        </div>
 
-          <div style="font-size: 0.75rem; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            <span class="modal-project-client">${p.client || 'Client'}</span> &bull; 
-            <span>${p.year || '2026'}</span> &bull; 
-            <span class="modal-project-cat" style="color: #dfbd69; font-weight: 600;">${catName}</span>
+        <div class="modal-project-info" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: #141414; border-top: 1px solid #242424; flex: 1;">
+          <h3 class="modal-project-title" style="margin: 0; font-size: 1.05rem; color: #ffffff; font-weight: 700; line-height: 1.35; display: flex; align-items: flex-start; gap: 8px;">
+            <span class="modal-project-num" style="color: #d4af37; font-family: monospace; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">${numStr}</span>
+            <span style="color: #ffffff; font-weight: 700; word-break: break-word;">${p.title}</span>
+          </h3>
+
+          <div style="font-size: 0.78rem; color: #a3a3a3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+            <span class="modal-project-client" style="color: #e5e5e5; font-weight: 500;">${p.client || 'Client'}</span>
+            <span style="color: #d4af37;">&bull;</span>
+            <span>${p.year || '2026'}</span>
+            <span style="color: #d4af37;">&bull;</span>
+            <span class="modal-project-cat" style="color: #d4af37; font-weight: 600; text-transform: uppercase; font-size: 0.72rem;">${catName}</span>
           </div>
-          
         </div>
       </article>
     `;
@@ -560,25 +561,26 @@ function renderProjectsGrid() {
 
     return `
       <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
-        <img src="${p.coverImage || ''}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
-        <div class="modal-project-info" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
-          
-          <div class="modal-project-meta-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 class="modal-project-title" style="margin: 0; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;">
-              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem; margin-right: 6px;">${numStr}</span>
-              ${p.title || 'Untitled'}
-            </h3>
-            <span class="modal-project-format" style="font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; flex-shrink: 0; margin-left: 12px; color: #d4d4d4;">
-              ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
-            </span>
-          </div>
+        <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
+          <img src="${p.coverImage || ''}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2;">
+            ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+          </span>
+        </div>
 
-          <div style="font-size: 0.75rem; color: #a3a3a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            <span class="modal-project-client">${p.client || 'Client'}</span> &bull; 
-            <span>${p.year || '2026'}</span> &bull; 
-            <span class="modal-project-cat" style="color: #dfbd69; font-weight: 600;">${catSubtitle}</span>
+        <div class="modal-project-info" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: #141414; border-top: 1px solid #242424; flex: 1;">
+          <h3 class="modal-project-title" style="margin: 0; font-size: 1.05rem; color: #ffffff; font-weight: 700; line-height: 1.35; display: flex; align-items: flex-start; gap: 8px;">
+            <span class="modal-project-num" style="color: #d4af37; font-family: monospace; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">${numStr}</span>
+            <span style="color: #ffffff; font-weight: 700; word-break: break-word;">${p.title || 'Untitled'}</span>
+          </h3>
+
+          <div style="font-size: 0.78rem; color: #a3a3a3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+            <span class="modal-project-client" style="color: #e5e5e5; font-weight: 500;">${p.client || 'Client'}</span>
+            <span style="color: #d4af37;">&bull;</span>
+            <span>${p.year || '2026'}</span>
+            <span style="color: #d4af37;">&bull;</span>
+            <span class="modal-project-cat" style="color: #d4af37; font-weight: 600; text-transform: uppercase; font-size: 0.72rem;">${catSubtitle}</span>
           </div>
-          
         </div>
       </article>
     `;
