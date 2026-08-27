@@ -162,7 +162,7 @@
             <!-- Live Preview Box -->
             <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
               <h3 style="color: var(--gold); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Live Preview</h3>
-              <div style="width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 2px solid var(--gold); background: #000; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 180px; height: 180px; border-radius: 8px; overflow: hidden; border: 2px solid var(--gold); background: #000; display: flex; align-items: center; justify-content: center;">
                 <img id="avatarPreview" src="" alt="Hero Avatar" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" onload="this.style.display='block'" />
               </div>
             </div>
@@ -170,8 +170,12 @@
             <!-- Controls -->
             <div style="flex: 1; min-width: 300px;">
               <div class="form-group">
-                <label>Image URL</label>
-                <input type="text" id="tunerUrl" class="form-input" placeholder="assets/hero.jpg or https://..." oninput="updateTunerPreview()" />
+                <label>Image URL or Upload from PC</label>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                  <input type="text" id="tunerUrl" class="form-input" placeholder="assets/hero.jpg or https://..." oninput="updateTunerPreview()" style="flex: 1; min-width: 200px;" />
+                  <button type="button" class="btn btn-secondary" onclick="document.getElementById('tunerFileUpload').click()">Upload Photo</button>
+                  <input type="file" id="tunerFileUpload" accept="image/*" style="display: none;" onchange="handleTunerUpload(event)" />
+                </div>
               </div>
 
               <div class="form-group">
@@ -693,7 +697,24 @@
         y: parseInt(document.getElementById('tunerY').value, 10)
       };
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      alert("Hero profile avatar saved!");
+      alert("Hero profile avatar saved! Click PUBLISH LIVE to update the website.");
+    }
+
+    function handleTunerUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File is too large. Please choose an image under 2MB to keep the website fast.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('tunerUrl').value = e.target.result;
+        updateTunerPreview();
+      };
+      reader.readAsDataURL(file);
     }
 
     // --- 5. GLOBAL TEXT EDITOR ---
