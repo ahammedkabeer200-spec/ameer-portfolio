@@ -126,10 +126,11 @@
         <li style="margin-top: auto; padding-top: 2rem;"><button type="button" class="nav-btn" style="color: var(--danger);" onclick="lockWorkspace()">🔒 Lock Workspace</button></li>
       </ul>
 
-      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
-        <button type="button" class="btn btn-secondary" onclick="forceSyncFromGitHub()" style="width: 100%;">Sync From Live</button>
-        <button type="button" class="btn btn-publish" onclick="publishToGitHub()">PUBLISH LIVE</button>
-      </div>
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+          <a href="index.html?preview=true" target="_blank" style="text-decoration: none;"><button type="button" class="btn" style="width: 100%; background: #2a2a2a; color: #fff; border: 1px solid #444;">👀 Preview Site</button></a>
+          <button type="button" class="btn btn-secondary" onclick="forceSyncFromGitHub()" style="width: 100%;">Sync From Live</button>
+          <button type="button" class="btn btn-publish" onclick="publishToGitHub()">PUBLISH LIVE</button>
+        </div>
     </aside>
 
     <!-- MAIN WORKSPACE -->
