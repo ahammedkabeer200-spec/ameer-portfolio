@@ -359,10 +359,44 @@
           <div class="form-group full">
             <label>Cover Image URL (JPG/PNG/WebP)</label>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-              <input type="text" id="inpCover" class="form-input" placeholder="assets/cover.jpg or https://..." required style="flex: 1; min-width: 200px;" />
+              <input type="text" id="inpCover" class="form-input" placeholder="assets/cover.jpg or https://..." required style="flex: 1; min-width: 200px;" oninput="updateCoverTunerPreview()" />
               <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileCover').click()">Upload Cover</button>
               <input type="file" id="fileCover" accept="image/*" style="display: none;" onchange="handleProjectFileUpload(this, 'inpCover', 'uploadProgressCover')" />
               <span id="uploadProgressCover" style="font-size: 0.8rem; font-weight: 600;"></span>
+            </div>
+          </div>
+
+          <div class="form-group full" id="coverPreviewContainer" style="display: none; margin-top: 0.5rem;">
+            <label>Cover Image Preview & Cropping</label>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+              <!-- Preview Box -->
+              <div style="width: 200px; aspect-ratio: 16/10; border-radius: 6px; overflow: hidden; border: 1px solid var(--gold); background: #000; position: relative;">
+                <img id="coverPreviewImage" src="" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%;" />
+              </div>
+              <!-- Sliders -->
+              <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-size: 0.75rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                    <span>Zoom</span>
+                    <span style="color: var(--gold); font-weight: 700;"><span id="coverZoomVal">100</span>%</span>
+                  </label>
+                  <input type="range" id="inpCoverZoom" min="100" max="200" value="100" style="width: 100%;" oninput="updateCoverTunerPreview()" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-size: 0.75rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                    <span>Vertical Position Y</span>
+                    <span style="color: var(--gold); font-weight: 700;"><span id="coverYVal">50</span>%</span>
+                  </label>
+                  <input type="range" id="inpCoverY" min="0" max="100" value="50" style="width: 100%;" oninput="updateCoverTunerPreview()" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-size: 0.75rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                    <span>Horizontal Position X</span>
+                    <span style="color: var(--gold); font-weight: 700;"><span id="coverXVal">50</span>%</span>
+                  </label>
+                  <input type="range" id="inpCoverX" min="0" max="100" value="50" style="width: 100%;" oninput="updateCoverTunerPreview()" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -480,6 +514,43 @@
       document.getElementById('loginPassInput').value = '';
     }
 
+    function resolveAssetUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('assets/uploads/')) {
+        try {
+          const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
+          if (conf.owner && conf.repo) {
+            return `https://raw.githubusercontent.com/${conf.owner}/${conf.repo}/${conf.branch || 'main'}/${url}`;
+          }
+        } catch (e) {}
+      }
+      return url;
+    }
+
+    function updateCoverTunerPreview() {
+      const url = document.getElementById('inpCover').value.trim();
+      const zoom = document.getElementById('inpCoverZoom').value;
+      const x = document.getElementById('inpCoverX').value;
+      const y = document.getElementById('inpCoverY').value;
+
+      document.getElementById('coverZoomVal').textContent = zoom;
+      document.getElementById('coverXVal').textContent = x;
+      document.getElementById('coverYVal').textContent = y;
+
+      const img = document.getElementById('coverPreviewImage');
+      const container = document.getElementById('coverPreviewContainer');
+
+      if (url) {
+        img.src = resolveAssetUrl(url);
+        img.style.transform = `scale(${zoom / 100})`;
+        img.style.objectPosition = `${x}% ${y}%`;
+        container.style.display = 'block';
+      } else {
+        img.src = '';
+        container.style.display = 'none';
+      }
+    }
+
     function toggleModalFields() {
       const type = document.getElementById('inpType').value;
       const groupPdf = document.getElementById('groupPdf');
@@ -562,6 +633,9 @@
         document.getElementById(targetInputId).value = path;
         progressEl.textContent = "✓ Uploaded!";
         progressEl.style.color = "var(--success)";
+        if (targetInputId === 'inpCover') {
+          updateCoverTunerPreview();
+        }
       } catch (err) {
         alert("Failed to upload: " + err.message);
         progressEl.textContent = "Upload failed";
@@ -750,8 +824,8 @@
         
         return `
           <div class="project-card">
-            <div class="card-thumb">
-              <img src="${cover}" alt="${proj.title || ''}" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
+            <div class="card-thumb" style="overflow: hidden; position: relative;">
+              <img src="${resolveAssetUrl(cover)}" alt="${proj.title || ''}" style="width: 100%; height: 100%; object-fit: cover; object-position: ${proj.coverX || 50}% ${proj.coverY || 50}%; transform: scale(${(proj.coverZoom || 100)/100}); transition: transform 0.2s;" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
               <div class="card-badge">${badge}</div>
             </div>
             <div class="card-body">
@@ -788,10 +862,18 @@
         document.getElementById('inpType').value = p.type || 'slides';
         document.getElementById('inpPdf').value = p.pdfUrl || '';
         document.getElementById('inpGallery').value = (p.images && Array.isArray(p.images)) ? p.images.join('\n') : '';
+        
+        document.getElementById('inpCoverZoom').value = p.coverZoom || 100;
+        document.getElementById('inpCoverX').value = p.coverX || 50;
+        document.getElementById('inpCoverY').value = p.coverY || 50;
       } else {
         document.getElementById('modalTitle').textContent = 'Add New Project';
+        document.getElementById('inpCoverZoom').value = 100;
+        document.getElementById('inpCoverX').value = 50;
+        document.getElementById('inpCoverY').value = 50;
       }
       toggleModalFields();
+      updateCoverTunerPreview();
       document.getElementById('projectModal').classList.add('active');
     }
 
@@ -813,7 +895,10 @@
         coverImage: document.getElementById('inpCover').value.trim(),
         type: document.getElementById('inpType').value,
         pdfUrl: document.getElementById('inpPdf').value.trim(),
-        images: imagesArray
+        images: imagesArray,
+        coverZoom: parseInt(document.getElementById('inpCoverZoom').value, 10),
+        coverX: parseInt(document.getElementById('inpCoverX').value, 10),
+        coverY: parseInt(document.getElementById('inpCoverY').value, 10)
       };
 
       if (idx >= 0) {
