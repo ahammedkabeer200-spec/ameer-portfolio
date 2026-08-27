@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <title>STUDIO OS - Admin Panel</title>
   <style>
     :root {
@@ -15,7 +18,7 @@
       --danger: #ef4444;
       --success: #10b981;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
     
     /* Layout */
@@ -97,9 +100,9 @@
 
   <!-- AUTH SCREEN -->
   <div id="authScreen" class="modal-overlay active" style="z-index: 999999;">
-    <div class="modal-card" style="max-width: 380px; text-align: center; background: #141414; padding: 3rem 2rem; display: block; border-radius: 16px;">
-      <div style="font-size: 2.5rem; color: var(--gold); margin-bottom: 1rem;">[SECURITY]</div>
-      <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; margin-bottom: 0.5rem;">STUDIO OS</h2>
+    <div class="modal-card" style="max-width: 380px; text-align: center; background: #141414; padding: 3rem 2rem; display: block; border-radius: 16px; border: 1px solid var(--border);">
+      <div style="font-size: 2.2rem; color: var(--gold); margin-bottom: 0.5rem; font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: 0.05em;">[SECURITY]</div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; margin-bottom: 0.5rem; font-family: 'Oswald', sans-serif;">STUDIO OS</h2>
       <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem;">Authenticate to access the workspace.</p>
       <form onsubmit="return false;" style="margin: 0; padding: 0;">
         <input type="password" id="loginPassInput" class="form-input" placeholder="Enter master password..." autocomplete="current-password" style="text-align: center; margin-bottom: 1rem; font-size: 1.1rem; padding: 1rem;" />
