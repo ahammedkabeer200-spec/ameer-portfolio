@@ -214,43 +214,16 @@
       <section id="contentTab" class="tab-content">
         <div class="tab-header">
           <div>
-            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Global Text Content</h1>
-            <p style="color: var(--muted); font-size: 0.95rem;">Edit your homepage text, bio, and social links.</p>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Global Content</h1>
+            <p style="color: var(--muted); font-size: 0.95rem;">Edit every text field on your portfolio across all sections.</p>
           </div>
           <button type="button" class="btn btn-gold" onclick="saveSiteContent()">Save Content</button>
         </div>
 
         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
-          <form id="contentForm" class="form-grid">
-            <div class="form-group full">
-              <label>Headline / Brand Name</label>
-              <input type="text" id="c_headline" class="form-input" placeholder="e.g. AMEER." />
-            </div>
-            <div class="form-group full">
-              <label>Hero Subtitle</label>
-              <input type="text" id="c_subtitle" class="form-input" placeholder="e.g. Creative Director & Designer" />
-            </div>
-            <div class="form-group full">
-              <label>Bio / About Text</label>
-              <textarea id="c_bio" class="form-textarea" placeholder="Write your bio here..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Core Disciplines</label>
-              <input type="text" id="c_disciplines" class="form-input" placeholder="Brand Identity, UI/UX..." />
-            </div>
-            <div class="form-group">
-              <label>Technical Arsenal</label>
-              <input type="text" id="c_tech" class="form-input" placeholder="Figma, Webflow..." />
-            </div>
-            <div class="form-group">
-              <label>Contact Email</label>
-              <input type="email" id="c_email" class="form-input" placeholder="hello@example.com" />
-            </div>
-            <div class="form-group">
-              <label>Behance / LinkedIn URL</label>
-              <input type="text" id="c_social" class="form-input" placeholder="https://..." />
-            </div>
-          </form>
+          <div id="dynamicContentForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <p style="color: var(--muted); text-align: center;">Loading form fields...</p>
+          </div>
         </div>
       </section>
 
@@ -661,11 +634,12 @@
 
     // --- 4. HERO PROFILE TUNER ---
     function populateTuner() {
-      const p = siteContent.profile;
-      document.getElementById('tunerUrl').value = p.url || '';
-      document.getElementById('tunerZoom').value = p.zoom || 100;
-      document.getElementById('tunerX').value = p.x || 50;
-      document.getElementById('tunerY').value = p.y || 50;
+      const ab = siteContent.about || {};
+      const pos = ab.heroPhotoPosition || { scale: 1, posX: 50, posY: 50 };
+      document.getElementById('tunerUrl').value = ab.heroPortrait || '';
+      document.getElementById('tunerZoom').value = Math.round(pos.scale * 100);
+      document.getElementById('tunerX').value = pos.posX;
+      document.getElementById('tunerY').value = pos.posY;
       updateTunerPreview();
     }
 
@@ -682,19 +656,24 @@
       const img = document.getElementById('avatarPreview');
       if (url) {
         img.src = url;
-        img.style.transform = `scale(${zoom / 100})`;
-        img.style.objectPosition = `${x}% ${y}%`;
+        const offsetX = (x - 50) * 1.5;
+        const offsetY = (y - 50) * 1.5;
+        img.style.objectFit = 'cover';
+        img.style.transformOrigin = 'center center';
+        img.style.objectPosition = 'center';
+        img.style.transform = `translate(${offsetX}%, ${offsetY}%) scale(${zoom / 100})`;
       } else {
         img.src = '';
       }
     }
 
     function saveProfileTuner() {
-      siteContent.profile = {
-        url: document.getElementById('tunerUrl').value.trim(),
-        zoom: parseInt(document.getElementById('tunerZoom').value, 10),
-        x: parseInt(document.getElementById('tunerX').value, 10),
-        y: parseInt(document.getElementById('tunerY').value, 10)
+      if (!siteContent.about) siteContent.about = {};
+      siteContent.about.heroPortrait = document.getElementById('tunerUrl').value.trim();
+      siteContent.about.heroPhotoPosition = {
+        scale: parseInt(document.getElementById('tunerZoom').value, 10) / 100,
+        posX: parseInt(document.getElementById('tunerX').value, 10),
+        posY: parseInt(document.getElementById('tunerY').value, 10)
       };
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
       alert("Hero profile avatar saved! Click PUBLISH LIVE to update the website.");
@@ -718,39 +697,83 @@
     }
 
     // --- 5. GLOBAL TEXT EDITOR ---
-    function populateContentForm() {
-      const about = siteContent.about || {};
-      const contact = siteContent.contact || {};
-      const services = siteContent.services || {};
+    const editablePaths = [
+      { path: 'about.brandName', label: 'Brand Name', type: 'text' },
+      { path: 'about.brandRole', label: 'Brand Role / Subtitle', type: 'text' },
+      { path: 'about.heroHeadline', label: 'Hero Headline (Use <br> for new lines)', type: 'text' },
+      { path: 'about.heroLead', label: 'Hero Lead Text', type: 'textarea' },
+      { path: 'about.tagline', label: 'Tagline', type: 'text' },
+      { path: 'about.locationBadge', label: 'Location Badge', type: 'text' },
+      { path: 'about.signatureScript', label: 'Signature Text', type: 'text' },
+      { path: 'about.bioP1', label: 'Bio Paragraph 1', type: 'textarea' },
+      { path: 'about.bioP2', label: 'Bio Paragraph 2', type: 'textarea' },
+      { path: 'about.quote', label: 'Quote', type: 'textarea' },
+      { path: 'contact.email', label: 'Contact Email', type: 'text' },
+      { path: 'contact.phone', label: 'Contact Phone / CTA', type: 'text' },
+      { path: 'contact.website', label: 'Location / Website', type: 'text' },
+      { path: 'contact.socials.behance', label: 'Behance URL', type: 'text' },
+      { path: 'contact.socials.linkedin', label: 'LinkedIn URL', type: 'text' },
+      { path: 'contact.copyright', label: 'Footer Copyright', type: 'text' }
+    ];
 
-      document.getElementById('c_headline').value = about.brandName || '';
-      document.getElementById('c_subtitle').value = about.brandRole || '';
-      document.getElementById('c_bio').value = (about.bioP1 || '') + (about.bioP2 ? '\n\n' + about.bioP2 : '');
-      document.getElementById('c_disciplines').value = (services.items || []).map(i => i.title).join(', ');
-      document.getElementById('c_tech').value = about.headline || '';
-      document.getElementById('c_email').value = contact.email || '';
-      document.getElementById('c_social').value = (contact.socials || {}).behance || '';
+    function getNestedValue(obj, path) {
+      return path.split('.').reduce((o, i) => o ? o[i] : '', obj);
+    }
+
+    function setNestedValue(obj, path, value) {
+      const parts = path.split('.');
+      let current = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = value;
+    }
+
+    function populateContentForm() {
+      const container = document.getElementById('dynamicContentForm');
+      container.innerHTML = '';
+      
+      editablePaths.forEach((field, i) => {
+        const val = getNestedValue(siteContent, field.path);
+        
+        const wrap = document.createElement('div');
+        wrap.className = 'form-group';
+        wrap.style.marginBottom = '1rem';
+        
+        const label = document.createElement('label');
+        label.innerText = field.label;
+        wrap.appendChild(label);
+        
+        if (field.type === 'textarea') {
+          const input = document.createElement('textarea');
+          input.className = 'form-textarea';
+          input.id = `dynFld_${i}`;
+          input.value = val || '';
+          input.style.minHeight = '100px';
+          wrap.appendChild(input);
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'form-input';
+          input.id = `dynFld_${i}`;
+          input.value = val || '';
+          wrap.appendChild(input);
+        }
+        
+        container.appendChild(wrap);
+      });
     }
 
     function saveSiteContent() {
-      const bio = document.getElementById('c_bio').value.trim();
-      const bioParts = bio.split(/\n\n+/);
-
-      if (!siteContent.about) siteContent.about = {};
-      if (!siteContent.contact) siteContent.contact = {};
-      if (!siteContent.contact.socials) siteContent.contact.socials = {};
-      if (!siteContent.services) siteContent.services = { items: [] };
-
-      siteContent.about.brandName = document.getElementById('c_headline').value.trim();
-      siteContent.about.brandRole = document.getElementById('c_subtitle').value.trim();
-      siteContent.about.bioP1 = bioParts[0] || '';
-      siteContent.about.bioP2 = bioParts[1] || '';
-      siteContent.about.headline = document.getElementById('c_tech').value.trim();
-      siteContent.contact.email = document.getElementById('c_email').value.trim();
-      siteContent.contact.socials.behance = document.getElementById('c_social').value.trim();
-
+      editablePaths.forEach((field, i) => {
+        const input = document.getElementById(`dynFld_${i}`);
+        if (input) {
+          setNestedValue(siteContent, field.path, input.value.trim());
+        }
+      });
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      alert('Global text content saved! Click PUBLISH LIVE to update the website.');
+      alert('All global text content saved! Click PUBLISH LIVE to update the website.');
     }
 
     // --- 6. GITHUB REST API SYNC ---
