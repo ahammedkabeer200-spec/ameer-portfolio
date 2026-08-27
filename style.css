@@ -844,6 +844,40 @@ body {
   line-height: 1.45;
 }
 
+.native-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.native-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.native-input:focus {
+  outline: none;
+  border-color: var(--gold-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.native-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+textarea.native-input {
+  resize: vertical;
+  min-height: 80px;
+}
+
 .quick-cta-btn-group {
   display: flex;
   flex-direction: column;
