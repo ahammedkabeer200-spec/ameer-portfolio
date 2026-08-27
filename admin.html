@@ -500,11 +500,11 @@
         console.warn("Could not auto-sync content from server, using local data", err);
       }
 
-      // Fallback to local storage if remote fetch was skipped or failed
+      // Fallback to local storage only if nothing was loaded
       if (projectsData.length === 0) {
         try { projectsData = JSON.parse(localStorage.getItem(DB_KEY_PROJ)) || []; } catch(e) { projectsData = []; }
       }
-      if (!siteContent.profile || !siteContent.text || Object.keys(siteContent.text).length === 0) {
+      if (!siteContent.about && !siteContent.profile) {
         try { 
           const c = JSON.parse(localStorage.getItem(DB_KEY_CONT)); 
           if (c) siteContent = c; 
@@ -513,7 +513,7 @@
 
       // Enforce structure
       if (!siteContent.profile) siteContent.profile = { url: '', zoom: 100, x: 50, y: 50 };
-      if (!siteContent.text) siteContent.text = {};
+      if (!siteContent.about) siteContent.about = {};
 
       loadGitHubConfig();
       renderProjectsGrid();
