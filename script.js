@@ -91,6 +91,7 @@ const defaultSiteContent = {
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', async () => {
   initCursorGlow();
+  initScrollReveal();
   await loadAndApplySiteContent();
   await loadProjectsData();
   renderProjectsGrid();
@@ -660,10 +661,21 @@ function openCaseStudy(identifier) {
       // 2. Render Image Gallery (Slides)
       const allImages = [];
       if (project.coverImage) allImages.push(project.coverImage);
+      
+      // Legacy gallery support (array of objects)
       if (project.gallery) {
         project.gallery.forEach(g => {
           const imgUrl = g.image || g.url;
           if (imgUrl && imgUrl !== project.coverImage) allImages.push(imgUrl);
+        });
+      }
+      
+      // New images support (array of strings)
+      if (project.images && Array.isArray(project.images)) {
+        project.images.forEach(imgUrl => {
+          if (imgUrl && imgUrl !== project.coverImage && !allImages.includes(imgUrl)) {
+            allImages.push(imgUrl);
+          }
         });
       }
 
@@ -723,10 +735,32 @@ function handleBehanceAppreciate() {
     btn.style.transform = 'scale(1.12)';
     hasAppreciated = true;
     showToast('ðŸ’™ Project Appreciated! Thank you.');
-    setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
+    setTimeout(() => { btn.style.transform = 'scale(1)'; }, 300);
   } else {
     showToast('You have already appreciated this project!');
   }
+}
+
+// Scroll Reveal Animations
+function initScrollReveal() {
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.15
+  };
+
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.reveal-up, .reveal-fade').forEach(el => {
+    revealObserver.observe(el);
+  });
 }
 
 // Copy Permalink
@@ -738,6 +772,29 @@ function copyCaseStudyLink() {
     showToast('ðŸ”— Permalink copied!');
   }
 }
+
+// Native Contact Form Submission
+document.addEventListener('DOMContentLoaded', () => {
+  const contactForm = document.getElementById('contactForm');
+  if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('contactName').value.trim();
+      const message = document.getElementById('contactMessage').value.trim();
+      
+      if (!name || !message) return;
+      
+      const email = "ameersuhail4729@gmail.com";
+      const subject = encodeURIComponent(`New Inquiry from ${name}`);
+      const body = encodeURIComponent(`Hello Ameer,\n\n${message}\n\nBest regards,\n${name}`);
+      
+      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+      
+      contactForm.reset();
+      showToast('Opening your email client...');
+    });
+  }
+});
 
 // Close Case Study
 function closeCaseStudy(e) {
