@@ -80,6 +80,166 @@
       document.getElementById('loginPassInput').value = '';
     }
 
+    function toggleModalFields() {
+      const type = document.getElementById('inpType').value;
+      const groupPdf = document.getElementById('groupPdf');
+      const groupGallery = document.getElementById('groupGallery');
+      
+      if (type === 'pdf') {
+        groupPdf.style.display = 'block';
+        groupGallery.style.display = 'none';
+      } else {
+        groupPdf.style.display = 'none';
+        groupGallery.style.display = 'block';
+      }
+    }
+
+    async function handleProjectFileUpload(inputEl, targetInputId, progressElId) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      const progressEl = document.getElementById(progressElId);
+      const btnSave = document.getElementById('btnSaveProject');
+      progressEl.textContent = "Uploading to GitHub...";
+      progressEl.style.color = "var(--gold)";
+      btnSave.disabled = true;
+      btnSave.style.opacity = "0.5";
+
+      const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
+      if (!conf.token || !conf.owner || !conf.repo) {
+        alert("Please configure your GitHub API settings under the 'Settings & Security' tab first so files can be uploaded to your repository.");
+        progressEl.textContent = "Upload failed (Config missing)";
+        progressEl.style.color = "var(--danger)";
+        btnSave.disabled = false;
+        btnSave.style.opacity = "1";
+        return;
+      }
+
+      const maxSizeBytes = 25 * 1024 * 1024; // 25MB
+      if (file.size > maxSizeBytes) {
+        alert(`File is too large. Keep uploads under 25MB.`);
+        progressEl.textContent = "File too large";
+        progressEl.style.color = "var(--danger)";
+        btnSave.disabled = false;
+        btnSave.style.opacity = "1";
+        return;
+      }
+
+      try {
+        const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filename = `${Date.now()}-${cleanName}`;
+        const path = `assets/uploads/${filename}`;
+        const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${path}`;
+
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const base64Content = await base64Promise;
+
+        const bodyPayload = {
+          message: `Upload project asset: ${filename}`,
+          content: base64Content,
+          branch: conf.branch || 'main'
+        };
+
+        const res = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${conf.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bodyPayload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "GitHub API returned error");
+        }
+
+        document.getElementById(targetInputId).value = path;
+        progressEl.textContent = "✓ Uploaded!";
+        progressEl.style.color = "var(--success)";
+      } catch (err) {
+        alert("Failed to upload: " + err.message);
+        progressEl.textContent = "Upload failed";
+        progressEl.style.color = "var(--danger)";
+      } finally {
+        btnSave.disabled = false;
+        btnSave.style.opacity = "1";
+      }
+    }
+
+    async function handleProjectGalleryUpload(inputEl, targetTextareaId, progressElId) {
+      const files = inputEl.files;
+      if (!files || files.length === 0) return;
+
+      const progressEl = document.getElementById(progressElId);
+      const btnSave = document.getElementById('btnSaveProject');
+      const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
+      if (!conf.token || !conf.owner || !conf.repo) {
+        alert("Please configure your GitHub API settings under the 'Settings & Security' tab first so files can be uploaded to your repository.");
+        return;
+      }
+
+      progressEl.style.color = "var(--gold)";
+      btnSave.disabled = true;
+      btnSave.style.opacity = "0.5";
+      const textarea = document.getElementById(targetTextareaId);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        progressEl.textContent = `Uploading file ${i + 1} of ${files.length}...`;
+
+        try {
+          const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const filename = `${Date.now()}-${cleanName}`;
+          const path = `assets/uploads/${filename}`;
+          const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${path}`;
+
+          const reader = new FileReader();
+          const base64Promise = new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const base64Content = await base64Promise;
+
+          const bodyPayload = {
+            message: `Upload project gallery asset: ${filename}`,
+            content: base64Content,
+            branch: conf.branch || 'main'
+          };
+
+          const res = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${conf.token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bodyPayload)
+          });
+
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || "GitHub API returned error");
+          }
+
+          const curVal = textarea.value.trim();
+          textarea.value = curVal ? `${curVal}\n${path}` : path;
+        } catch (err) {
+          alert(`Failed to upload ${file.name}: ${err.message}`);
+        }
+      }
+
+      progressEl.textContent = `✓ Uploaded ${files.length} photos!`;
+      progressEl.style.color = "var(--success)";
+      btnSave.disabled = false;
+      btnSave.style.opacity = "1";
+    }
+
     // --- 2. BOOTSTRAP DATA ---
     async function bootstrapData() {
       // Show loading states or fetch data from remote first (Remote-first auto-sync on startup)
@@ -212,6 +372,11 @@
       document.getElementById('editProjectIndex').value = index;
       document.getElementById('projectForm').reset();
 
+      // Reset progress indicators
+      document.getElementById('uploadProgressCover').textContent = '';
+      document.getElementById('uploadProgressPdf').textContent = '';
+      document.getElementById('uploadProgressGallery').textContent = '';
+
       if (index >= 0) {
         const p = projectsData[index];
         document.getElementById('modalTitle').textContent = 'Edit Project';
@@ -226,6 +391,7 @@
       } else {
         document.getElementById('modalTitle').textContent = 'Add New Project';
       }
+      toggleModalFields();
       document.getElementById('projectModal').classList.add('active');
     }
 
