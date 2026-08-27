@@ -1,4 +1,4 @@
-﻿# Netlify Configuration File
+# Netlify Configuration File
 [build]
   publish = "."
 
@@ -19,5 +19,11 @@
 # Ensure data JSON files update immediately
 [[headers]]
   for = "/data/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Ensure the admin panel is never cached so changes load instantly
+[[headers]]
+  for = "/admin.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
