@@ -11,6 +11,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Oswald:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ameersuhail.com/">
+  <meta property="og:title" content="Ameer Suhail | Brand & Visual Communication">
+  <meta property="og:description" content="Senior Graphic Designer delivering high-impact visual design, branding, and campaign solutions across government and corporate sectors.">
+  <meta property="og:image" content="https://ameersuhail.com/assets/hero-portrait.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://ameersuhail.com/">
+  <meta property="twitter:title" content="Ameer Suhail | Brand & Visual Communication">
+  <meta property="twitter:description" content="Senior Graphic Designer delivering high-impact visual design, branding, and campaign solutions across government and corporate sectors.">
+  <meta property="twitter:image" content="https://ameersuhail.com/assets/hero-portrait.png">
+
   <link rel="stylesheet" href="style.css?v=3.8">
 </head>
 <body>
@@ -93,7 +107,7 @@
     <!-- ====================================================================
          3. TABLE OF CONTENTS (LUXURY FRAMED DIRECTORY)
          ==================================================================== -->
-    <section class="toc-luxury-frame" id="toc">
+    <section class="toc-luxury-frame reveal-up" id="toc">
       
       <!-- Left Column: Header & Manifesto -->
       <div class="toc-left-col">
@@ -167,7 +181,7 @@
     <!-- ====================================================================
          3.5. 01 ABOUT ME & CAREER EXPERIENCE SECTION
          ==================================================================== -->
-    <section class="about-me-section" id="about">
+    <section class="about-me-section reveal-up" id="about">
       <div class="section-title-bar">
         <h2 class="section-title-gold" id="aboutSectionTitle">01 ABOUT ME &amp; CAREER</h2>
         <span class="view-all-link" style="color: var(--gold-sand);">GOVERNMENT • TOURISM • CORPORATE</span>
@@ -297,7 +311,7 @@
     <!-- ====================================================================
          4. 03 SELECTED WORK / PROJECTS (4-COLUMN CARD GRID)
          ==================================================================== -->
-    <section class="selected-projects-section" id="projects" style="padding: 3rem 1.5rem; max-width: 1280px; margin: 0 auto;">
+    <section class="selected-projects-section reveal-up" id="projects" style="padding: 3rem 1.5rem; max-width: 1280px; margin: 0 auto;">
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <h2 style="font-size: 1.5rem; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.05em;">Selected Projects</h2>
@@ -337,7 +351,7 @@
     <!-- ====================================================================
          5. 02 SERVICES & DISCIPLINES / TECHNICAL ARSENAL
          ==================================================================== -->
-    <section class="info-2col-grid" id="services">
+    <section class="info-2col-grid reveal-up" id="services">
       
       <!-- Col 1: CORE SERVICES -->
       <div class="info-column">
@@ -460,7 +474,7 @@
     <!-- ====================================================================
          6. 04 DIRECT INQUIRIES, BOOKINGS & CONTACT
          ==================================================================== -->
-    <section class="cta-luxury-frame" id="contact">
+    <section class="cta-luxury-frame reveal-up" id="contact">
       
       <!-- Left Column: Headline -->
       <div class="cta-title-col">
@@ -473,17 +487,19 @@
       <div class="cta-inquiries-col">
         <span class="quick-cta-title">DIRECT INQUIRIES &amp; BOOKINGS</span>
         <p class="quick-cta-desc">Available for high-impact brand identities, government campaigns, and creative leadership across the UAE and worldwide.</p>
-        <div class="quick-cta-btn-group">
-          <a href="https://wa.me/971561480139" target="_blank" rel="noopener" class="quick-btn-gold" id="btnWhatsappLink">
-            <span>💬 Direct WhatsApp Chat</span>
-          </a>
-          <a href="mailto:ameersuhail4729@gmail.com" class="quick-btn-dark" id="btnEmailLink">
-            <span>✉️ Email Ameer</span>
-          </a>
-          <a href="https://www.linkedin.com/in/ameersuhail2/" target="_blank" rel="noopener" class="quick-btn-dark" id="btnLinkedinLink">
-            <span>💼 Connect on LinkedIn</span>
-          </a>
-        </div>
+        
+        <form id="contactForm" class="native-contact-form">
+          <input type="text" id="contactName" placeholder="Your Name" required class="native-input">
+          <textarea id="contactMessage" placeholder="How can I help you?" required rows="3" class="native-input"></textarea>
+          <div class="quick-cta-btn-group" style="margin-top: 0.5rem;">
+            <button type="submit" class="quick-btn-gold" style="border: none; cursor: pointer; font-family: inherit;">
+              <span>Send Message</span>
+            </button>
+            <a href="https://wa.me/971561480139" target="_blank" rel="noopener" class="quick-btn-dark" id="btnWhatsappLink">
+              <span>WhatsApp Instead</span>
+            </a>
+          </div>
+        </form>
       </div>
 
       <!-- Right Column: Details & Socials -->
