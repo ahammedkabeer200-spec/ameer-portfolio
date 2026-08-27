@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AMEER SUHAIL â€” SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
    Luxury Poster Layout & Design System matching Reference Poster
    Deep Obsidian (#0a0a0a), Charcoal Surface (#141414), Champagne Gold (#DFBD69)
@@ -2213,11 +2213,26 @@ body {
 }
 
 /* Grid View (Default) */
-.archive-container--grid .modal-project-card { height: auto !important; min-height: 100% !important; display: flex !important; flex-direction: column !important; }
-.archive-container--grid .modal-project-info { flex: 1 1 auto !important; }
+.archive-container--grid .modal-project-card {
+  height: auto !important;
+  min-height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #141414 !important;
+  border: 1px solid #242424 !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+.archive-container--grid .modal-project-info {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 14px 16px !important;
+  background: #141414 !important;
+}
 .archive-container--grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
