@@ -797,14 +797,48 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (!name || !message) return;
       
-      const email = "ameersuhail4729@gmail.com";
-      const subject = encodeURIComponent(`New Inquiry from ${name}`);
-      const body = encodeURIComponent(`Hello Ameer,\n\n${message}\n\nBest regards,\n${name}`);
+      const submitBtn = contactForm.querySelector('button[type="submit"]');
+      const submitBtnText = submitBtn.querySelector('span');
+      const originalText = submitBtnText ? submitBtnText.textContent : "Send Message";
       
-      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+      submitBtn.disabled = true;
+      if (submitBtnText) submitBtnText.textContent = "SENDING...";
+      submitBtn.style.opacity = "0.7";
       
-      contactForm.reset();
-      showToast('Opening your email client...');
+      fetch("https://formsubmit.co/ajax/ameersuhail4729@gmail.com", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          name: name,
+          message: message,
+          _subject: `New Portfolio Inquiry from ${name}`
+        })
+      })
+      .then(response => {
+        if (response.ok) {
+          showToast("✓ Message sent! I will get back to you soon.");
+          contactForm.reset();
+        } else {
+          throw new Error("FormSubmit response not OK");
+        }
+      })
+      .catch(error => {
+        console.warn("FormSubmit failed, falling back to mailto client:", error);
+        const email = "ameersuhail4729@gmail.com";
+        const subject = encodeURIComponent(`New Inquiry from ${name}`);
+        const body = encodeURIComponent(`Hello Ameer,\n\n${message}\n\nBest regards,\n${name}`);
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+        showToast("Opening email client...");
+        contactForm.reset();
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        if (submitBtnText) submitBtnText.textContent = originalText;
+        submitBtn.style.opacity = "1";
+      });
     });
   }
 });
