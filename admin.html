@@ -73,7 +73,7 @@
     .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); cursor: pointer; }
     
     /* Modals */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+    .modal-overlay { position: fixed; inset: 0; background: #0a0a0a; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
     .modal-overlay.active { display: flex; }
     .modal-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
     .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
@@ -123,6 +123,7 @@
         <li><button type="button" class="nav-btn" onclick="switchTab('contentTab')">Global Content</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('settingsTab')">Settings & Security</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('backupTab')">Backup & Restore</button></li>
+        <li style="margin-top: auto; padding-top: 2rem;"><button type="button" class="nav-btn" style="color: var(--danger);" onclick="lockWorkspace()">🔒 Lock Workspace</button></li>
       </ul>
 
       <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
@@ -451,6 +452,12 @@
         localStorage.removeItem(STORAGE_PASS);
         alert('Password reset to: ameer2026');
       }
+    }
+
+    function lockWorkspace() {
+      sessionStorage.removeItem('ameer_admin_auth');
+      document.getElementById('authScreen').classList.add('active');
+      document.getElementById('loginPassInput').value = '';
     }
 
     // --- 2. BOOTSTRAP DATA ---
