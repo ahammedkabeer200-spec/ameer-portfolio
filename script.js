@@ -9,6 +9,19 @@ let siteContent = null;
 let currentProjectIndex = 0;
 let toastTimeout = null;
 
+function resolveAssetUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('assets/uploads/')) {
+    try {
+      const conf = JSON.parse(localStorage.getItem('ameer_github_config') || '{}');
+      if (conf.owner && conf.repo) {
+        return `https://raw.githubusercontent.com/${conf.owner}/${conf.repo}/${conf.branch || 'main'}/${url}`;
+      }
+    } catch (e) {}
+  }
+  return url;
+}
+
 // Default Site Content for Sections (01 About, 02 Services, 03 Selected Work, 04 Contact)
 const defaultSiteContent = {
   about: {
@@ -497,7 +510,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
     return `
       <article class="modal-project-card" onclick="openCaseStudyFromModal('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
-          <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <img src="${resolveAssetUrl(p.coverImage)}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
@@ -563,7 +576,7 @@ function renderProjectsGrid() {
     return `
       <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
-          <img src="${p.coverImage || ''}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <img src="${resolveAssetUrl(p.coverImage || '')}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
@@ -609,7 +622,7 @@ function openCaseStudy(identifier) {
 
     if (isPdfProject && pdfUrl) {
       // 1. Render PDF Deck Viewer
-      let finalPdfUrl = pdfUrl;
+      let finalPdfUrl = resolveAssetUrl(pdfUrl);
       
       // Accurately resolve relative URLs against the current path (crucial for GitHub Pages /subpaths/)
       if (!finalPdfUrl.startsWith('http')) {
@@ -681,7 +694,7 @@ function openCaseStudy(identifier) {
 
       const galleryHtml = allImages.map(url => `
         <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem;">
-          <img src="${url}" alt="${project.title}" style="width: 100%; height: auto; display: block; object-fit: cover;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';" />
+          <img src="${resolveAssetUrl(url)}" alt="${project.title}" style="width: 100%; height: auto; display: block; object-fit: cover;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';" />
         </div>
       `).join('');
 
