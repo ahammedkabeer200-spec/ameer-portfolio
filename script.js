@@ -499,7 +499,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
           <img src="${p.coverImage}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2;">
-            ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+            ${isPdf ? '[PDF] Deck' : '[IMG] Slides'}
           </span>
         </div>
 
@@ -565,7 +565,7 @@ function renderProjectsGrid() {
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
           <img src="${p.coverImage || ''}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2;">
-            ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
+            ${isPdf ? '[PDF] Deck' : '[IMG] Slides'}
           </span>
         </div>
 
@@ -915,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedMode = localStorage.getItem('portfolio_view_mode') || 'grid';
   setArchiveViewMode(savedMode);
 });
+
 
 
 
