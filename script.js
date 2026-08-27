@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AMEER SUHAIL â€” SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
  * JavaScript Engine: Dynamic Site Content Hydration & Universal Case Study Engine
  */
@@ -499,9 +499,9 @@ function renderModalProjectsGrid(filterCat = 'all') {
         <div class="modal-project-info" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
           
           <div class="modal-project-meta-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 class="modal-project-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem;">${numStr}</span>
-              <span style="overflow: hidden; text-overflow: ellipsis;">${p.title}</span>
+            <h3 class="modal-project-title" style="margin: 0; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;">
+              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem; margin-right: 6px;">${numStr}</span>
+              ${p.title}
             </h3>
             <span class="modal-project-format" style="font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; flex-shrink: 0; margin-left: 12px; color: #d4d4d4;">
               ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
@@ -564,9 +564,9 @@ function renderProjectsGrid() {
         <div class="modal-project-info" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
           
           <div class="modal-project-meta-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 class="modal-project-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem;">${numStr}</span>
-              <span style="overflow: hidden; text-overflow: ellipsis;">${p.title || 'Untitled'}</span>
+            <h3 class="modal-project-title" style="margin: 0; font-size: 1.1rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;">
+              <span class="modal-project-num" style="color: #dfbd69; font-family: monospace; font-size: 0.85rem; margin-right: 6px;">${numStr}</span>
+              ${p.title || 'Untitled'}
             </h3>
             <span class="modal-project-format" style="font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; flex-shrink: 0; margin-left: 12px; color: #d4d4d4;">
               ${isPdf ? '📄 PDF Deck' : '🖼️ Slides'}
