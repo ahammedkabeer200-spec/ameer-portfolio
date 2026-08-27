@@ -27,14 +27,14 @@ const defaultSiteContent = {
   about: {
     brandName: "AMEER SUHAIL",
     brandRole: "SENIOR GRAPHIC DESIGNER & BRAND SPECIALIST",
-    yearPill: "UAE â€¢ 3 YRS EXP",
+    yearPill: "UAE \u2022 3 YRS EXP",
     heroHeadline: "BRAND & VISUAL<br>COMMUNICATION",
     heroLead: "Senior Graphic Designer with 4 years of experience (3 years in UAE) delivering high-impact visual design, branding, and campaign solutions across government, tourism, and corporate sectors.",
     heroPortrait: "assets/hero-portrait.png",
     signatureScript: "Ameer Suhail",
     signatureSub: "AMEER SUHAIL",
     tagline: "DESIGN THAT RESONATES.<br>CAMPAIGNS THAT DELIVER.",
-    locationBadge: "ðŸ“ UMM AL QUWAIN, UAE â€¢ AVAILABLE GLOBALLY",
+    locationBadge: "\ud83d\udccd UMM AL QUWAIN, UAE \u2022 AVAILABLE GLOBALLY",
     tocTitle: "TABLE OF<br>CONTENTS",
     tocDesc: "Explore career milestones, government tourism case studies, AI creative workflows, and direct contact details.",
     tocLabels: {
@@ -82,7 +82,7 @@ const defaultSiteContent = {
   },
   selectedWork: {
     title: "SELECTED PROJECTS",
-    viewAllText: "VIEW ALL PROJECTS â†’"
+    viewAllText: "VIEW ALL PROJECTS \u2192"
   },
   contact: {
     ctaHeading: "LET'S CREATE<br>SOMETHING AMAZING",
@@ -162,8 +162,8 @@ function calculateCareerMilestones() {
     totalYearsText: `${totalYears}+`,
     uaeYears,
     uaeYearsText: `${uaeYears} YRS`,
-    uaePillText: `UAE â€¢ ${uaeYears} YRS EXP`,
-    uaqPeriodText: `2023 â€“ PRESENT (${uaeYears} YRS)`,
+    uaePillText: `UAE \u2022 ${uaeYears} YRS EXP`,
+    uaqPeriodText: `2023 - PRESENT (${uaeYears} YRS)`,
     adobeYears,
     aeYears,
     idYears,
@@ -747,7 +747,7 @@ function handleBehanceAppreciate() {
     btn.style.background = '#003db3';
     btn.style.transform = 'scale(1.12)';
     hasAppreciated = true;
-    showToast('ðŸ’™ Project Appreciated! Thank you.');
+    showToast('\ud83d\udc99 Project Appreciated! Thank you.');
     setTimeout(() => { btn.style.transform = 'scale(1)'; }, 300);
   } else {
     showToast('You have already appreciated this project!');
@@ -780,9 +780,9 @@ function initScrollReveal() {
 function copyCaseStudyLink() {
   const url = window.location.href;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(() => showToast('ðŸ”— Project permalink copied to clipboard!')).catch(() => showToast('Copied!'));
+    navigator.clipboard.writeText(url).then(() => showToast('\ud83d\udd17 Project permalink copied to clipboard!')).catch(() => showToast('Copied!'));
   } else {
-    showToast('ðŸ”— Permalink copied!');
+    showToast('\ud83d\udd17 Permalink copied!');
   }
 }
 
