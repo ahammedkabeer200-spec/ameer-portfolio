@@ -698,28 +698,38 @@
 
     // --- 5. GLOBAL TEXT EDITOR ---
     function populateContentForm() {
-      const t = siteContent.text || {};
-      document.getElementById('c_headline').value = t.headline || '';
-      document.getElementById('c_subtitle').value = t.subtitle || '';
-      document.getElementById('c_bio').value = t.bio || '';
-      document.getElementById('c_disciplines').value = t.disciplines || '';
-      document.getElementById('c_tech').value = t.tech || '';
-      document.getElementById('c_email').value = t.email || '';
-      document.getElementById('c_social').value = t.social || '';
+      const about = siteContent.about || {};
+      const contact = siteContent.contact || {};
+      const services = siteContent.services || {};
+
+      document.getElementById('c_headline').value = about.brandName || '';
+      document.getElementById('c_subtitle').value = about.brandRole || '';
+      document.getElementById('c_bio').value = (about.bioP1 || '') + (about.bioP2 ? '\n\n' + about.bioP2 : '');
+      document.getElementById('c_disciplines').value = (services.items || []).map(i => i.title).join(', ');
+      document.getElementById('c_tech').value = about.headline || '';
+      document.getElementById('c_email').value = contact.email || '';
+      document.getElementById('c_social').value = (contact.socials || {}).behance || '';
     }
 
     function saveSiteContent() {
-      siteContent.text = {
-        headline: document.getElementById('c_headline').value.trim(),
-        subtitle: document.getElementById('c_subtitle').value.trim(),
-        bio: document.getElementById('c_bio').value.trim(),
-        disciplines: document.getElementById('c_disciplines').value.trim(),
-        tech: document.getElementById('c_tech').value.trim(),
-        email: document.getElementById('c_email').value.trim(),
-        social: document.getElementById('c_social').value.trim()
-      };
+      const bio = document.getElementById('c_bio').value.trim();
+      const bioParts = bio.split(/\n\n+/);
+
+      if (!siteContent.about) siteContent.about = {};
+      if (!siteContent.contact) siteContent.contact = {};
+      if (!siteContent.contact.socials) siteContent.contact.socials = {};
+      if (!siteContent.services) siteContent.services = { items: [] };
+
+      siteContent.about.brandName = document.getElementById('c_headline').value.trim();
+      siteContent.about.brandRole = document.getElementById('c_subtitle').value.trim();
+      siteContent.about.bioP1 = bioParts[0] || '';
+      siteContent.about.bioP2 = bioParts[1] || '';
+      siteContent.about.headline = document.getElementById('c_tech').value.trim();
+      siteContent.contact.email = document.getElementById('c_email').value.trim();
+      siteContent.contact.socials.behance = document.getElementById('c_social').value.trim();
+
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      alert('Global text content saved!');
+      alert('Global text content saved! Click PUBLISH LIVE to update the website.');
     }
 
     // --- 6. GITHUB REST API SYNC ---
