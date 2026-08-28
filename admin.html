@@ -169,7 +169,7 @@
       </ul>
 
         <div class="sidebar-actions" style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
-          <a href="index.html?preview=true" target="_blank" style="text-decoration: none;"><button type="button" class="btn" style="width: 100%; background: #2a2a2a; color: #fff; border: 1px solid #444;">👀 Preview Site</button></a>
+          <button type="button" class="btn" onclick="openPreviewSite()" style="width: 100%; background: #2a2a2a; color: #fff; border: 1px solid #444; cursor: pointer;">👀 Preview Site</button>
           <button type="button" class="btn btn-secondary" onclick="forceSyncFromGitHub()" style="width: 100%;">Sync From Live</button>
           <button type="button" class="btn btn-publish" onclick="publishToGitHub()">PUBLISH LIVE</button>
         </div>
@@ -1279,6 +1279,13 @@
     }
 
     // --- 8. UTILS ---
+    function openPreviewSite() {
+      const currentPath = window.location.pathname;
+      const baseDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+      const targetUrl = window.location.origin + baseDir + 'index.html?preview=true';
+      window.open(targetUrl, '_blank');
+    }
+
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
