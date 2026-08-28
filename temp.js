@@ -590,6 +590,7 @@
       { path: 'contact.website', label: 'Location / Website', type: 'text' },
       { path: 'contact.socials.behance', label: 'Behance URL', type: 'text' },
       { path: 'contact.socials.linkedin', label: 'LinkedIn URL', type: 'text' },
+      { path: 'contact.socials.instagram', label: 'Instagram URL', type: 'text' },
       { path: 'contact.copyright', label: 'Footer Copyright', type: 'text' }
     ];
 
@@ -650,6 +651,7 @@
         }
       });
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
       alert('All global text content saved! Click PUBLISH LIVE to update the website.');
     }
 
