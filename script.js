@@ -506,11 +506,16 @@ function renderModalProjectsGrid(filterCat = 'all') {
     const numStr = (idx + 1).toString().padStart(2, '0');
     const catName = getCategoryDisplayName(p.category);
     const isPdf = p.presentationType === 'pdf' || (p.pdfUrl && p.pdfUrl.length > 0);
+    const scale = (p.coverZoom || 100) / 100;
+    const x = p.coverX !== undefined ? p.coverX : 50;
+    const y = p.coverY !== undefined ? p.coverY : 50;
+    const offsetX = (x - 50) * 1.0;
+    const offsetY = (y - 50) * 1.0;
 
     return `
       <article class="modal-project-card" onclick="openCaseStudyFromModal('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
-          <img src="${resolveAssetUrl(p.coverImage)}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: ${p.coverX || 50}% ${p.coverY || 50}%; transform-origin: ${p.coverX || 50}% ${p.coverY || 50}%; transform: scale(${(p.coverZoom || 100)/100}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <img src="${resolveAssetUrl(p.coverImage)}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
@@ -572,11 +577,16 @@ function renderProjectsGrid() {
     const numStr = (idx + 1).toString().padStart(2, '0');
     const isPdf = p.presentationType === 'pdf' || (p.pdfUrl && p.pdfUrl.length > 0);
     const catSubtitle = (p.categories && p.categories[0]) || (typeof getCategoryDisplayName === 'function' ? getCategoryDisplayName(p.category) : p.category) || 'Category';
+    const scale = (p.coverZoom || 100) / 100;
+    const x = p.coverX !== undefined ? p.coverX : 50;
+    const y = p.coverY !== undefined ? p.coverY : 50;
+    const offsetX = (x - 50) * 1.0;
+    const offsetY = (y - 50) * 1.0;
 
     return `
       <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
-          <img src="${resolveAssetUrl(p.coverImage || '')}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: ${p.coverX || 50}% ${p.coverY || 50}%; transform-origin: ${p.coverX || 50}% ${p.coverY || 50}%; transform: scale(${(p.coverZoom || 100)/100}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <img src="${resolveAssetUrl(p.coverImage || '')}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
