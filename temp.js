@@ -287,45 +287,55 @@
 
     // --- 2. BOOTSTRAP DATA ---
     async function bootstrapData() {
-      // Show loading states or fetch data from remote first (Remote-first auto-sync on startup)
+      // 1. Load local draft data from localStorage first
       try {
-        const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (projRes.ok) {
-          const remoteProj = await projRes.ok ? await projRes.json() : null;
-          if (remoteProj && Array.isArray(remoteProj)) {
-            projectsData = remoteProj;
-            localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-          }
+        const localProj = JSON.parse(localStorage.getItem(DB_KEY_PROJ));
+        if (localProj && Array.isArray(localProj) && localProj.length > 0) {
+          projectsData = localProj;
         }
-      } catch (err) {
-        console.warn("Could not auto-sync projects from server, using local data", err);
-      }
+      } catch (e) {}
 
       try {
-        const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (contRes.ok) {
-          const remoteCont = await contRes.json();
-          if (remoteCont) {
-            siteContent = remoteCont;
-            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-          }
+        const localCont = JSON.parse(localStorage.getItem(DB_KEY_CONT) || localStorage.getItem('ameer_portfolio_site_content'));
+        if (localCont && (localCont.about || localCont.profile)) {
+          siteContent = localCont;
         }
-      } catch (err) {
-        console.warn("Could not auto-sync content from server, using local data", err);
+      } catch (e) {}
+
+      // 2. Only if local storage is completely empty, fetch initial data from server
+      if (!projectsData || projectsData.length === 0) {
+        try {
+          const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (projRes.ok) {
+            const remoteProj = await projRes.json();
+            if (remoteProj && Array.isArray(remoteProj)) {
+              projectsData = remoteProj;
+              localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+            }
+          }
+        } catch (err) {
+          console.warn("Could not load projects from server", err);
+        }
       }
 
-      // Fallback to local storage only if nothing was loaded
-      if (projectsData.length === 0) {
-        try { projectsData = JSON.parse(localStorage.getItem(DB_KEY_PROJ)) || []; } catch(e) { projectsData = []; }
-      }
-      if (!siteContent.about && !siteContent.profile) {
-        try { 
-          const c = JSON.parse(localStorage.getItem(DB_KEY_CONT)); 
-          if (c) siteContent = c; 
-        } catch(e) { }
+      if (!siteContent || (!siteContent.about && !siteContent.profile)) {
+        try {
+          const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (contRes.ok) {
+            const remoteCont = await contRes.json();
+            if (remoteCont) {
+              siteContent = remoteCont;
+              localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+              localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+            }
+          }
+        } catch (err) {
+          console.warn("Could not load content from server", err);
+        }
       }
 
       // Enforce structure
+      if (!siteContent) siteContent = {};
       if (!siteContent.profile) siteContent.profile = { url: '', zoom: 100, x: 50, y: 50 };
       if (!siteContent.about) siteContent.about = {};
 
