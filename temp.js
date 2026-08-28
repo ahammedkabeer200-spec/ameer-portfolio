@@ -560,15 +560,38 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      if (file.size > 2 * 1024 * 1024) {
-        alert("File is too large. Please choose an image under 2MB to keep the website fast.");
-        return;
-      }
-
       const reader = new FileReader();
       reader.onload = function(e) {
-        document.getElementById('tunerUrl').value = e.target.result;
-        updateTunerPreview();
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1600;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          
+          const isPng = file.type === 'image/png';
+          const optimizedDataUrl = isPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.92);
+          
+          document.getElementById('tunerUrl').value = optimizedDataUrl;
+          updateTunerPreview();
+        };
+        img.onerror = function() {
+          alert('Could not read image file. Please try another image format (PNG, JPG, WebP).');
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
