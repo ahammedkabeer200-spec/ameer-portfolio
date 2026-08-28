@@ -805,6 +805,13 @@
     }
 
     // --- 8. UTILS ---
+    function openPreviewSite() {
+      const currentPath = window.location.pathname;
+      const baseDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+      const targetUrl = window.location.origin + baseDir + 'index.html?preview=true';
+      window.open(targetUrl, '_blank');
+    }
+
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
