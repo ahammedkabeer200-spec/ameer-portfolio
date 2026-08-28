@@ -95,9 +95,9 @@
 
     function updateCoverTunerPreview() {
       const url = document.getElementById('inpCover').value.trim();
-      const zoom = document.getElementById('inpCoverZoom').value;
-      const x = document.getElementById('inpCoverX').value;
-      const y = document.getElementById('inpCoverY').value;
+      const zoom = parseInt(document.getElementById('inpCoverZoom').value, 10) || 100;
+      const x = parseInt(document.getElementById('inpCoverX').value, 10) || 50;
+      const y = parseInt(document.getElementById('inpCoverY').value, 10) || 50;
 
       document.getElementById('coverZoomVal').textContent = zoom;
       document.getElementById('coverXVal').textContent = x;
@@ -108,8 +108,11 @@
 
       if (url) {
         img.src = resolveAssetUrl(url);
-        img.style.transform = `scale(${zoom / 100})`;
+        const scale = zoom / 100;
+        img.style.objectFit = 'cover';
         img.style.objectPosition = `${x}% ${y}%`;
+        img.style.transformOrigin = `${x}% ${y}%`;
+        img.style.transform = `scale(${scale})`;
         container.style.display = 'block';
       } else {
         img.src = '';
@@ -388,10 +391,14 @@
         const isPdf = proj.type === 'pdf' || proj.pdfUrl;
         const badge = isPdf ? 'PDF Deck' : 'Slides';
         
+        const scale = (proj.coverZoom || 100) / 100;
+        const x = proj.coverX || 50;
+        const y = proj.coverY || 50;
+        
         return `
           <div class="project-card">
             <div class="card-thumb" style="overflow: hidden; position: relative;">
-              <img src="${resolveAssetUrl(cover)}" alt="${proj.title || ''}" style="width: 100%; height: 100%; object-fit: cover; object-position: ${proj.coverX || 50}% ${proj.coverY || 50}%; transform: scale(${(proj.coverZoom || 100)/100}); transition: transform 0.2s;" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
+              <img src="${resolveAssetUrl(cover)}" alt="${proj.title || ''}" style="width: 100%; height: 100%; object-fit: cover; object-position: ${x}% ${y}%; transform-origin: ${x}% ${y}%; transform: scale(${scale}); transition: transform 0.2s;" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
               <div class="card-badge">${badge}</div>
             </div>
             <div class="card-body">
