@@ -176,7 +176,7 @@ async function loadAndApplySiteContent() {
   const isPreview = window.location.search.includes('preview=');
   let loaded = false;
   if (isPreview) {
-    const local = localStorage.getItem('ameer_portfolio_site_content');
+    const local = localStorage.getItem('ameer_portfolio_content') || localStorage.getItem('ameer_portfolio_site_content');
     if (local) {
       try { siteContent = JSON.parse(local); loaded = true; } catch (e) {}
     }
