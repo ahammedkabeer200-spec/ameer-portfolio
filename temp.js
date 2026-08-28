@@ -542,7 +542,8 @@
         posY: parseInt(document.getElementById('tunerY').value, 10)
       };
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      alert("Hero profile avatar saved! Click PUBLISH LIVE to update the website.");
+      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+      alert("Hero profile avatar saved! Click '👀 Preview Site' to preview or 'PUBLISH LIVE' to deploy.");
     }
 
     function handleTunerUpload(event) {
