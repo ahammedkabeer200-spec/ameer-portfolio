@@ -1,5 +1,5 @@
 /**
- * AMEER SUHAIL â€” SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
+ * AMEER SUHAIL - SENIOR GRAPHIC DESIGNER & BRAND STRATEGIST
  * JavaScript Engine: Dynamic Site Content Hydration & Universal Case Study Engine
  */
 
@@ -144,7 +144,7 @@ function calculateCareerMilestones() {
   if (currentMonth < careerStartMonth) totalYears--;
   totalYears = Math.max(4, totalYears);
 
-  // 2. UAE & Current Company Experience (UAQ Next â€” Started in August 2023)
+  // 2. UAE & Current Company Experience (UAQ Next - Started in August 2023)
   const uaeStartYear = 2023;
   const uaeStartMonth = 7; // August
   let uaeYears = currentYear - uaeStartYear;
