@@ -1370,9 +1370,10 @@
       }
     }
 
-    function saveProfileTuner() {
+    async function saveProfileTuner() {
       if (!siteContent.about) siteContent.about = {};
-      siteContent.about.heroPortrait = document.getElementById('tunerUrl').value.trim();
+      const photoUrl = document.getElementById('tunerUrl').value.trim();
+      siteContent.about.heroPortrait = photoUrl;
       siteContent.about.heroPhotoPosition = {
         scale: parseInt(document.getElementById('tunerZoom').value, 10) / 100,
         posX: parseInt(document.getElementById('tunerX').value, 10),
@@ -1383,51 +1384,53 @@
 
       const db = initFirebase();
       if (db) {
-        db.collection('content').doc('site').set(siteContent, { merge: true })
-          .then(() => console.log('✓ Hero profile saved to Firestore Cloud'))
-          .catch(err => console.warn('Firestore profile save note:', err));
+        try {
+          await db.collection('content').doc('site').set(siteContent, { merge: true });
+          console.log('✓ Hero profile saved to Firestore Cloud');
+          alert("✓ Hero avatar saved and synced to cloud successfully!");
+        } catch (err) {
+          console.error('Firestore profile save error:', err);
+          alert("Cloud save error: " + err.message);
+          return;
+        }
+      } else {
+        alert("Hero avatar saved locally!");
       }
-      alert("Hero profile avatar saved and synced to cloud!");
     }
 
-    function handleTunerUpload(event) {
+    async function handleTunerUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const maxDim = 1600;
-          let w = img.width;
-          let h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) {
-              h = Math.round((h * maxDim) / w);
-              w = maxDim;
-            } else {
-              w = Math.round((w * maxDim) / h);
-              h = maxDim;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          
-          const isPng = file.type === 'image/png';
-          const optimizedDataUrl = isPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.92);
-          
-          document.getElementById('tunerUrl').value = optimizedDataUrl;
-          updateTunerPreview();
-        };
-        img.onerror = function() {
-          alert('Could not read image file. Please try another image format (PNG, JPG, WebP).');
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      const conf = getGitHubConfig();
+      try {
+        // Compress avatar with high quality to compact WebP (max 1200px)
+        const { blob, finalSize } = await compressImageBlob(file, {
+          maxDimension: 1200,
+          quality: 0.88,
+          format: 'image/webp'
+        });
+
+        let finalPath = '';
+        if (conf.token && conf.owner && conf.repo) {
+          const filename = `hero-portrait-${Date.now()}.webp`;
+          finalPath = await uploadSmartAssetBlob(blob, filename, conf);
+        } else {
+          // Optimized WebP Data URL (~100-180KB, safely under Firestore 1MB limit)
+          finalPath = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        document.getElementById('tunerUrl').value = finalPath;
+        updateTunerPreview();
+      } catch (err) {
+        console.error("Avatar upload error:", err);
+        alert("Could not process avatar: " + err.message);
+      }
     }
 
     // --- 5. GLOBAL TEXT EDITOR ---
