@@ -4,13 +4,31 @@
    Deep Obsidian (#0a0a0a), Charcoal Surface (#141414), Champagne Gold (#DFBD69)
    ========================================================================== */
 
+@font-face {
+  font-family: 'HelloBrideScript';
+  src: local('HelloBrideScript'), local('Hello Bride Script'), local('Hello Bride'),
+       url('assets/fonts/HelloBrideScript.woff2') format('woff2'),
+       url('assets/fonts/HelloBrideScript.woff') format('woff'),
+       url('assets/fonts/HelloBrideScript.ttf') format('truetype'),
+       url('assets/fonts/HelloBrideScript.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Core Colors */
   --bg-dark: #0a0a0a;
-  --bg-canvas: #0d0d0d;
+  --bg-canvas: #000000;
   --bg-card: rgba(18, 18, 20, 0.65);
   --bg-card-hover: rgba(26, 26, 30, 0.85);
   --bg-surface: #141414;
+
+  /* Accent Colors */
+  --accent-lime: #cdf863;
+  --accent-lime-dim: rgba(205, 248, 99, 0.18);
+  --accent-lime-glow: rgba(205, 248, 99, 0.4);
+  --color-black: #000000;
 
   /* Apple Glassmorphism Design Tokens */
   --glass-bg-frame: rgba(18, 18, 20, 0.68);
@@ -40,7 +58,8 @@
   /* Typography */
   --font-display: 'Bebas Neue', sans-serif;
   --font-condensed: 'Oswald', sans-serif;
-  --font-signature: 'Great Vibes', cursive;
+  --font-name: 'Montserrat', sans-serif;
+  --font-signature: 'HelloBrideScript', 'Hello Bride Script', 'Hello Bride', 'Montserrat', 'Great Vibes', cursive;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
   --transition-smooth: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
@@ -151,12 +170,18 @@ body {
 }
 
 .brand-title span:first-child {
-  font-family: var(--font-condensed);
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--text-main);
+  font-family: var(--font-name), var(--font-condensed);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--accent-lime);
   line-height: 1.1;
+  text-shadow: 0 0 16px var(--accent-lime-dim);
+  transition: var(--transition-smooth);
+}
+
+.brand-wrapper:hover .brand-title span:first-child {
+  text-shadow: 0 0 24px var(--accent-lime-glow);
 }
 
 .brand-title span:last-child {
@@ -308,16 +333,28 @@ body {
 
 .signature-script {
   font-family: var(--font-signature);
-  font-size: 2rem;
-  color: var(--gold-primary);
-  line-height: 1;
+  font-size: 2.5rem;
+  color: var(--accent-lime);
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  transform: rotate(-2deg);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95), 0 0 24px var(--accent-lime-glow);
+  transition: var(--transition-smooth);
+}
+
+.signature-wrapper:hover .signature-script {
+  transform: rotate(0deg) scale(1.04);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-lime);
 }
 
 .signature-name-sub {
+  font-family: var(--font-name);
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: var(--gold-sand);
+  color: var(--accent-lime);
   text-transform: uppercase;
 }
 
@@ -2049,7 +2086,9 @@ textarea.native-input {
   }
 
   .brand-title span:first-child {
-    font-size: 0.92rem;
+    font-family: var(--font-name), var(--font-condensed);
+    font-size: 0.95rem;
+    color: var(--accent-lime);
   }
 
   .header-year-pill {
@@ -2112,7 +2151,9 @@ textarea.native-input {
   }
 
   .signature-script {
-    font-size: 1.7rem;
+    font-family: var(--font-signature);
+    font-size: 2rem;
+    color: var(--accent-lime);
   }
 
   .toc-luxury-frame {
