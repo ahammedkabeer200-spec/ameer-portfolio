@@ -724,8 +724,11 @@ function openCaseStudy(identifier) {
       }
     }
 
-    // 2. If project already has converted slide images, render seamless Behance-style vertical deck
-    if (allImages.length > 0) {
+    // 2. Determine presentation display mode
+    const hasMultipleImages = allImages.length > 1;
+
+    // Case A: Project has an image gallery with multiple slides -> Render full vertical Behance image deck
+    if (hasMultipleImages || (allImages.length === 1 && !finalPdfUrl)) {
       let topBarHtml = '';
       if (finalPdfUrl) {
         topBarHtml = `
@@ -759,7 +762,7 @@ function openCaseStudy(identifier) {
         </div>
       `;
     } else if (finalPdfUrl) {
-      // 3. If no images yet but PDF is provided: render PDF pages directly as high-res images via PDF.js
+      // Case B: Project has a PDF presentation deck -> Render ALL pages dynamically as high-res slides via PDF.js!
       renderPdfToImageSlides(finalPdfUrl, presBody, project);
     } else {
       presBody.innerHTML = `
@@ -807,14 +810,18 @@ async function renderPdfToImageSlides(pdfUrl, containerEl, project) {
     }
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+    const loadingTask = pdfjsLib.getDocument({
+      url: pdfUrl,
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+      cMapPacked: true
+    });
     const pdf = await loadingTask.promise;
     const slidesContainer = document.getElementById('pdfSlidesContainer');
     const statusEl = document.getElementById('pdfSlideStatus');
-    if (statusEl) statusEl.textContent = `Presentation Deck • ${pdf.numPages} High-Res Slides`;
     if (slidesContainer) slidesContainer.innerHTML = '';
 
     for (let i = 1; i <= pdf.numPages; i++) {
+      if (statusEl) statusEl.textContent = `Rendering slide ${i} of ${pdf.numPages}...`;
       const page = await pdf.getPage(i);
       const baseViewport = page.getViewport({ scale: 1.0 });
       const targetScale = Math.min(2.5, Math.max(1.5, 2048 / Math.max(baseViewport.width, 1)));
@@ -836,6 +843,7 @@ async function renderPdfToImageSlides(pdfUrl, containerEl, project) {
       slideWrapper.appendChild(canvas);
       if (slidesContainer) slidesContainer.appendChild(slideWrapper);
     }
+    if (statusEl) statusEl.textContent = `Presentation Deck • ${pdf.numPages} High-Res Slides`;
   } catch (err) {
     console.warn("Direct PDF slide rendering fallback:", err);
     // Graceful fallback to Google Docs viewer / iframe
