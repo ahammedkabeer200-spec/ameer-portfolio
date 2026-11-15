@@ -9,6 +9,33 @@ let siteContent = null;
 let currentProjectIndex = 0;
 let toastTimeout = null;
 
+// Firebase Cloud Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyC9LOrqXjqybVbv3Y0FyE97JpG69PsLsH4",
+  authDomain: "ameer-portfolio-9c7a9.firebaseapp.com",
+  projectId: "ameer-portfolio-9c7a9",
+  storageBucket: "ameer-portfolio-9c7a9.firebasestorage.app",
+  messagingSenderId: "991908659995",
+  appId: "1:991908659995:web:29d6d81f965ef70e2d49be",
+  measurementId: "G-B3HP9MTKRV"
+};
+
+let firebaseDb = null;
+function initFirebase() {
+  if (firebaseDb) return firebaseDb;
+  if (typeof firebase !== 'undefined') {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      firebaseDb = firebase.firestore();
+    } catch (e) {
+      console.warn("Firebase initialization note:", e);
+    }
+  }
+  return firebaseDb;
+}
+
 function resolveAssetUrl(url) {
   if (!url) return '';
   if (url.startsWith('assets/uploads/')) {
@@ -179,6 +206,21 @@ async function loadAndApplySiteContent() {
     const local = localStorage.getItem('ameer_portfolio_content') || localStorage.getItem('ameer_portfolio_site_content');
     if (local) {
       try { siteContent = JSON.parse(local); loaded = true; } catch (e) {}
+    }
+  }
+
+  if (!loaded) {
+    const db = initFirebase();
+    if (db) {
+      try {
+        const doc = await db.collection('content').doc('site').get();
+        if (doc.exists) {
+          siteContent = doc.data();
+          loaded = true;
+        }
+      } catch (e) {
+        console.warn("Firestore siteContent note:", e);
+      }
     }
   }
 
@@ -382,6 +424,28 @@ async function loadProjectsData() {
     }
   }
 
+  // 1. Try loading from Cloud Firestore
+  const db = initFirebase();
+  if (db) {
+    try {
+      const snap = await db.collection('projects').get();
+      if (!snap.empty) {
+        const cloudProjs = [];
+        snap.forEach(doc => {
+          cloudProjs.push({ id: doc.id, ...doc.data() });
+        });
+        if (cloudProjs.length > 0) {
+          cloudProjs.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? (a.order - b.order) : 0);
+          projectsData = cloudProjs;
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Firestore projects note:", e);
+    }
+  }
+
+  // 2. Fallback to local data/projects.json
   try {
     const res = await fetch('data/projects.json?v=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
