@@ -33,7 +33,7 @@
     "brandIdentity": {
       "primaryLogoType": "Crown Chronometer Emblem",
       "primaryLogoSvg": "<svg viewBox='0 0 120 120' fill='none' stroke='#DFBD69' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='60' cy='60' r='50'/><circle cx='60' cy='60' r='42' stroke-width='1'/><path d='M60 25V35M60 85V95M25 60H35M85 60H95'/><polygon points='60 38 68 58 88 60 72 74 76 94 60 84 44 94 48 74 32 60 52 58'/></svg>",
-      "secondaryMarkSvg": "<svg viewBox='0 0 200 60' fill='none'><text x='10' y='36' font-family='serif' font-size='22' font-weight='700' fill='#DFBD69' letter-spacing='5'>LUXORA</text><text x='10' y='50' font-family='sans-serif' font-size='8' font-weight='600' fill='#C5A059' letter-spacing='4'>GENÈVE • EST. 1928</text></svg>",
+      "secondaryMarkSvg": "<svg viewBox='0 0 200 60' fill='none'><text x='10' y='36' font-family='serif' font-size='22' font-weight='700' fill='#DFBD69' letter-spacing='5'>LUXORA</text><text x='10' y='50' font-family='sans-serif' font-size='8' font-weight='600' fill='#C5A059' letter-spacing='4'>GEN\u00c8VE \u2022 EST. 1928</text></svg>",
       "submarkSvg": "<svg viewBox='0 0 80 80' fill='none' stroke='#DFBD69' stroke-width='2'><rect x='10' y='10' width='60' height='60' rx='8'/><text x='40' y='46' font-family='serif' font-size='16' font-weight='700' text-anchor='middle' fill='#DFBD69'>LX</text></svg>",
       "constructionNotes": "Precision 12-facet symmetry inspired by watch escapement wheels and mechanical chronometer gears.",
       "colors": [
@@ -61,7 +61,7 @@
       "typography": {
         "heading": "Cinzel / Playfair Display (Serif)",
         "body": "Plus Jakarta Sans (Clean Sans)",
-        "hierarchy": "H1: 44px Medium • Subheads: 20px Tracked • Body: 14px Regular"
+        "hierarchy": "H1: 44px Medium \u2022 Subheads: 20px Tracked \u2022 Body: 14px Regular"
       }
     },
     "gallery": [
@@ -134,7 +134,7 @@
       "typography": {
         "heading": "Syne & Bodoni (Display)",
         "body": "Space Grotesk & Inter (Body)",
-        "hierarchy": "H1: 56px Heavy • Article Title: 32px Bold • Body: 11pt on 16pt lead"
+        "hierarchy": "H1: 56px Heavy \u2022 Article Title: 32px Bold \u2022 Body: 11pt on 16pt lead"
       }
     },
     "gallery": [
@@ -207,7 +207,7 @@
       "typography": {
         "heading": "Italiana / Cinzel (Display Serif)",
         "body": "Plus Jakarta Sans (Clean Neutral)",
-        "hierarchy": "H1: 38px Light • Subtitle: 16px Tracked • Body: 14px Regular"
+        "hierarchy": "H1: 38px Light \u2022 Subtitle: 16px Tracked \u2022 Body: 14px Regular"
       }
     },
     "gallery": [
@@ -280,7 +280,7 @@
       "typography": {
         "heading": "Bebas Neue / Oswald (Bold Condensed)",
         "body": "Plus Jakarta Sans (Neutral Body)",
-        "hierarchy": "H1: 64px Condensed • H2: 32px Bold • Body: 15px Regular"
+        "hierarchy": "H1: 64px Condensed \u2022 H2: 32px Bold \u2022 Body: 15px Regular"
       }
     },
     "gallery": [
@@ -294,7 +294,7 @@
   {
     "id": "cafe-aurora",
     "slug": "cafe-aurora",
-    "title": "Café Aurora Michelin Bistro",
+    "title": "Caf\u00e9 Aurora Michelin Bistro",
     "client": "Aurora Hospitality Group",
     "year": "2024",
     "industry": "Fine Dining & Artisanal Gastronomy",
@@ -325,7 +325,7 @@
     "brandIdentity": {
       "primaryLogoType": "Monoline Sunburst Seal",
       "primaryLogoSvg": "<svg viewBox='0 0 120 120' fill='none' stroke='#DFBD69' stroke-width='2' stroke-linecap='round'><circle cx='60' cy='60' r='48'/><circle cx='60' cy='60' r='38' stroke-dasharray='2 4'/><path d='M60 20V28M60 92V100M20 60H28M92 60H100M32 32L38 38M82 82L88 88M32 88L38 82M82 38L88 32'/><circle cx='60' cy='60' r='18'/><text x='60' y='65' font-family='serif' font-size='14' text-anchor='middle' fill='#DFBD69'>CA</text></svg>",
-      "secondaryMarkSvg": "<svg viewBox='0 0 220 60' fill='none'><text x='5' y='36' font-family='serif' font-size='24' font-weight='600' fill='#DFBD69' letter-spacing='4'>CAFÉ AURORA</text><text x='5' y='50' font-family='sans-serif' font-size='8' font-weight='500' fill='#A6894C' letter-spacing='3'>MICHELIN STAR • EST. 2012</text></svg>",
+      "secondaryMarkSvg": "<svg viewBox='0 0 220 60' fill='none'><text x='5' y='36' font-family='serif' font-size='24' font-weight='600' fill='#DFBD69' letter-spacing='4'>CAF\u00c9 AURORA</text><text x='5' y='50' font-family='sans-serif' font-size='8' font-weight='500' fill='#A6894C' letter-spacing='3'>MICHELIN STAR \u2022 EST. 2012</text></svg>",
       "submarkSvg": "<svg viewBox='0 0 80 80' fill='none' stroke='#DFBD69' stroke-width='1.5'><circle cx='40' cy='40' r='35'/><path d='M40 18C28 18 18 28 18 40C18 52 28 62 40 62'/></svg>",
       "constructionNotes": "Circular 16-ray solar geometry aligned with classical European bistronomy heraldry.",
       "colors": [
@@ -353,7 +353,7 @@
       "typography": {
         "heading": "Cormorant Garamond (Elegance)",
         "body": "Outfit / Plus Jakarta Sans (Modern Clean)",
-        "hierarchy": "H1: 36px Medium • Menu Headings: 22px Semi-Bold • Body: 13px Regular"
+        "hierarchy": "H1: 36px Medium \u2022 Menu Headings: 22px Semi-Bold \u2022 Body: 13px Regular"
       }
     },
     "gallery": [
@@ -377,7 +377,45 @@
     "deliverables": [],
     "description": "",
     "colorPalette": [],
-    "gallery": [],
-    "slug": "test"
+    "gallery": [
+      {
+        "image": "assets/uploads/projects/test/slide-1.webp",
+        "caption": "Slide 1"
+      },
+      {
+        "image": "assets/uploads/projects/test/slide-2.webp",
+        "caption": "Slide 2"
+      },
+      {
+        "image": "assets/uploads/projects/test/slide-3.webp",
+        "caption": "Slide 3"
+      },
+      {
+        "image": "assets/uploads/projects/test/slide-4.webp",
+        "caption": "Slide 4"
+      },
+      {
+        "image": "assets/uploads/projects/test/slide-5.webp",
+        "caption": "Slide 5"
+      },
+      {
+        "image": "assets/uploads/projects/test/slide-6.webp",
+        "caption": "Slide 6"
+      },
+      {
+        "image": "assets/uploads/projects/test/slide-7.webp",
+        "caption": "Slide 7"
+      }
+    ],
+    "slug": "test",
+    "images": [
+      "assets/uploads/projects/test/slide-1.webp",
+      "assets/uploads/projects/test/slide-2.webp",
+      "assets/uploads/projects/test/slide-3.webp",
+      "assets/uploads/projects/test/slide-4.webp",
+      "assets/uploads/projects/test/slide-5.webp",
+      "assets/uploads/projects/test/slide-6.webp",
+      "assets/uploads/projects/test/slide-7.webp"
+    ]
   }
 ]

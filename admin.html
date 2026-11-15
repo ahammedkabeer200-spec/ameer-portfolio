@@ -167,6 +167,7 @@
         <li><button type="button" class="nav-btn" onclick="switchTab('contentTab', this)">Global Content</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('settingsTab', this)">Settings & Security</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('backupTab', this)">Backup & Restore</button></li>
+        <li><button type="button" class="nav-btn" onclick="switchTab('recycleBinTab', this)">🗑️ Recycle Bin <span id="recycleBinBadge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 2px 7px; border-radius: 12px; font-size: 0.75rem; margin-left: 6px;">0/5</span></button></li>
         <li style="margin-top: auto; padding-top: 2rem;"><button type="button" class="nav-btn" style="color: var(--danger);" onclick="lockWorkspace()">🔒 Lock Workspace</button></li>
       </ul>
 
@@ -355,6 +356,25 @@
         </div>
       </section>
 
+      <!-- 6. RECYCLE BIN TAB -->
+      <section id="recycleBinTab" class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">🗑️ Recycle Bin</h1>
+            <p style="color: var(--muted); font-size: 0.95rem;">Safely stores up to 5 recently deleted projects & files. When the 5-item limit is reached, older files are automatically purged from Cloud Storage.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <div id="recycleBinCapacityBar" style="display: flex; align-items: center; gap: 8px; background: #1a1a1a; padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.85rem;">
+              <span style="color: var(--muted);">Capacity:</span>
+              <strong id="recycleBinCapacityCount" style="color: var(--gold);">0 / 5 Slots Used</strong>
+            </div>
+            <button type="button" class="btn btn-danger" onclick="emptyRecycleBin()">Empty Recycle Bin</button>
+          </div>
+        </div>
+
+        <div id="recycleBinContainer" class="projects-grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));"></div>
+      </section>
+
     </main>
   </div>
 
@@ -511,6 +531,7 @@
 
     // --- STATE ---
     let projectsData = [];
+    let recycleBin = [];
     let siteContent = {
       profile: { url: '', zoom: 100, x: 50, y: 50 },
       text: {}
@@ -518,9 +539,11 @@
     
     const DB_KEY_PROJ = 'ameer_portfolio_projects';
     const DB_KEY_CONT = 'ameer_portfolio_content';
+    const DB_KEY_BIN = 'ameer_portfolio_recycle_bin';
     const GH_CONF_KEY = 'ameer_github_config';
     const AUTH_KEY = 'ameer_admin_password';
     const DEFAULT_PASS = 'ameer2026';
+    const MAX_BIN_CAPACITY = 5;
 
     // --- 1. AUTHENTICATION & SECURITY ---
     const STORAGE_PASS = 'ameer_admin_password';
@@ -1090,6 +1113,24 @@
             localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
           }
         } catch (e) {}
+
+        try {
+          const binDoc = await db.collection('content').doc('recycle_bin').get();
+          if (binDoc.exists && binDoc.data().items) {
+            recycleBin = binDoc.data().items;
+            localStorage.setItem(DB_KEY_BIN, JSON.stringify(recycleBin));
+          }
+        } catch (e) {}
+      }
+
+      // Load recycle bin from localStorage if empty
+      if (!recycleBin || recycleBin.length === 0) {
+        try {
+          const localBin = JSON.parse(localStorage.getItem(DB_KEY_BIN));
+          if (localBin && Array.isArray(localBin)) {
+            recycleBin = localBin;
+          }
+        } catch (e) {}
       }
 
       // 2. If not loaded from Firestore, check localStorage
@@ -1146,6 +1187,7 @@
 
       loadGitHubConfig();
       renderProjectsGrid();
+      renderRecycleBin();
       populateTuner();
       populateContentForm();
     }
@@ -1319,19 +1361,260 @@
     }
 
     function editProject(idx) { openProjectModal(idx); }
-    function deleteProject(idx) {
-      if (confirm('Delete this project permanently?')) {
-        const proj = projectsData[idx];
-        projectsData.splice(idx, 1);
+
+    // --- RECYCLE BIN ENGINE (MAX 5 ITEMS FIFO WITH PERMANENT CLOUD PURGE) ---
+
+    async function deleteProject(idx) {
+      const proj = projectsData[idx];
+      if (!proj) return;
+
+      const confirmMove = confirm(`Move "${proj.title || 'Untitled'}" to Recycle Bin?\n\n• It will be kept in the Recycle Bin (up to 5 items).\n• If the 5-item limit is reached, older items will be permanently erased from Cloud Storage.`);
+      if (!confirmMove) return;
+
+      // 1. Remove from active projects list
+      projectsData.splice(idx, 1);
+      localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+      renderProjectsGrid();
+
+      // 2. Remove active doc from Firestore
+      const db = initFirebase();
+      if (db && proj.id) {
+        db.collection('projects').doc(proj.id).delete()
+          .then(() => console.log('✓ Removed from active Cloud Firestore:', proj.id))
+          .catch(err => console.warn('Firestore active doc remove note:', err));
+      }
+
+      // 3. Collect associated storage file paths for cleanup
+      const attachedFiles = [
+        proj.coverImage,
+        ...(proj.images || []),
+        proj.pdfUrl,
+        proj.mockupImage
+      ].filter(f => f && typeof f === 'string');
+
+      const binItem = {
+        binId: 'bin_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        type: 'project',
+        title: proj.title || 'Untitled Project',
+        client: proj.client || 'Client',
+        category: proj.category || 'Design',
+        thumbnail: proj.coverImage || (proj.images && proj.images[0]) || '',
+        deletedAt: new Date().toISOString(),
+        filePaths: attachedFiles,
+        data: proj
+      };
+
+      // 4. Push to front of Recycle Bin
+      recycleBin.unshift(binItem);
+
+      // 5. Enforce 5-item FIFO limit: permanently purge oldest items exceeding capacity
+      while (recycleBin.length > MAX_BIN_CAPACITY) {
+        const oldestItem = recycleBin.pop();
+        console.log('Recycle Bin limit (5) reached: permanently purging oldest item:', oldestItem.title);
+        await permanentlyPurgeCloudFiles(oldestItem);
+      }
+
+      await saveRecycleBin();
+      renderRecycleBin();
+
+      alert(`✓ "${proj.title || 'Project'}" moved to Recycle Bin (${recycleBin.length}/5 slots used).`);
+    }
+
+    async function saveRecycleBin() {
+      localStorage.setItem(DB_KEY_BIN, JSON.stringify(recycleBin));
+      const db = initFirebase();
+      if (db) {
+        try {
+          await db.collection('content').doc('recycle_bin').set({
+            items: recycleBin,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn("Firestore save recycle_bin note:", e);
+        }
+      }
+    }
+
+    function renderRecycleBin() {
+      const container = document.getElementById('recycleBinContainer');
+      const badge = document.getElementById('recycleBinBadge');
+      const capacityCount = document.getElementById('recycleBinCapacityCount');
+
+      const count = recycleBin.length;
+      if (badge) {
+        badge.textContent = `${count}/${MAX_BIN_CAPACITY}`;
+        badge.style.color = count >= MAX_BIN_CAPACITY ? '#ef4444' : '#cdf863';
+        badge.style.background = count >= MAX_BIN_CAPACITY ? 'rgba(239,68,68,0.2)' : 'rgba(205,248,99,0.15)';
+      }
+      if (capacityCount) {
+        capacityCount.textContent = `${count} / ${MAX_BIN_CAPACITY} Slots Used`;
+        capacityCount.style.color = count >= MAX_BIN_CAPACITY ? '#ef4444' : '#cdf863';
+      }
+
+      if (!container) return;
+
+      if (count === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 4.5rem 2rem; color: var(--muted); border: 1px dashed var(--border); border-radius: 12px; background: rgba(20,20,20,0.5);">
+            <div style="font-size: 3rem; margin-bottom: 0.75rem;">🗑️</div>
+            <h3 style="color: #fff; margin-bottom: 0.5rem; font-size: 1.15rem;">Recycle Bin is Empty</h3>
+            <p style="font-size: 0.85rem; max-width: 480px; margin: 0 auto; line-height: 1.6;">
+              When you delete projects or files, they are safely preserved here (up to 5 items). You can restore them anytime. If a 6th item is deleted, the oldest item is permanently erased from Cloud Storage.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = recycleBin.map((item, idx) => {
+        const thumb = item.thumbnail || 'https://placehold.co/600x375/141414/d4af37?text=Deleted+Item';
+        const fileCount = (item.filePaths || []).length;
+        const dateStr = item.deletedAt ? new Date(item.deletedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently';
+
+        return `
+          <div class="project-card" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(26, 15, 15, 0.6);">
+            <div class="card-thumb" style="overflow: hidden; position: relative;">
+              <img src="${resolveAssetUrl(thumb)}" alt="${item.title || ''}" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(40%);" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=No+Preview'" />
+              <div class="card-badge" style="background: rgba(239, 68, 68, 0.9); color: #fff;">Slot ${idx + 1} of ${MAX_BIN_CAPACITY}</div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta" style="color: #ef4444;">Deleted: ${dateStr}</div>
+              <div class="card-title">${item.title || 'Untitled'}</div>
+              <p style="color: var(--muted); font-size: 0.8rem; margin-bottom: 0.5rem;">${item.client || 'Client'} &bull; ${fileCount} attached file(s)</p>
+              <div class="card-actions" style="margin-top: 1rem;">
+                <button type="button" class="btn btn-gold" style="flex: 1;" onclick="restoreFromRecycleBin('${item.binId}')">↺ Restore</button>
+                <button type="button" class="btn btn-danger" onclick="permanentlyDeleteItem('${item.binId}')">✕ Purge</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function restoreFromRecycleBin(binId) {
+      const idx = recycleBin.findIndex(i => i.binId === binId);
+      if (idx === -1) return;
+
+      const item = recycleBin[idx];
+      if (item.type === 'project' && item.data) {
+        const restoredProj = item.data;
+        projectsData.unshift(restoredProj);
         localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
         renderProjectsGrid();
 
+        // Restore back to Cloud Firestore
         const db = initFirebase();
-        if (db && proj && proj.id) {
-          db.collection('projects').doc(proj.id).delete()
-            .then(() => console.log('✓ Deleted from Cloud Firestore:', proj.id))
-            .catch(err => console.warn('Firestore delete note:', err));
+        if (db && restoredProj.id) {
+          db.collection('projects').doc(restoredProj.id).set(restoredProj, { merge: true })
+            .then(() => console.log('✓ Restored to Cloud Firestore:', restoredProj.id))
+            .catch(err => console.warn('Firestore restore note:', err));
         }
+      }
+
+      recycleBin.splice(idx, 1);
+      await saveRecycleBin();
+      renderRecycleBin();
+
+      alert(`✓ "${item.title}" successfully restored to Project Manager!`);
+    }
+
+    async function permanentlyDeleteItem(binId) {
+      const idx = recycleBin.findIndex(i => i.binId === binId);
+      if (idx === -1) return;
+
+      const item = recycleBin[idx];
+      if (!confirm(`Permanently delete "${item.title}"?\n\n⚠️ This will irreversibly remove this project and permanently delete its files from Cloud Storage / GitHub repository.`)) return;
+
+      recycleBin.splice(idx, 1);
+      await saveRecycleBin();
+      renderRecycleBin();
+
+      await permanentlyPurgeCloudFiles(item);
+      alert(`✓ "${item.title}" permanently erased from Cloud Storage.`);
+    }
+
+    async function emptyRecycleBin() {
+      if (recycleBin.length === 0) return alert("Recycle Bin is already empty.");
+      if (!confirm(`Permanently delete all ${recycleBin.length} items in the Recycle Bin?\n\n⚠️ All attached images and presentation files will be irreversibly wiped from Cloud Storage.`)) return;
+
+      const itemsToPurge = [...recycleBin];
+      recycleBin = [];
+      await saveRecycleBin();
+      renderRecycleBin();
+
+      for (const item of itemsToPurge) {
+        await permanentlyPurgeCloudFiles(item);
+      }
+      alert("✓ Recycle Bin emptied. All files permanently purged from Cloud Storage.");
+    }
+
+    // Permanently purges physical files from GitHub Repository / Cloud Storage
+    async function permanentlyPurgeCloudFiles(item) {
+      if (!item) return;
+      const filePaths = item.filePaths || [];
+      const conf = getGitHubConfig();
+
+      for (const filePath of filePaths) {
+        if (!filePath || typeof filePath !== 'string') continue;
+
+        // 1. Purge from GitHub repo if under assets/uploads/
+        if (filePath.startsWith('assets/uploads/') && conf && conf.token) {
+          await _deleteGitHubFile(filePath, conf);
+        }
+
+        // 2. Purge from Firebase Storage if it was uploaded to storage bucket
+        if (filePath.startsWith('gs://') || filePath.includes('firebasestorage.googleapis.com')) {
+          await _deleteFirebaseStorageFile(filePath);
+        }
+      }
+    }
+
+    async function _deleteGitHubFile(filePath, conf) {
+      if (!conf || !conf.token || !conf.owner || !conf.repo) return;
+      const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${filePath}`;
+      try {
+        const checkRes = await fetch(`${apiUrl}?ref=${conf.branch || 'main'}`, {
+          headers: {
+            'Authorization': `Bearer ${conf.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          cache: 'no-store'
+        });
+        if (!checkRes.ok) return;
+        const fileInfo = await checkRes.json();
+        if (!fileInfo || !fileInfo.sha) return;
+
+        const delRes = await fetch(apiUrl, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${conf.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify({
+            message: `Permanent purge: remove deleted file ${filePath}`,
+            sha: fileInfo.sha,
+            branch: conf.branch || 'main'
+          })
+        });
+        if (delRes.ok) {
+          console.log('✓ Successfully purged file from repository:', filePath);
+        }
+      } catch (err) {
+        console.warn('GitHub purge file note:', err);
+      }
+    }
+
+    async function _deleteFirebaseStorageFile(fileUrl) {
+      try {
+        if (typeof firebase !== 'undefined' && firebase.storage) {
+          const storage = firebase.storage();
+          const ref = storage.refFromURL(fileUrl);
+          await ref.delete();
+          console.log('✓ Permanently deleted file from Firebase Storage:', fileUrl);
+        }
+      } catch (e) {
+        console.warn('Firebase Storage purge note:', e);
       }
     }
 
