@@ -692,82 +692,52 @@ function openCaseStudy(identifier) {
   const presBody = document.getElementById('csPresBody');
   if (presBody) {
     const pdfUrl = project.pdfUrl || (project.documents && project.documents.find(d => (d.url && d.url.endsWith('.pdf')) || (d.file && d.file.endsWith('.pdf')) || d.type === 'PDF'))?.url || '';
-    const isPdfProject = (project.presentationType === 'pdf') || Boolean(pdfUrl && project.presentationType !== 'photos' && pdfUrl.toLowerCase().includes('.pdf'));
+    
+    // 1. Gather all slide images
+    const allImages = [];
+    if (project.coverImage) allImages.push(project.coverImage);
+    
+    // Legacy gallery support (array of objects)
+    if (project.gallery) {
+      project.gallery.forEach(g => {
+        const imgUrl = g.image || g.url;
+        if (imgUrl && imgUrl !== project.coverImage) allImages.push(imgUrl);
+      });
+    }
+    
+    // New images support (array of strings)
+    if (project.images && Array.isArray(project.images)) {
+      project.images.forEach(imgUrl => {
+        if (imgUrl && imgUrl !== project.coverImage && !allImages.includes(imgUrl)) {
+          allImages.push(imgUrl);
+        }
+      });
+    }
 
-    if (isPdfProject && pdfUrl) {
-      // 1. Render PDF Deck Viewer
-      let finalPdfUrl = resolveAssetUrl(pdfUrl);
-      
-      // Accurately resolve relative URLs against the current path (crucial for GitHub Pages /subpaths/)
-      if (!finalPdfUrl.startsWith('http')) {
+    let finalPdfUrl = '';
+    if (pdfUrl) {
+      finalPdfUrl = resolveAssetUrl(pdfUrl);
+      if (!finalPdfUrl.startsWith('http') && !finalPdfUrl.startsWith('data:')) {
         const baseHref = window.location.href.split('#')[0].split('?')[0];
         const baseDir = baseHref.substring(0, baseHref.lastIndexOf('/') + 1);
         finalPdfUrl = baseDir + finalPdfUrl.replace(/^\.?\//, '');
       }
-      
-      const renderIframe = () => {
-        let iframeSrc = '';
-        if (finalPdfUrl.includes('drive.google.com')) {
-          iframeSrc = finalPdfUrl.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
-        } else {
-          // Use Google Docs Viewer universally for standard PDFs to guarantee rendering
-          if (finalPdfUrl.toLowerCase().includes('.pdf')) {
-            iframeSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(finalPdfUrl)}&embedded=true`;
-          } else {
-            iframeSrc = finalPdfUrl;
-          }
-        }
+    }
 
-        presBody.innerHTML = `
-          <div style="padding: 1rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <span style="color: #a3a3a3; font-size: 0.9rem; font-weight: 600;">PDF Case Study Deck</span>
-            <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Download / Open Fullscreen &#x2197;</a>
-          </div>
-          <div style="width: 100%; height: calc(100vh - 140px); background: #111;">
-            <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none;" title="${project.title} PDF Deck"></iframe>
+    // 2. If project already has converted slide images, render seamless Behance-style vertical deck
+    if (allImages.length > 0) {
+      let topBarHtml = '';
+      if (finalPdfUrl) {
+        topBarHtml = `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(20,20,20,0.85); border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+            <span style="color: #a3a3a3; font-size: 0.85rem; font-weight: 600;">Presentation Deck &bull; ${allImages.length} High-Res Slides</span>
+            <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(205, 248, 99, 0.15); border: 1px solid var(--accent-lime, #cdf863); color: var(--accent-lime, #cdf863); padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">Download Original PDF &darr;</a>
           </div>
         `;
-      };
-
-      const renderFallback = () => {
-        presBody.innerHTML = `
-          <div style="padding: 4rem 2rem; max-width: 600px; margin: 0 auto; text-align: center;">
-            <div style="background: #1a1a1a; border: 1px solid #333; padding: 3rem 2rem; border-radius: 12px;">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" style="margin-bottom: 1rem; display: inline-block;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-              <h3 style="color: #d4af37; margin-bottom: 1rem;">Document Unavailable</h3>
-              <p style="color: #a3a3a3; margin-bottom: 2rem;">The requested case study document could not be loaded or may have been moved.</p>
-              <a href="${finalPdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-block;">Download / View Direct File &#x2197;</a>
-            </div>
-          </div>
-        `;
-      };
-
-      // Always render iframe directly (Google Docs viewer handles 404s gracefully with its own UI)
-      renderIframe();
-    } else {
-      // 2. Render Image Gallery (Slides)
-      const allImages = [];
-      if (project.coverImage) allImages.push(project.coverImage);
-      
-      // Legacy gallery support (array of objects)
-      if (project.gallery) {
-        project.gallery.forEach(g => {
-          const imgUrl = g.image || g.url;
-          if (imgUrl && imgUrl !== project.coverImage) allImages.push(imgUrl);
-        });
-      }
-      
-      // New images support (array of strings)
-      if (project.images && Array.isArray(project.images)) {
-        project.images.forEach(imgUrl => {
-          if (imgUrl && imgUrl !== project.coverImage && !allImages.includes(imgUrl)) {
-            allImages.push(imgUrl);
-          }
-        });
       }
 
       const galleryHtml = allImages.map(url => `
-        <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem;">
+        <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
           <img src="${resolveAssetUrl(url)}" alt="${project.title}" style="width: 100%; height: auto; display: block; object-fit: cover;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';" />
         </div>
       `).join('');
@@ -775,16 +745,27 @@ function openCaseStudy(identifier) {
       let externalBtnHtml = '';
       const externalLink = project.externalUrl || (pdfUrl && !pdfUrl.toLowerCase().includes('.pdf') ? pdfUrl : null);
       if (externalLink && externalLink.startsWith('http')) {
-        externalBtnHtml = `<div style="margin-bottom: 2rem;"><a href="${externalLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: rgba(223, 189, 105, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; text-decoration: none;">Visit Live Site &#x2197;</a></div>`;
+        externalBtnHtml = `<div style="margin-bottom: 2rem;"><a href="${externalLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: rgba(205, 248, 99, 0.15); border: 1px solid var(--accent-lime, #cdf863); color: var(--accent-lime, #cdf863); padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; text-decoration: none;">Visit Live Site &#x2197;</a></div>`;
       }
 
       const descHtml = project.description || project.summary ? `<div style="color: #d4d4d4; line-height: 1.6; font-size: 0.95rem; margin-bottom: 2rem;"><p>${project.description || project.summary}</p></div>` : '';
 
       presBody.innerHTML = `
         <div style="padding: 2rem 5%; max-width: 1200px; margin: 0 auto;">
+          ${topBarHtml}
           ${externalBtnHtml}
           ${descHtml}
           ${galleryHtml}
+        </div>
+      `;
+    } else if (finalPdfUrl) {
+      // 3. If no images yet but PDF is provided: render PDF pages directly as high-res images via PDF.js
+      renderPdfToImageSlides(finalPdfUrl, presBody, project);
+    } else {
+      presBody.innerHTML = `
+        <div style="padding: 4rem 2rem; max-width: 600px; margin: 0 auto; text-align: center;">
+          <h3 style="color: #cdf863; margin-bottom: 1rem;">No Slides Found</h3>
+          <p style="color: #a3a3a3;">This project currently has no presentation slides uploaded.</p>
         </div>
       `;
     }
@@ -805,6 +786,69 @@ function openCaseStudy(identifier) {
     // 1. Lock background scrolling when modal mounts
     originalBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+  }
+}
+
+// High-resolution on-the-fly PDF-to-Image Slide Renderer using PDF.js
+async function renderPdfToImageSlides(pdfUrl, containerEl, project) {
+  containerEl.innerHTML = `
+    <div style="padding: 1rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <span style="color: #a3a3a3; font-size: 0.9rem; font-weight: 600;" id="pdfSlideStatus">Loading Presentation Slides...</span>
+      <a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(205, 248, 99, 0.15); border: 1px solid var(--accent-lime, #cdf863); color: var(--accent-lime, #cdf863); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Download / View Direct PDF &#x2197;</a>
+    </div>
+    <div id="pdfSlidesContainer" style="padding: 2rem 5%; display: flex; flex-direction: column; gap: 1.5rem; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto;">
+      <div style="padding: 3rem; color: #a3a3a3; text-align: center;">Rendering high-resolution slides...</div>
+    </div>
+  `;
+
+  try {
+    if (typeof pdfjsLib === 'undefined') {
+      throw new Error("PDF.js library is not loaded.");
+    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+    const pdf = await loadingTask.promise;
+    const slidesContainer = document.getElementById('pdfSlidesContainer');
+    const statusEl = document.getElementById('pdfSlideStatus');
+    if (statusEl) statusEl.textContent = `Presentation Deck • ${pdf.numPages} High-Res Slides`;
+    if (slidesContainer) slidesContainer.innerHTML = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const baseViewport = page.getViewport({ scale: 1.0 });
+      const targetScale = Math.min(2.5, Math.max(1.5, 2048 / Math.max(baseViewport.width, 1)));
+      const viewport = page.getViewport({ scale: targetScale });
+
+      const slideWrapper = document.createElement('div');
+      slideWrapper.style.cssText = 'width: 100%; border-radius: 12px; overflow: hidden; background: #111; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 1.5rem;';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.cssText = 'width: 100%; height: auto; display: block;';
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+      slideWrapper.appendChild(canvas);
+      if (slidesContainer) slidesContainer.appendChild(slideWrapper);
+    }
+  } catch (err) {
+    console.warn("Direct PDF slide rendering fallback:", err);
+    // Graceful fallback to Google Docs viewer / iframe
+    const iframeSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+    containerEl.innerHTML = `
+      <div style="padding: 1rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="color: #a3a3a3; font-size: 0.9rem; font-weight: 600;">PDF Presentation Deck</span>
+        <a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" style="background: rgba(205, 248, 99, 0.15); border: 1px solid var(--accent-lime, #cdf863); color: var(--accent-lime, #cdf863); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Download / Open Fullscreen &#x2197;</a>
+      </div>
+      <div style="width: 100%; height: calc(100vh - 140px); background: #111;">
+        <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none;" title="${project.title} PDF Deck"></iframe>
+      </div>
+    `;
   }
 }
 
