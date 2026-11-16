@@ -12,6 +12,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Bebas+Neue&family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Oswald:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- PDF.js Engine for Client-side Presentation Deck Rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- GSAP + ScrollTrigger for scroll-driven animations -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.css">
 
   <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
   <meta property="og:type" content="website">
@@ -82,6 +88,12 @@
           <h1 class="hero-subheading-gold" id="heroHeadlineText">
             BRAND &amp; VISUAL<br>COMMUNICATION
           </h1>
+          <!-- Floating Figma-Style Role Pills -->
+          <div class="hero-role-pills">
+            <span class="role-pill role-pill-lime">Brand Strategist</span>
+            <span class="role-pill role-pill-coral">Visual Designer</span>
+            <span class="role-pill role-pill-violet">Creative Director</span>
+          </div>
           <p class="hero-lead-text" id="heroLeadText">
             Senior Graphic Designer with 4 years of experience (3 years in UAE) delivering high-impact visual design, branding, and campaign solutions across government, tourism, and corporate sectors.
           </p>
@@ -314,22 +326,34 @@
     <!-- ====================================================================
          4. 03 SELECTED WORK / PROJECTS (4-COLUMN CARD GRID)
          ==================================================================== -->
-    <section class="selected-projects-section reveal-up" id="projects" style="padding: 3rem 1.5rem; max-width: 1280px; margin: 0 auto;">
+    <!-- Kinetic Horizontal Work Showcase -->
+    <section class="kinetic-work-section" id="projects">
       
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.05em;">Selected Projects</h2>
-        <a href="javascript:void(0)" onclick="openAllProjectsModal()" id="viewAllProjectsLinkText" style="color: #a3a3a3; font-size: 0.85rem; text-decoration: none; font-weight: 600;">VIEW ALL PROJECTS &rarr;</a>
+      <!-- Background Watermark Typography -->
+      <div class="kinetic-watermark" aria-hidden="true">
+        <span>Work</span><span>Work</span><span>Work</span>
       </div>
 
-      <!-- THE GRID CONTAINER (Must have this ID) -->
-      <div id="selectedProjectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
-        <!-- JavaScript will dynamically insert project cards here -->
+      <!-- Section Header -->
+      <div class="kinetic-header">
+        <div>
+          <span class="kinetic-label">FEAT WORKS</span>
+          <h2 class="kinetic-title">Selected Projects</h2>
+        </div>
+        <a href="javascript:void(0)" onclick="openAllProjectsModal()" id="viewAllProjectsLinkText" class="kinetic-view-all">VIEW ALL PROJECTS →</a>
+      </div>
+
+      <!-- Horizontal Scroll Track (pinned by GSAP) -->
+      <div class="kinetic-track-wrapper">
+        <div class="kinetic-track" id="selectedProjectsGrid">
+          <!-- JavaScript inserts project cards here -->
+        </div>
       </div>
 
       <!-- Archive Button -->
-      <div style="text-align: center; margin-bottom: 3rem;">
-        <button id="btnOpenArchive" onclick="openAllProjectsModal()" class="btn-archive" style="background: transparent; border: 1px solid #d4af37; color: #d4af37; padding: 0.75rem 2rem; border-radius: 8px; font-weight: 700; cursor: pointer;">
-          + EXPLORE ALL PROJECTS ARCHIVE &rarr;
+      <div class="kinetic-archive-row">
+        <button id="btnOpenArchive" onclick="openAllProjectsModal()" class="btn-archive">
+          + EXPLORE ALL PROJECTS ARCHIVE →
         </button>
       </div>
 
@@ -348,8 +372,6 @@
           <span>Explore Behance @ameersuhailv ↗</span>
         </a>
       </div>
-
-    </section>
 
     <!-- ====================================================================
          5. 02 SERVICES & DISCIPLINES / TECHNICAL ARSENAL
@@ -671,5 +693,6 @@
 
   <link rel="stylesheet" href="style.css?v=5.0">
   <script src="script.js?v=5.0" defer></script>
+  <script src="animations.js?v=1.0" defer></script>
 </body>
 </html>

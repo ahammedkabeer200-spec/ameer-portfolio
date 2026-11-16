@@ -648,7 +648,7 @@ function renderProjectsGrid() {
     const offsetY = (y - 50) * 1.0;
 
     return `
-      <article class="modal-project-card" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
+      <article class="modal-project-card project-card-mini" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
           <img src="${resolveAssetUrl(p.coverImage || '')}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
@@ -673,6 +673,13 @@ function renderProjectsGrid() {
       </article>
     `;
   }).join('');
+
+  // Re-sync kinetic horizontal scroller with GSAP ScrollTrigger
+  if (typeof window.initKineticTrack === 'function') {
+    setTimeout(window.initKineticTrack, 50);
+  } else if (typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.refresh();
+  }
 }
 
 // Open Universal Presentation Modal (PDF Document or Pure Vertical Image Gallery)
