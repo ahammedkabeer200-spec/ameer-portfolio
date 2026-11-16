@@ -146,14 +146,13 @@
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, cw, ch);
 
-        // Responsive smart fit
-        const isPortraitScreen = ch > cw;
-        const ratio = isPortraitScreen
-          ? Math.max(cw / iw, ch / ih)
-          : Math.min(cw / iw, ch / ih);
+        // Render at exact actual natural size (no zoom, no crop)
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        // Fit within screen if smaller than image, but NEVER zoom or upscale past actual 1:1 size
+        const scale = Math.min(1.0, window.innerWidth / iw, window.innerHeight / ih) * dpr;
 
-        const nw = iw * ratio;
-        const nh = ih * ratio;
+        const nw = iw * scale;
+        const nh = ih * scale;
         const nx = (cw - nw) / 2;
         const ny = (ch - nh) / 2;
 
