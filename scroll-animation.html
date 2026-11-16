@@ -2,25 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Ameer Suhail — Smooth Scroll Animation</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html {
       background-color: #000000;
       color: #ffffff;
-      width: 100%;
-      height: 100%;
+      height: auto;
       overflow-x: hidden;
-      background: #000;
     }
 
-    /* Fixed Canvas Viewport (Sticky to Viewport) */
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      min-height: 450vh;
+      height: 450vh;
+      overflow-x: hidden;
+      touch-action: pan-y;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Fixed Fullscreen Canvas Viewport */
     .canvas-viewport {
       position: fixed;
       top: 0;
@@ -32,25 +43,19 @@
       align-items: center;
       justify-content: center;
       background: #000000;
-      z-index: 1;
-      pointer-events: none;
+      z-index: 10;
+      cursor: ns-resize;
+      user-select: none;
     }
 
     canvas {
       display: block;
       width: 100%;
       height: 100%;
+      object-fit: contain;
     }
 
-    /* Long Scroll Track for Scrubbing (500vh gives smooth, controlled playback) */
-    .scroll-track {
-      position: relative;
-      height: 500vh;
-      width: 100%;
-      z-index: 2;
-    }
-
-    /* Ultra-minimal Top Loading Progress Bar */
+    /* Minimal Top Progress Bar */
     .progress-bar {
       position: fixed;
       top: 0;
@@ -58,9 +63,9 @@
       height: 3px;
       width: 0%;
       background: #cdf863;
-      box-shadow: 0 0 12px rgba(205, 248, 99, 0.7);
+      box-shadow: 0 0 10px rgba(205, 248, 99, 0.6);
       z-index: 100;
-      transition: width 0.15s ease-out, opacity 0.5s ease;
+      transition: width 0.1s linear, opacity 0.4s ease;
       pointer-events: none;
     }
 
@@ -71,19 +76,13 @@
 </head>
 <body>
 
-  <!-- Top Progress Indicator -->
+  <!-- Loading Bar -->
   <div class="progress-bar" id="progressBar"></div>
 
-  <!-- Sticky Fullscreen Canvas -->
-  <div class="canvas-viewport">
+  <!-- Fullscreen Interactive Canvas -->
+  <div class="canvas-viewport" id="viewport">
     <canvas id="portraitCanvas"></canvas>
   </div>
-
-  <!-- Scroll Track -->
-  <div class="scroll-track"></div>
-
-  <!-- Lenis Smooth Scroll Engine -->
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
 
   <script>
     (function () {
@@ -91,146 +90,225 @@
 
       const canvas = document.getElementById('portraitCanvas');
       const ctx = canvas.getContext('2d', { alpha: false });
+      const viewport = document.getElementById('viewport');
       const progressBar = document.getElementById('progressBar');
 
       const TOTAL_FRAMES = 240;
       const images = new Array(TOTAL_FRAMES);
-      let loadedCount = 0;
+      const loadedFrames = new Set();
 
-      // Current interpolated frame & target frame
-      let currentFrame = 0;
-      let targetFrame = 0;
-      let isFirstFrameDrawn = false;
+      // Normalized Progress (0.0 to 1.0)
+      let targetProgress = 0;
+      let currentProgress = 0;
+      let lastRenderedFrame = -1;
 
-      // Generate file paths: assets/portrait-frames/ezgif-frame-001.jpg -> ezgif-frame-240.jpg
-      function getFrameUrl(index) {
-        const frameNum = String(index + 1).padStart(3, '0');
-        return `assets/portrait-frames/ezgif-frame-${frameNum}.jpg`;
+      // URL generator: ezgif-frame-001.jpg -> ezgif-frame-240.jpg
+      function getFrameUrl(idx) {
+        const num = String(idx + 1).padStart(3, '0');
+        return `assets/portrait-frames/ezgif-frame-${num}.jpg`;
       }
 
-      // High-DPI Canvas Resizing
+      // Responsive Retina Canvas Resizing
       function resizeCanvas() {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = Math.round(window.innerWidth * dpr);
         canvas.height = Math.round(window.innerHeight * dpr);
-        renderFrame(Math.round(currentFrame));
+        renderCurrent();
       }
 
       window.addEventListener('resize', resizeCanvas, { passive: true });
 
-      // Draw single frame on canvas with aspect ratio centering
-      function renderFrame(index) {
-        const img = images[index];
+      // Find nearest loaded frame so canvas NEVER goes blank
+      function getBestAvailableImage(targetIdx) {
+        if (loadedFrames.has(targetIdx)) return images[targetIdx];
+
+        // Search outward for closest loaded neighbor
+        for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
+          const prev = targetIdx - offset;
+          if (prev >= 0 && loadedFrames.has(prev)) return images[prev];
+
+          const next = targetIdx + offset;
+          if (next < TOTAL_FRAMES && loadedFrames.has(next)) return images[next];
+        }
+
+        return images[0] || null;
+      }
+
+      // Render image onto canvas with aspect ratio centering
+      function drawImageToCanvas(img) {
         if (!img || !img.complete || img.naturalWidth === 0) return;
 
-        const w = canvas.width;
-        const h = canvas.height;
-        const imgW = img.naturalWidth;
-        const imgH = img.naturalHeight;
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
 
         ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(0, 0, cw, ch);
 
-        // Smart fit: Cover slightly on vertical screens, contain on desktop
-        const isPortrait = h > w;
-        const ratio = isPortrait
-          ? Math.max(w / imgW, h / imgH)
-          : Math.min(w / imgW, h / imgH);
+        // Responsive smart fit
+        const isPortraitScreen = ch > cw;
+        const ratio = isPortraitScreen
+          ? Math.max(cw / iw, ch / ih)
+          : Math.min(cw / iw, ch / ih);
 
-        const nw = imgW * ratio;
-        const nh = imgH * ratio;
-        const nx = (w - nw) / 2;
-        const ny = (h - nh) / 2;
+        const nw = iw * ratio;
+        const nh = ih * ratio;
+        const nx = (cw - nw) / 2;
+        const ny = (ch - nh) / 2;
 
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, imgW, imgH, nx, ny, nw, nh);
+        ctx.drawImage(img, 0, 0, iw, ih, nx, ny, nw, nh);
       }
 
-      // Smooth Animation Loop using Linear Interpolation (LERP)
-      function updateLoop() {
-        // Smooth easing towards targetFrame (0.09 factor creates buttery inertia)
-        const diff = targetFrame - currentFrame;
-        if (Math.abs(diff) > 0.001) {
-          currentFrame += diff * 0.09;
-          renderFrame(Math.round(currentFrame));
+      function renderCurrent() {
+        const targetFrameIdx = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(currentProgress * (TOTAL_FRAMES - 1))));
+        const img = getBestAvailableImage(targetFrameIdx);
+        if (img) {
+          drawImageToCanvas(img);
+          lastRenderedFrame = targetFrameIdx;
+        }
+      }
+
+      // Smooth Animation Loop with Linear Interpolation (LERP)
+      function animationLoop() {
+        // Friction factor (0.1 = smooth Apple-grade momentum)
+        const diff = targetProgress - currentProgress;
+        if (Math.abs(diff) > 0.0001) {
+          currentProgress += diff * 0.1;
+          renderCurrent();
         }
 
-        requestAnimationFrame(updateLoop);
+        requestAnimationFrame(animationLoop);
       }
 
-      // Scroll Event Listener: maps scroll progress 0..1 to frame 0..239
-      function onScroll(e) {
-        const scrollY = (e && typeof e.scroll === 'number') ? e.scroll : window.scrollY;
+      // --- INPUT METHOD 1: Native Window Scroll ---
+      function handleScroll() {
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
         if (maxScroll <= 0) return;
-
-        const scrollFraction = Math.max(0, Math.min(1, scrollY / maxScroll));
-        targetFrame = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(scrollFraction * (TOTAL_FRAMES - 1))));
+        const p = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+        targetProgress = p;
       }
+      window.addEventListener('scroll', handleScroll, { passive: true });
 
-      window.addEventListener('scroll', onScroll, { passive: true });
-
-      // Initialize Lenis Smooth Scroll
-      if (typeof Lenis !== 'undefined') {
-        const lenis = new Lenis({
-          duration: 1.2,
-          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-          smoothWheel: true,
-          touchMultiplier: 1.5,
-        });
-
-        function raf(time) {
-          lenis.raf(time);
-          requestAnimationFrame(raf);
+      // --- INPUT METHOD 2: Desktop Wheel (works anywhere on canvas) ---
+      window.addEventListener('wheel', function (e) {
+        // Increment scroll position
+        const delta = e.deltaY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (maxScroll > 0) {
+          window.scrollBy({ top: delta * 0.8, behavior: 'auto' });
+        } else {
+          targetProgress = Math.max(0, Math.min(1, targetProgress + (delta * 0.001)));
         }
-        requestAnimationFrame(raf);
+      }, { passive: true });
 
-        lenis.on('scroll', onScroll);
-      }
+      // --- INPUT METHOD 3: Touch Swipe & Drag on Mobile ---
+      let touchStartY = 0;
+      let touchStartProgress = 0;
 
-      // Progressive Preloader
-      // 1. Load frame 1 immediately and draw as fast as possible
-      const firstImg = new Image();
-      firstImg.onload = function () {
-        images[0] = firstImg;
-        loadedCount++;
-        if (!isFirstFrameDrawn) {
-          resizeCanvas();
-          renderFrame(0);
-          isFirstFrameDrawn = true;
+      window.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 1) {
+          touchStartY = e.touches[0].clientY;
+          touchStartProgress = targetProgress;
         }
-      };
-      firstImg.src = getFrameUrl(0);
+      }, { passive: true });
 
-      // 2. Preload remaining frames
-      for (let i = 1; i < TOTAL_FRAMES; i++) {
+      window.addEventListener('touchmove', function (e) {
+        if (e.touches.length === 1) {
+          const deltaY = touchStartY - e.touches[0].clientY;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          if (maxScroll > 0) {
+            window.scrollBy({ top: deltaY * 0.15, behavior: 'auto' });
+          } else {
+            targetProgress = Math.max(0, Math.min(1, touchStartProgress + (deltaY / (window.innerHeight * 1.5))));
+          }
+        }
+      }, { passive: true });
+
+      // --- INPUT METHOD 4: Mouse Click-and-Drag Scrubbing ---
+      let isDragging = false;
+      let dragStartY = 0;
+      let dragStartProgress = 0;
+
+      viewport.addEventListener('mousedown', function (e) {
+        isDragging = true;
+        dragStartY = e.clientY;
+        dragStartProgress = targetProgress;
+      });
+
+      window.addEventListener('mousemove', function (e) {
+        if (!isDragging) return;
+        const deltaY = dragStartY - e.clientY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (maxScroll > 0) {
+          window.scrollBy({ top: deltaY * 0.3, behavior: 'auto' });
+        } else {
+          targetProgress = Math.max(0, Math.min(1, dragStartProgress + (deltaY / (window.innerHeight * 1.5))));
+        }
+      });
+
+      window.addEventListener('mouseup', function () {
+        isDragging = false;
+      });
+
+      // --- SMART PRELOADER ---
+      function loadSingleImage(idx, onDone) {
         const img = new Image();
-        const frameIdx = i;
         img.onload = function () {
-          images[frameIdx] = img;
-          loadedCount++;
-
-          // Update progress bar
-          const pct = Math.round((loadedCount / TOTAL_FRAMES) * 100);
+          images[idx] = img;
+          loadedFrames.add(idx);
           if (progressBar) {
+            const pct = Math.round((loadedFrames.size / TOTAL_FRAMES) * 100);
             progressBar.style.width = pct + '%';
             if (pct >= 100) {
-              setTimeout(() => progressBar.classList.add('loaded'), 200);
+              setTimeout(() => progressBar.classList.add('loaded'), 250);
             }
           }
-
-          // If current target frame just finished loading, re-render
-          if (Math.round(currentFrame) === frameIdx) {
-            renderFrame(frameIdx);
-          }
+          if (onDone) onDone();
         };
-        img.src = getFrameUrl(i);
+        img.onerror = function () {
+          console.warn('Could not load frame:', idx);
+          if (onDone) onDone();
+        };
+        img.src = getFrameUrl(idx);
       }
 
-      // Initialize
+      // Priority 1: Load frame 0 immediately and paint
+      loadSingleImage(0, function () {
+        resizeCanvas();
+        renderCurrent();
+
+        // Priority 2: Keyframe sampling (every 6th frame) for instant responsiveness across the whole range
+        let keyframesLoaded = 0;
+        const keyframeIndices = [];
+        for (let i = 6; i < TOTAL_FRAMES; i += 6) {
+          keyframeIndices.push(i);
+        }
+
+        keyframeIndices.forEach(idx => {
+          loadSingleImage(idx, function () {
+            keyframesLoaded++;
+            if (keyframesLoaded === keyframeIndices.length) {
+              // Priority 3: Fill in all remaining intermediate frames sequentially
+              loadAllRemaining();
+            }
+          });
+        });
+      });
+
+      function loadAllRemaining() {
+        for (let i = 1; i < TOTAL_FRAMES; i++) {
+          if (!loadedFrames.has(i)) {
+            loadSingleImage(i);
+          }
+        }
+      }
+
+      // Start rendering loop immediately
       resizeCanvas();
-      requestAnimationFrame(updateLoop);
+      requestAnimationFrame(animationLoop);
     })();
   </script>
 </body>
