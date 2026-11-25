@@ -31,7 +31,7 @@
 
     function getFrameUrl(idx) {
       const num = String(idx + 1).padStart(3, '0');
-      return `assets/portrait-frames/ezgif-frame-${num}.jpg`;
+      return `assets/portrait-frames/ezgif-frame-${num}.jpg?v=2`;
     }
 
     function getBestAvailableImage(targetIdx) {
@@ -56,46 +56,63 @@
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, cw, ch);
 
-      // Render at exact actual natural size (1:1 CSS pixels), scaling down only if viewport is smaller
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const scale = Math.min(1.0, window.innerWidth / iw, window.innerHeight / ih) * dpr;
+      const isMobile = window.innerWidth < 768 || window.innerHeight > window.innerWidth;
 
+      let cssScale;
+      if (isMobile) {
+        // Mobile / portrait viewports:
+        // Subject is centered in 16:9 frame. Scale height to fill ~68% of viewport height
+        // so the portrait has high presence, clarity, and face size without clipping hair or chin.
+        cssScale = Math.min(0.98, (window.innerHeight * 0.68) / ih);
+      } else {
+        // Desktop / landscape viewports:
+        // Fit cleanly to 92% of viewport height (capped at 1.35x), showing full head & shoulders in crisp clarity.
+        cssScale = Math.min(1.35, Math.max(0.70, (window.innerHeight * 0.92) / ih));
+      }
+
+      const scale = cssScale * dpr;
       const nw = iw * scale;
       const nh = ih * scale;
       const nx = (cw - nw) / 2;
-      const ny = (ch - nh) / 2;
+      // On mobile, vertically offset so the face sits naturally in the open hero stage below the heading & signature
+      const ny = isMobile ? Math.round(ch * 0.62 - nh * 0.38) : Math.round((ch - nh) / 2);
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, iw, ih, nx, ny, nw, nh);
 
-      // Feather frame perimeter smoothly into #000000 so there is never a hard rectangular seam
-      const fadeX = Math.max(24, nw * 0.12);
-      const fadeY = Math.max(20, nh * 0.10);
+      // Feather outer edges only when image does not span beyond canvas borders
+      const fadeX = Math.min(48 * dpr, nw * 0.06);
+      const fadeY = Math.min(24 * dpr, nh * 0.04);
 
-      const leftGrad = ctx.createLinearGradient(nx, 0, nx + fadeX, 0);
-      leftGrad.addColorStop(0, '#000000');
-      leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = leftGrad;
-      ctx.fillRect(nx, ny, fadeX + 1, nh);
+      if (nx > 0) {
+        const leftGrad = ctx.createLinearGradient(nx, 0, nx + fadeX, 0);
+        leftGrad.addColorStop(0, '#000000');
+        leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = leftGrad;
+        ctx.fillRect(nx - 1, ny, fadeX + 1, nh);
 
-      const rightGrad = ctx.createLinearGradient(nx + nw - fadeX, 0, nx + nw, 0);
-      rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      rightGrad.addColorStop(1, '#000000');
-      ctx.fillStyle = rightGrad;
-      ctx.fillRect(nx + nw - fadeX - 1, ny, fadeX + 2, nh);
+        const rightGrad = ctx.createLinearGradient(nx + nw - fadeX, 0, nx + nw, 0);
+        rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        rightGrad.addColorStop(1, '#000000');
+        ctx.fillStyle = rightGrad;
+        ctx.fillRect(nx + nw - fadeX - 1, ny, fadeX + 2, nh);
+      }
 
-      const topGrad = ctx.createLinearGradient(0, ny, 0, ny + fadeY);
-      topGrad.addColorStop(0, '#000000');
-      topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = topGrad;
-      ctx.fillRect(nx, ny, nw, fadeY + 1);
+      if (ny > 0) {
+        const topGrad = ctx.createLinearGradient(0, ny, 0, ny + fadeY);
+        topGrad.addColorStop(0, '#000000');
+        topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = topGrad;
+        ctx.fillRect(nx, ny - 1, nw, fadeY + 1);
 
-      const botGrad = ctx.createLinearGradient(0, ny + nh - fadeY, 0, ny + nh);
-      botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      botGrad.addColorStop(1, '#000000');
-      ctx.fillStyle = botGrad;
-      ctx.fillRect(nx, ny + nh - fadeY - 1, nw, fadeY + 2);
+        const botGrad = ctx.createLinearGradient(0, ny + nh - fadeY, 0, ny + nh);
+        botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        botGrad.addColorStop(1, '#000000');
+        ctx.fillStyle = botGrad;
+        ctx.fillRect(nx, ny + nh - fadeY - 1, nw, fadeY + 2);
+      }
     }
 
     function renderBgCurrent(force) {
@@ -137,20 +154,28 @@
       requestAnimationFrame(bgAnimationLoop);
     }
 
-    // Staggered queue preloader: Frame 0 immediately, then keyframes, then remaining frames via 6 workers
+    // High-performance preloader with off-thread decode
     function loadFrame(idx, onDone) {
       if (loadedFrames.has(idx)) {
         if (onDone) onDone();
         return;
       }
       const img = new Image();
-      img.onload = function () {
+      function onReady() {
         images[idx] = img;
         loadedFrames.add(idx);
         if (Math.abs(idx - lastDrawnIdx) <= 8) {
           forceRedraw = true;
         }
         if (onDone) onDone();
+      }
+
+      img.onload = function () {
+        if (img.decode) {
+          img.decode().then(onReady).catch(onReady);
+        } else {
+          onReady();
+        }
       };
       img.onerror = function () {
         if (onDone) onDone();
@@ -160,20 +185,20 @@
 
     function startRemainingQueue() {
       const queue = [];
-      // Keyframes first (every 8th frame) for immediate scrub coverage across entire timeline
-      for (let i = 8; i < TOTAL_FRAMES; i += 8) {
+      // Keyframes first (every 6th frame) for immediate scrub coverage across entire timeline
+      for (let i = 6; i < TOTAL_FRAMES; i += 6) {
         queue.push(i);
       }
       if (!queue.includes(TOTAL_FRAMES - 1)) queue.push(TOTAL_FRAMES - 1);
       // Intermediate frames next
       for (let i = 1; i < TOTAL_FRAMES; i++) {
-        if (i % 8 !== 0 && i !== TOTAL_FRAMES - 1) {
+        if (i % 6 !== 0 && i !== TOTAL_FRAMES - 1) {
           queue.push(i);
         }
       }
 
       let cursor = 0;
-      const WORKERS = 6;
+      const WORKERS = 10;
 
       function nextWorker() {
         if (cursor >= queue.length) return;

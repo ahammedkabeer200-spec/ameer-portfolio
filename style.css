@@ -119,10 +119,10 @@ body {
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    ellipse at center,
-    rgba(0, 0, 0, 0.05) 0%,
-    rgba(0, 0, 0, 0.42) 68%,
-    rgba(0, 0, 0, 0.85) 100%
+    ellipse at 50% 45%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0.25) 72%,
+    rgba(0, 0, 0, 0.82) 100%
   );
   pointer-events: none;
 }
