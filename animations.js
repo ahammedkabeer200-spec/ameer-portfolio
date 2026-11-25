@@ -9,6 +9,191 @@
 (function() {
   'use strict';
 
+  // ====== PHASE 0: FULL-PAGE BACKGROUND PORTRAIT SCROLL CANVAS ======
+  initBackgroundScrollCanvas();
+
+  function initBackgroundScrollCanvas() {
+    const canvas = document.getElementById('bgPortraitCanvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    const TOTAL_FRAMES = 240;
+    const images = new Array(TOTAL_FRAMES);
+    const loadedFrames = new Set();
+
+    let targetProgress = 0;
+    let currentProgress = 0;
+    let lastDrawnIdx = -1;
+    let lastDrawnImg = null;
+    let forceRedraw = false;
+
+    function getFrameUrl(idx) {
+      const num = String(idx + 1).padStart(3, '0');
+      return `assets/portrait-frames/ezgif-frame-${num}.jpg`;
+    }
+
+    function getBestAvailableImage(targetIdx) {
+      if (loadedFrames.has(targetIdx)) return images[targetIdx];
+      for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
+        const prev = targetIdx - offset;
+        if (prev >= 0 && loadedFrames.has(prev)) return images[prev];
+        const next = targetIdx + offset;
+        if (next < TOTAL_FRAMES && loadedFrames.has(next)) return images[next];
+      }
+      return images[0] || null;
+    }
+
+    function drawBgImage(img) {
+      if (!img || !img.complete || img.naturalWidth === 0) return;
+
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Render at exact actual natural size (1:1 CSS pixels), scaling down only if viewport is smaller
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const scale = Math.min(1.0, window.innerWidth / iw, window.innerHeight / ih) * dpr;
+
+      const nw = iw * scale;
+      const nh = ih * scale;
+      const nx = (cw - nw) / 2;
+      const ny = (ch - nh) / 2;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, iw, ih, nx, ny, nw, nh);
+
+      // Feather frame perimeter smoothly into #000000 so there is never a hard rectangular seam
+      const fadeX = Math.max(24, nw * 0.12);
+      const fadeY = Math.max(20, nh * 0.10);
+
+      const leftGrad = ctx.createLinearGradient(nx, 0, nx + fadeX, 0);
+      leftGrad.addColorStop(0, '#000000');
+      leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = leftGrad;
+      ctx.fillRect(nx, ny, fadeX + 1, nh);
+
+      const rightGrad = ctx.createLinearGradient(nx + nw - fadeX, 0, nx + nw, 0);
+      rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      rightGrad.addColorStop(1, '#000000');
+      ctx.fillStyle = rightGrad;
+      ctx.fillRect(nx + nw - fadeX - 1, ny, fadeX + 2, nh);
+
+      const topGrad = ctx.createLinearGradient(0, ny, 0, ny + fadeY);
+      topGrad.addColorStop(0, '#000000');
+      topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(nx, ny, nw, fadeY + 1);
+
+      const botGrad = ctx.createLinearGradient(0, ny + nh - fadeY, 0, ny + nh);
+      botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      botGrad.addColorStop(1, '#000000');
+      ctx.fillStyle = botGrad;
+      ctx.fillRect(nx, ny + nh - fadeY - 1, nw, fadeY + 2);
+    }
+
+    function renderBgCurrent(force) {
+      const idx = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(currentProgress * (TOTAL_FRAMES - 1))));
+      const img = getBestAvailableImage(idx);
+      if (img && (force || img !== lastDrawnImg)) {
+        drawBgImage(img);
+        lastDrawnIdx = idx;
+        lastDrawnImg = img;
+      }
+    }
+
+    function resizeBgCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      renderBgCurrent(true);
+    }
+
+    window.addEventListener('resize', resizeBgCanvas, { passive: true });
+
+    function bgAnimationLoop() {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll > 0) {
+        targetProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      }
+
+      const diff = targetProgress - currentProgress;
+      if (Math.abs(diff) > 0.0001 || forceRedraw) {
+        if (Math.abs(diff) > 0.0001) {
+          currentProgress += diff * 0.09;
+        } else {
+          currentProgress = targetProgress;
+        }
+        forceRedraw = false;
+        renderBgCurrent(false);
+      }
+
+      requestAnimationFrame(bgAnimationLoop);
+    }
+
+    // Staggered queue preloader: Frame 0 immediately, then keyframes, then remaining frames via 6 workers
+    function loadFrame(idx, onDone) {
+      if (loadedFrames.has(idx)) {
+        if (onDone) onDone();
+        return;
+      }
+      const img = new Image();
+      img.onload = function () {
+        images[idx] = img;
+        loadedFrames.add(idx);
+        if (Math.abs(idx - lastDrawnIdx) <= 8) {
+          forceRedraw = true;
+        }
+        if (onDone) onDone();
+      };
+      img.onerror = function () {
+        if (onDone) onDone();
+      };
+      img.src = getFrameUrl(idx);
+    }
+
+    function startRemainingQueue() {
+      const queue = [];
+      // Keyframes first (every 8th frame) for immediate scrub coverage across entire timeline
+      for (let i = 8; i < TOTAL_FRAMES; i += 8) {
+        queue.push(i);
+      }
+      if (!queue.includes(TOTAL_FRAMES - 1)) queue.push(TOTAL_FRAMES - 1);
+      // Intermediate frames next
+      for (let i = 1; i < TOTAL_FRAMES; i++) {
+        if (i % 8 !== 0 && i !== TOTAL_FRAMES - 1) {
+          queue.push(i);
+        }
+      }
+
+      let cursor = 0;
+      const WORKERS = 6;
+
+      function nextWorker() {
+        if (cursor >= queue.length) return;
+        const idx = queue[cursor++];
+        loadFrame(idx, nextWorker);
+      }
+
+      for (let w = 0; w < WORKERS; w++) {
+        nextWorker();
+      }
+    }
+
+    resizeBgCanvas();
+    loadFrame(0, function () {
+      renderBgCurrent(true);
+      startRemainingQueue();
+    });
+    requestAnimationFrame(bgAnimationLoop);
+  }
+
   // Wait for all libraries to load
   function waitForLibs(cb) {
     const check = setInterval(() => {
@@ -85,9 +270,9 @@
           ease: 'back.out(1.7)'
         });
 
-        // Continuous floating animation
+        // Subtle continuous floating animation (bounded to avoid row overlap)
         gsap.to(pill, {
-          y: i % 2 === 0 ? -6 : 6,
+          y: i % 2 === 0 ? -3 : 3,
           duration: 2 + i * 0.4,
           repeat: -1,
           yoyo: true,

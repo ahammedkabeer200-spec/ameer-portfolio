@@ -75,22 +75,56 @@
 html {
   scroll-behavior: smooth;
   font-size: 16px;
-  background-color: var(--bg-dark);
+  background-color: #000000;
   color: var(--text-main);
   font-family: var(--font-body);
   width: 100%;
+  overflow-x: clip;
 }
 
 body {
-  background-color: var(--bg-dark);
+  background-color: #000000;
   color: var(--text-main);
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Scroll-Driven Full-Page Portrait Background Canvas */
+.bg-scroll-canvas-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 0;
+  pointer-events: none;
+  background: #000000;
+  overflow: hidden;
+}
+
+.bg-scroll-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bg-scroll-canvas-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.42) 68%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  pointer-events: none;
 }
 
 /* Custom Scrollbar */
@@ -98,7 +132,7 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #000000;
 }
 ::-webkit-scrollbar-thumb {
   background: #2a251b;
@@ -118,7 +152,7 @@ body {
   border-radius: 50%;
   pointer-events: none;
   transform: translate(-50%, -50%);
-  z-index: 0;
+  z-index: 1;
   transition: transform 0.08s ease-out, opacity 0.3s ease;
   opacity: 0.85;
 }
@@ -130,7 +164,7 @@ body {
   margin: 0 auto;
   padding: 16px clamp(20px, 3.2vw, 56px) 70px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* ==========================================================================
@@ -226,7 +260,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  background: var(--bg-dark);
+  background: transparent;
   overflow: hidden;
   margin-bottom: 28px;
 }
@@ -244,14 +278,15 @@ body {
 
 .hero-backdrop-word {
   position: absolute;
-  top: clamp(35px, 6.5vh, 80px);
+  top: clamp(16px, 3vh, 45px);
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-condensed);
   font-size: clamp(7.5rem, 18.5vw, 19rem);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #dec39d;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(222, 195, 157, 0.09);
   line-height: 0.85;
   z-index: 1;
   pointer-events: none;
@@ -260,13 +295,7 @@ body {
 }
 
 .hero-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  z-index: 5;
+  display: none !important;
 }
 
 .hero-image-wrapper img {
@@ -316,12 +345,14 @@ body {
   letter-spacing: 0.06em;
   color: var(--gold-primary);
   text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
 }
 
 .hero-lead-text {
   font-size: 0.78rem;
   color: var(--text-muted);
   line-height: 1.55;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
 }
 
 .signature-wrapper {
@@ -389,6 +420,7 @@ body {
   color: var(--gold-sand);
   line-height: 1.25;
   text-transform: uppercase;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.95);
 }
 
 .location-badge {
@@ -1116,17 +1148,20 @@ textarea.native-input {
 
 /* Behance Portfolio Showcase Card */
 .behance-showcase-card {
-  background: linear-gradient(135deg, rgba(22, 22, 26, 0.95) 0%, rgba(14, 14, 16, 0.98) 100%);
+  background: var(--glass-bg-frame);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid rgba(0, 87, 255, 0.35);
   border-radius: 12px;
   padding: 18px 24px;
   margin-top: 24px;
+  margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
 }
 
@@ -1211,9 +1246,10 @@ textarea.native-input {
 .info-2col-grid {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  gap: 36px;
+  gap: 28px;
+  margin-top: 28px;
   margin-bottom: 36px;
-  padding-top: 10px;
+  padding-top: 24px;
   border-top: 1px solid var(--border-gold-subtle);
 }
 
@@ -1221,6 +1257,13 @@ textarea.native-input {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: var(--glass-bg-frame);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: var(--glass-shadow);
 }
 
 .col-header-title {
@@ -1325,16 +1368,16 @@ textarea.native-input {
 
 /* AI Creative Workflow Card */
 .ai-workflow-card {
-  background: var(--glass-bg-frame);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  box-shadow: var(--glass-card-shadow);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
 .ai-workflow-header {
@@ -1888,25 +1931,20 @@ textarea.native-input {
   /* Hero Section Stacking for Tablets & Mobile */
   .hero-section {
     position: relative;
-    min-height: auto;
+    height: auto;
+    min-height: calc(100dvh - 80px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     padding-top: 8px;
+    padding-bottom: 12px;
     margin-bottom: 24px;
     overflow: hidden;
   }
   
   .hero-overlay-grid {
-    position: static;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 14px;
-    padding: 0;
-    pointer-events: auto;
+    display: contents;
   }
   
   /* 1. Top Headline & Bio */
@@ -1918,6 +1956,10 @@ textarea.native-input {
     text-align: center;
     gap: 10px;
     margin-bottom: 4px;
+  }
+
+  .hero-role-pills {
+    justify-content: center;
   }
   
   .hero-subheading-gold {
@@ -1934,44 +1976,26 @@ textarea.native-input {
     line-height: 1.5;
   }
   
-  /* 2. Center Visual Stage with Backdrop PORTFOLIO directly behind Ameer */
+  /* 2. Center Visual Stage opening onto animated background portrait */
   .hero-visual-stage {
     order: 2;
     position: relative;
     width: 100%;
     max-width: 440px;
-    height: 480px;
-    margin: 14px auto 18px;
+    height: clamp(230px, 34vh, 320px);
+    margin: 8px auto 12px;
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    align-items: center;
+    overflow: hidden;
   }
   
   .hero-backdrop-word {
-    position: absolute;
-    top: clamp(25px, 4vh, 50px);
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: clamp(4.2rem, 17vw, 6.5rem);
-    letter-spacing: 0.04em;
-    color: #dec39d;
-    line-height: 0.85;
-    z-index: 1;
-    white-space: nowrap;
-    pointer-events: none;
-    user-select: none;
-    text-align: center;
-    opacity: 0.85;
+    display: none;
   }
   
   .hero-image-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    z-index: 5;
+    display: none !important;
   }
 
   .hero-image-wrapper img {
@@ -2104,33 +2128,20 @@ textarea.native-input {
   }
 
   .hero-visual-stage {
-    height: 390px;
-    max-width: 320px;
-    margin: 10px auto 14px;
+    height: clamp(220px, 33vh, 300px);
+    max-width: 100%;
+    margin: 6px auto 10px;
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    align-items: center;
   }
 
   .hero-backdrop-word {
-    position: absolute;
-    top: clamp(20px, 3vh, 40px);
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: clamp(3rem, 15.5vw, 4.5rem);
-    letter-spacing: 0.05em;
-    z-index: 1;
-    opacity: 0.9;
-    white-space: nowrap;
+    display: none;
   }
 
   .hero-image-wrapper {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    z-index: 5;
+    display: none !important;
   }
 
   .hero-image-wrapper img {
@@ -2478,8 +2489,8 @@ html.lenis, html.lenis body {
 .hero-role-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 10px 0 6px;
+  gap: 14px 10px;
+  margin: 10px 0 8px;
 }
 
 .role-pill {
@@ -2536,7 +2547,7 @@ html.lenis, html.lenis body {
   overflow: hidden;
   padding: 4rem 0 3rem;
   min-height: 100vh;
-  background: var(--bg-dark);
+  background: transparent;
 }
 
 .kinetic-watermark {
@@ -2673,7 +2684,7 @@ html.lenis, html.lenis body {
     gap: 0.5rem;
   }
   .hero-role-pills {
-    gap: 6px;
+    gap: 14px 8px;
   }
   .role-pill {
     padding: 5px 10px;
