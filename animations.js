@@ -20,27 +20,40 @@
     if (!ctx) return;
 
     const TOTAL_FRAMES = 240;
-    const images = new Array(TOTAL_FRAMES);
-    const loadedFrames = new Set();
+    const desktopImages = new Array(TOTAL_FRAMES);
+    const mobileImages = new Array(TOTAL_FRAMES);
+    const loadedDesktop = new Set();
+    const loadedMobile = new Set();
 
     let targetProgress = 0;
     let currentProgress = 0;
     let lastDrawnIdx = -1;
     let lastDrawnImg = null;
     let forceRedraw = false;
+    let lastMode = null;
 
-    function getFrameUrl(idx) {
+    function isMobileMode() {
+      return window.innerWidth < 768 || window.innerHeight > window.innerWidth;
+    }
+
+    function getFrameUrl(idx, mobile) {
       const num = String(idx + 1).padStart(3, '0');
+      if (mobile) {
+        return `assets/portrait-frames-mobile/frame-${num}.jpg?v=1`;
+      }
       return `assets/portrait-frames/ezgif-frame-${num}.jpg?v=2`;
     }
 
-    function getBestAvailableImage(targetIdx) {
-      if (loadedFrames.has(targetIdx)) return images[targetIdx];
+    function getBestAvailableImage(targetIdx, mobile) {
+      const loaded = mobile ? loadedMobile : loadedDesktop;
+      const images = mobile ? mobileImages : desktopImages;
+
+      if (loaded.has(targetIdx)) return images[targetIdx];
       for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
         const prev = targetIdx - offset;
-        if (prev >= 0 && loadedFrames.has(prev)) return images[prev];
+        if (prev >= 0 && loaded.has(prev)) return images[prev];
         const next = targetIdx + offset;
-        if (next < TOTAL_FRAMES && loadedFrames.has(next)) return images[next];
+        if (next < TOTAL_FRAMES && loaded.has(next)) return images[next];
       }
       return images[0] || null;
     }
@@ -57,67 +70,72 @@
       ctx.fillRect(0, 0, cw, ch);
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const isMobile = window.innerWidth < 768 || window.innerHeight > window.innerWidth;
+      const isMobile = isMobileMode();
 
-      let cssScale;
+      let nw, nh, nx, ny;
+
       if (isMobile) {
-        // Mobile / portrait viewports:
-        // Subject is centered in 16:9 frame. Scale height to fill ~68% of viewport height
-        // so the portrait has high presence, clarity, and face size without clipping hair or chin.
-        cssScale = Math.min(0.98, (window.innerHeight * 0.68) / ih);
+        // Mobile 9:16 portrait mode (matches user sample 576x1024):
+        // Scale to cleanly fill viewport height and center, positioning headroom & subject with 100% natural presence
+        const scale = Math.max(cw / iw, ch / ih);
+        nw = iw * scale;
+        nh = ih * scale;
+        nx = (cw - nw) / 2;
+        ny = (ch - nh) / 2;
       } else {
-        // Desktop / landscape viewports:
+        // Desktop / landscape viewports (1280x720 frames):
         // Fit cleanly to 92% of viewport height (capped at 1.35x), showing full head & shoulders in crisp clarity.
-        cssScale = Math.min(1.35, Math.max(0.70, (window.innerHeight * 0.92) / ih));
+        const cssScale = Math.min(1.35, Math.max(0.70, (window.innerHeight * 0.92) / ih));
+        const scale = cssScale * dpr;
+        nw = iw * scale;
+        nh = ih * scale;
+        nx = (cw - nw) / 2;
+        ny = Math.round((ch - nh) / 2);
       }
-
-      const scale = cssScale * dpr;
-      const nw = iw * scale;
-      const nh = ih * scale;
-      const nx = (cw - nw) / 2;
-      // On mobile, vertically offset so the face sits naturally in the open hero stage below the heading & signature
-      const ny = isMobile ? Math.round(ch * 0.62 - nh * 0.38) : Math.round((ch - nh) / 2);
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, iw, ih, nx, ny, nw, nh);
 
-      // Feather outer edges only when image does not span beyond canvas borders
-      const fadeX = Math.min(48 * dpr, nw * 0.06);
-      const fadeY = Math.min(24 * dpr, nh * 0.04);
+      // Feather outer edges only on desktop where frame does not span beyond canvas borders
+      if (!isMobile) {
+        const fadeX = Math.min(48 * dpr, nw * 0.06);
+        const fadeY = Math.min(24 * dpr, nh * 0.04);
 
-      if (nx > 0) {
-        const leftGrad = ctx.createLinearGradient(nx, 0, nx + fadeX, 0);
-        leftGrad.addColorStop(0, '#000000');
-        leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = leftGrad;
-        ctx.fillRect(nx - 1, ny, fadeX + 1, nh);
+        if (nx > 0) {
+          const leftGrad = ctx.createLinearGradient(nx, 0, nx + fadeX, 0);
+          leftGrad.addColorStop(0, '#000000');
+          leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = leftGrad;
+          ctx.fillRect(nx - 1, ny, fadeX + 1, nh);
 
-        const rightGrad = ctx.createLinearGradient(nx + nw - fadeX, 0, nx + nw, 0);
-        rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        rightGrad.addColorStop(1, '#000000');
-        ctx.fillStyle = rightGrad;
-        ctx.fillRect(nx + nw - fadeX - 1, ny, fadeX + 2, nh);
-      }
+          const rightGrad = ctx.createLinearGradient(nx + nw - fadeX, 0, nx + nw, 0);
+          rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+          rightGrad.addColorStop(1, '#000000');
+          ctx.fillStyle = rightGrad;
+          ctx.fillRect(nx + nw - fadeX - 1, ny, fadeX + 2, nh);
+        }
 
-      if (ny > 0) {
-        const topGrad = ctx.createLinearGradient(0, ny, 0, ny + fadeY);
-        topGrad.addColorStop(0, '#000000');
-        topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = topGrad;
-        ctx.fillRect(nx, ny - 1, nw, fadeY + 1);
+        if (ny > 0) {
+          const topGrad = ctx.createLinearGradient(0, ny, 0, ny + fadeY);
+          topGrad.addColorStop(0, '#000000');
+          topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = topGrad;
+          ctx.fillRect(nx, ny - 1, nw, fadeY + 1);
 
-        const botGrad = ctx.createLinearGradient(0, ny + nh - fadeY, 0, ny + nh);
-        botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        botGrad.addColorStop(1, '#000000');
-        ctx.fillStyle = botGrad;
-        ctx.fillRect(nx, ny + nh - fadeY - 1, nw, fadeY + 2);
+          const botGrad = ctx.createLinearGradient(0, ny + nh - fadeY, 0, ny + nh);
+          botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+          botGrad.addColorStop(1, '#000000');
+          ctx.fillStyle = botGrad;
+          ctx.fillRect(nx, ny + nh - fadeY - 1, nw, fadeY + 2);
+        }
       }
     }
 
     function renderBgCurrent(force) {
       const idx = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(currentProgress * (TOTAL_FRAMES - 1))));
-      const img = getBestAvailableImage(idx);
+      const mobile = isMobileMode();
+      const img = getBestAvailableImage(idx, mobile);
       if (img && (force || img !== lastDrawnImg)) {
         drawBgImage(img);
         lastDrawnIdx = idx;
@@ -129,7 +147,16 @@
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
-      renderBgCurrent(true);
+      const currentMode = isMobileMode();
+      if (lastMode !== currentMode) {
+        lastMode = currentMode;
+        loadFrame(0, currentMode, function () {
+          renderBgCurrent(true);
+          startRemainingQueue(currentMode);
+        });
+      } else {
+        renderBgCurrent(true);
+      }
     }
 
     window.addEventListener('resize', resizeBgCanvas, { passive: true });
@@ -155,16 +182,19 @@
     }
 
     // High-performance preloader with off-thread decode
-    function loadFrame(idx, onDone) {
-      if (loadedFrames.has(idx)) {
+    function loadFrame(idx, mobile, onDone) {
+      const loaded = mobile ? loadedMobile : loadedDesktop;
+      const images = mobile ? mobileImages : desktopImages;
+
+      if (loaded.has(idx)) {
         if (onDone) onDone();
         return;
       }
       const img = new Image();
       function onReady() {
         images[idx] = img;
-        loadedFrames.add(idx);
-        if (Math.abs(idx - lastDrawnIdx) <= 8) {
+        loaded.add(idx);
+        if (Math.abs(idx - lastDrawnIdx) <= 8 && isMobileMode() === mobile) {
           forceRedraw = true;
         }
         if (onDone) onDone();
@@ -180,10 +210,10 @@
       img.onerror = function () {
         if (onDone) onDone();
       };
-      img.src = getFrameUrl(idx);
+      img.src = getFrameUrl(idx, mobile);
     }
 
-    function startRemainingQueue() {
+    function startRemainingQueue(mobile) {
       const queue = [];
       // Keyframes first (every 6th frame) for immediate scrub coverage across entire timeline
       for (let i = 6; i < TOTAL_FRAMES; i += 6) {
@@ -203,7 +233,7 @@
       function nextWorker() {
         if (cursor >= queue.length) return;
         const idx = queue[cursor++];
-        loadFrame(idx, nextWorker);
+        loadFrame(idx, mobile, nextWorker);
       }
 
       for (let w = 0; w < WORKERS; w++) {
@@ -212,9 +242,11 @@
     }
 
     resizeBgCanvas();
-    loadFrame(0, function () {
+    const initMobile = isMobileMode();
+    lastMode = initMobile;
+    loadFrame(0, initMobile, function () {
       renderBgCurrent(true);
-      startRemainingQueue();
+      startRemainingQueue(initMobile);
     });
     requestAnimationFrame(bgAnimationLoop);
   }

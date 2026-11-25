@@ -362,6 +362,10 @@ body {
   gap: 2px;
 }
 
+.signature-wrapper--mobile {
+  display: none;
+}
+
 .signature-script {
   font-family: var(--font-signature);
   font-size: 2.5rem;
@@ -1944,10 +1948,18 @@ textarea.native-input {
   }
   
   .hero-overlay-grid {
-    display: contents;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-height: clamp(520px, calc(100dvh - 110px), 760px);
+    pointer-events: none;
+    z-index: 3;
+    padding: 6px 0 16px;
   }
   
-  /* 1. Top Headline & Bio */
+  /* 1. Top Headline & Role Pills (in atmospheric headroom) */
   .hero-col-left {
     order: 1;
     max-width: 100%;
@@ -1955,7 +1967,8 @@ textarea.native-input {
     align-items: center;
     text-align: center;
     gap: 10px;
-    margin-bottom: 4px;
+    pointer-events: auto;
+    margin-bottom: 0;
   }
 
   .hero-role-pills {
@@ -1963,31 +1976,24 @@ textarea.native-input {
   }
   
   .hero-subheading-gold {
-    font-size: clamp(1.8rem, 6.5vw, 2.4rem);
+    font-size: clamp(1.75rem, 6.2vw, 2.3rem);
     line-height: 1.05;
     letter-spacing: 0.05em;
     text-align: center;
   }
   
-  .hero-lead-text {
-    max-width: 480px;
-    font-size: 0.78rem;
-    text-align: center;
-    line-height: 1.5;
+  .hero-col-left .hero-lead-text {
+    display: none;
   }
   
-  /* 2. Center Visual Stage opening onto animated background portrait */
+  /* 2. Visual Stage opens completely over face */
   .hero-visual-stage {
     order: 2;
     position: relative;
     width: 100%;
-    max-width: 440px;
-    height: clamp(230px, 34vh, 320px);
-    margin: 8px auto 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    height: clamp(240px, 38vh, 360px);
+    margin: 0;
+    pointer-events: none;
   }
   
   .hero-backdrop-word {
@@ -1996,6 +2002,29 @@ textarea.native-input {
   
   .hero-image-wrapper {
     display: none !important;
+  }
+
+  /* 3. Bottom Signature, Tagline & Location over dark jacket */
+  .hero-col-right {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    pointer-events: auto;
+    margin-top: 0;
+  }
+
+  .hero-col-left .signature-wrapper {
+    display: none !important;
+  }
+
+  .signature-wrapper--mobile {
+    display: flex !important;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 4px;
   }
 
   .hero-image-wrapper img {
