@@ -89,6 +89,24 @@
     .modal-body { padding: 2rem; overflow-y: auto; flex: 1; }
     .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem; background: #0e0e0e; border-radius: 0 0 16px 16px; }
 
+    /* Hero Background Studio Cards */
+    .bg-studio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.75rem; }
+    .bg-device-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+    .bg-device-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .bg-status-pill { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(212, 175, 55, 0.14); color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.35); text-transform: uppercase; letter-spacing: 0.04em; }
+    .bg-preview-stage { background: #000; border: 1px solid #2a2a2a; border-radius: 10px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+    .bg-preview-stage--pc { width: 100%; aspect-ratio: 16 / 9; }
+    .bg-preview-stage--mobile { width: 190px; aspect-ratio: 9 / 16; margin: 0 auto; border-radius: 16px; border: 2px solid #2e2e2e; }
+    .bg-preview-stage img, .bg-preview-stage video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bg-upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .bg-upload-tile { background: #1a1a1a; border: 1px dashed #3a3a3a; border-radius: 10px; padding: 0.9rem 0.75rem; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #fff; }
+    .bg-upload-tile:hover { border-color: var(--gold); background: #201d15; }
+    .bg-upload-tile strong { font-size: 0.82rem; color: var(--gold); }
+    .bg-upload-tile span { font-size: 0.7rem; color: var(--muted); }
+    .bg-progress-wrap { display: none; flex-direction: column; gap: 6px; background: #0e0e0e; border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; }
+    .bg-progress-bar-bg { width: 100%; height: 6px; background: #242424; border-radius: 3px; overflow: hidden; }
+    .bg-progress-bar-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.2s; }
+
     /* Mobile */
     @media (max-width: 768px) {
       .admin-wrapper { flex-direction: column; }
@@ -163,7 +181,7 @@
 
       <ul class="nav-list">
         <li><button type="button" class="nav-btn active" onclick="switchTab('projectsTab', this)">Project Manager</button></li>
-        <li><button type="button" class="nav-btn" onclick="switchTab('profileTab', this)">Hero Profile Tuner</button></li>
+        <li><button type="button" class="nav-btn" onclick="switchTab('profileTab', this)">🎬 Hero Background</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('contentTab', this)">Global Content</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('settingsTab', this)">Settings & Security</button></li>
         <li><button type="button" class="nav-btn" onclick="switchTab('backupTab', this)">Backup & Restore</button></li>
@@ -193,67 +211,196 @@
         <div id="projectsContainer" class="projects-grid"></div>
       </section>
 
-      <!-- 2. HERO PROFILE TUNER -->
+      <!-- 2. HERO ANIMATION BACKGROUND STUDIO (PC & MOBILE SEPARATELY) -->
       <section id="profileTab" class="tab-content">
         <div class="tab-header">
           <div>
-            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Hero Profile Tuner</h1>
-            <p style="color: var(--muted); font-size: 0.95rem;">Adjust your avatar for the homepage hero.</p>
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">Hero Background &amp; Animation</h1>
+            <p style="color: var(--muted); font-size: 0.95rem;">Upload high-quality animation pictures or videos separately for PC and Mobile backgrounds.</p>
           </div>
-          <button type="button" class="btn btn-gold" onclick="saveProfileTuner()">Save Avatar</button>
+          <button type="button" class="btn btn-gold" id="btnSaveHeroBg" onclick="saveProfileTuner()">💾 Save &amp; Sync Backgrounds</button>
         </div>
 
-        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; display: flex; flex-direction: column; gap: 3rem;">
-          <div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;">
-            
-            <!-- Live Preview Box -->
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-              <h3 style="color: var(--gold); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Live Preview</h3>
-              <div style="width: 180px; height: 180px; border-radius: 8px; overflow: hidden; border: 2px solid var(--gold); background: #000; display: flex; align-items: center; justify-content: center;">
-                <img id="avatarPreview" src="" alt="Hero Avatar" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" onload="this.style.display='block'" />
+        <div class="bg-studio-grid">
+
+          <!-- ========== PC / DESKTOP CARD ========== -->
+          <div class="bg-device-card" id="bgCard_pc">
+            <div class="bg-device-header">
+              <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff;">🖥️ PC / Desktop Background</h2>
+                <p style="font-size: 0.78rem; color: var(--muted);">Landscape Viewports (&ge; 768px) • Optimized up to 1920px HQ</p>
+              </div>
+              <span class="bg-status-pill" id="bgStatus_pc">Default Sequence (240 Frames)</span>
+            </div>
+
+            <!-- Preview Viewport -->
+            <div class="bg-preview-stage bg-preview-stage--pc" id="bgPreviewBox_pc">
+              <img id="bgPreviewImg_pc" src="assets/portrait-frames/ezgif-frame-001.jpg" alt="PC Preview" />
+              <video id="bgPreviewVid_pc" muted loop playsinline controls style="display: none;"></video>
+            </div>
+
+            <!-- Interactive Frame Scrub Tester (visible for sequences) -->
+            <div id="bgScrubWrap_pc" style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Scroll Test</span>
+              <input type="range" id="bgScrubSlider_pc" class="slider" min="0" max="239" value="0" oninput="previewScrubFrame('pc', this.value)" />
+              <span id="bgScrubLabel_pc" style="font-size: 0.72rem; color: var(--gold); min-width: 48px; text-align: right;">1/240</span>
+            </div>
+
+            <!-- HQ Quality & Video Options -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>When Uploading Video</label>
+                <select id="bgVideoMode_pc" class="form-select" style="padding: 0.6rem 0.75rem; font-size: 0.8rem;">
+                  <option value="scroll-frames">Extract HQ Scroll Animation (Recommended)</option>
+                  <option value="video-loop">Smooth HD Video Loop (60fps)</option>
+                  <option value="video-scroll">Direct Scroll-Synced Video</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Visual Framing (Fit)</label>
+                <select id="bgFit_pc" class="form-select" style="padding: 0.6rem 0.75rem; font-size: 0.8rem;" onchange="updateBgMetaFromInputs('pc')">
+                  <option value="smart">Smart HQ Fit</option>
+                  <option value="cover">Full Screen Cover</option>
+                  <option value="contain">Contain (No Crop)</option>
+                </select>
               </div>
             </div>
 
-            <!-- Controls -->
-            <div style="flex: 1; min-width: 300px;">
-              <div class="form-group">
-                <label>Image URL or Upload from PC</label>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                  <input type="text" id="tunerUrl" class="form-input" placeholder="assets/hero.jpg or https://..." oninput="updateTunerPreview()" style="flex: 1; min-width: 200px;" />
-                  <button type="button" class="btn btn-secondary" onclick="document.getElementById('tunerFileUpload').click()">Upload Photo</button>
-                  <input type="file" id="tunerFileUpload" accept="image/*" style="display: none;" onchange="handleTunerUpload(event)" />
-                </div>
-              </div>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #e5e5e5; cursor: pointer;">
+              <input type="checkbox" id="bgEnhanceHq_pc" checked style="accent-color: var(--gold); width: 15px; height: 15px;" />
+              <span>Enhance Visual Clarity (HQ 1920px WebP + Crisp Edge Sharpening)</span>
+            </label>
 
-              <div class="form-group">
-                <label>Zoom (<span id="zoomVal">100</span>%)</label>
-                <div class="slider-container">
-                  <span style="font-size: 0.8rem; color: var(--muted);">100%</span>
-                  <input type="range" id="tunerZoom" class="slider" min="100" max="250" value="100" oninput="updateTunerPreview()" />
-                  <span style="font-size: 0.8rem; color: var(--muted);">250%</span>
-                </div>
+            <!-- Separate Upload Tiles: Pictures vs Video -->
+            <div class="bg-upload-actions">
+              <div class="bg-upload-tile" onclick="document.getElementById('bgPicturesInput_pc').click()">
+                <strong>🖼️ Upload Pictures</strong>
+                <span>1 Photo or Multi-Frame Sequence</span>
+                <input type="file" id="bgPicturesInput_pc" accept="image/*" multiple style="display: none;" onchange="handleBgPicturesUpload(event, 'pc')" />
               </div>
-
-              <div class="form-group">
-                <label>Horizontal Position X (<span id="xVal">50</span>%)</label>
-                <div class="slider-container">
-                  <span style="font-size: 0.8rem; color: var(--muted);">0%</span>
-                  <input type="range" id="tunerX" class="slider" min="0" max="100" value="50" oninput="updateTunerPreview()" />
-                  <span style="font-size: 0.8rem; color: var(--muted);">100%</span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Vertical Position Y (<span id="yVal">50</span>%)</label>
-                <div class="slider-container">
-                  <span style="font-size: 0.8rem; color: var(--muted);">0%</span>
-                  <input type="range" id="tunerY" class="slider" min="0" max="100" value="50" oninput="updateTunerPreview()" />
-                  <span style="font-size: 0.8rem; color: var(--muted);">100%</span>
-                </div>
+              <div class="bg-upload-tile" onclick="document.getElementById('bgVideoInput_pc').click()">
+                <strong>🎥 Upload Video</strong>
+                <span>MP4, MOV, WebM • Auto-HQ</span>
+                <input type="file" id="bgVideoInput_pc" accept="video/mp4,video/webm,video/quicktime,video/*" style="display: none;" onchange="handleBgVideoUpload(event, 'pc')" />
               </div>
             </div>
 
+            <!-- Upload Progress -->
+            <div class="bg-progress-wrap" id="bgProgressWrap_pc">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+                <span id="bgProgressText_pc" style="color: var(--gold); font-weight: 600;">Processing HQ media...</span>
+                <span id="bgProgressPct_pc" style="color: var(--muted);">0%</span>
+              </div>
+              <div class="bg-progress-bar-bg"><div class="bg-progress-bar-fill" id="bgProgressBar_pc"></div></div>
+            </div>
+
+            <!-- Alignment & Direct URL -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Focus X (<span id="bgXVal_pc">50</span>%)</label>
+                <input type="range" id="bgPosX_pc" class="slider" min="0" max="100" value="50" oninput="updateBgMetaFromInputs('pc')" />
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Focus Y (<span id="bgYVal_pc">50</span>%)</label>
+                <input type="range" id="bgPosY_pc" class="slider" min="0" max="100" value="50" oninput="updateBgMetaFromInputs('pc')" />
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" id="bgDirectUrl_pc" class="form-input" placeholder="Direct Image/Video URL (optional)..." oninput="applyDirectBgUrl('pc', this.value)" style="padding: 0.65rem 0.8rem; font-size: 0.8rem;" />
+              <button type="button" class="btn btn-danger" style="padding: 0.65rem 0.9rem; font-size: 0.72rem; white-space: nowrap;" onclick="resetDeviceBackground('pc')">↺ Reset Default</button>
+            </div>
           </div>
+
+          <!-- ========== MOBILE PORTRAIT CARD ========== -->
+          <div class="bg-device-card" id="bgCard_mobile">
+            <div class="bg-device-header">
+              <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff;">📱 Mobile Background</h2>
+                <p style="font-size: 0.78rem; color: var(--muted);">Portrait Viewports (&lt; 768px) • Optimized 9:16 HQ</p>
+              </div>
+              <span class="bg-status-pill" id="bgStatus_mobile">Default 9:16 Sequence (240 Frames)</span>
+            </div>
+
+            <!-- Preview Viewport -->
+            <div class="bg-preview-stage bg-preview-stage--mobile" id="bgPreviewBox_mobile">
+              <img id="bgPreviewImg_mobile" src="assets/portrait-frames-mobile/frame-001.jpg" alt="Mobile Preview" />
+              <video id="bgPreviewVid_mobile" muted loop playsinline controls style="display: none;"></video>
+            </div>
+
+            <!-- Interactive Frame Scrub Tester (visible for sequences) -->
+            <div id="bgScrubWrap_mobile" style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Scroll Test</span>
+              <input type="range" id="bgScrubSlider_mobile" class="slider" min="0" max="239" value="0" oninput="previewScrubFrame('mobile', this.value)" />
+              <span id="bgScrubLabel_mobile" style="font-size: 0.72rem; color: var(--gold); min-width: 48px; text-align: right;">1/240</span>
+            </div>
+
+            <!-- HQ Quality & Video Options -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>When Uploading Video</label>
+                <select id="bgVideoMode_mobile" class="form-select" style="padding: 0.6rem 0.75rem; font-size: 0.8rem;">
+                  <option value="scroll-frames">Extract HQ Scroll Animation (Recommended)</option>
+                  <option value="video-loop">Smooth HD Video Loop (60fps)</option>
+                  <option value="video-scroll">Direct Scroll-Synced Video</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Visual Framing (Fit)</label>
+                <select id="bgFit_mobile" class="form-select" style="padding: 0.6rem 0.75rem; font-size: 0.8rem;" onchange="updateBgMetaFromInputs('mobile')">
+                  <option value="smart">Smart Mobile 9:16 Cover</option>
+                  <option value="cover">Full Screen Cover</option>
+                  <option value="contain">Contain (No Crop)</option>
+                </select>
+              </div>
+            </div>
+
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #e5e5e5; cursor: pointer;">
+              <input type="checkbox" id="bgEnhanceHq_mobile" checked style="accent-color: var(--gold); width: 15px; height: 15px;" />
+              <span>Enhance Visual Clarity (HQ 1440px WebP + Crisp Edge Sharpening)</span>
+            </label>
+
+            <!-- Separate Upload Tiles: Pictures vs Video -->
+            <div class="bg-upload-actions">
+              <div class="bg-upload-tile" onclick="document.getElementById('bgPicturesInput_mobile').click()">
+                <strong>🖼️ Upload Pictures</strong>
+                <span>1 Photo or Multi-Frame Sequence</span>
+                <input type="file" id="bgPicturesInput_mobile" accept="image/*" multiple style="display: none;" onchange="handleBgPicturesUpload(event, 'mobile')" />
+              </div>
+              <div class="bg-upload-tile" onclick="document.getElementById('bgVideoInput_mobile').click()">
+                <strong>🎥 Upload Video</strong>
+                <span>MP4, MOV, WebM • Auto-HQ</span>
+                <input type="file" id="bgVideoInput_mobile" accept="video/mp4,video/webm,video/quicktime,video/*" style="display: none;" onchange="handleBgVideoUpload(event, 'mobile')" />
+              </div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div class="bg-progress-wrap" id="bgProgressWrap_mobile">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+                <span id="bgProgressText_mobile" style="color: var(--gold); font-weight: 600;">Processing HQ media...</span>
+                <span id="bgProgressPct_mobile" style="color: var(--muted);">0%</span>
+              </div>
+              <div class="bg-progress-bar-bg"><div class="bg-progress-bar-fill" id="bgProgressBar_mobile"></div></div>
+            </div>
+
+            <!-- Alignment & Direct URL -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Focus X (<span id="bgXVal_mobile">50</span>%)</label>
+                <input type="range" id="bgPosX_mobile" class="slider" min="0" max="100" value="50" oninput="updateBgMetaFromInputs('mobile')" />
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Focus Y (<span id="bgYVal_mobile">50</span>%)</label>
+                <input type="range" id="bgPosY_mobile" class="slider" min="0" max="100" value="50" oninput="updateBgMetaFromInputs('mobile')" />
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" id="bgDirectUrl_mobile" class="form-input" placeholder="Direct Image/Video URL (optional)..." oninput="applyDirectBgUrl('mobile', this.value)" style="padding: 0.65rem 0.8rem; font-size: 0.8rem;" />
+              <button type="button" class="btn btn-danger" style="padding: 0.65rem 0.9rem; font-size: 0.72rem; white-space: nowrap;" onclick="resetDeviceBackground('mobile')">↺ Reset Default</button>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1618,101 +1765,823 @@
       }
     }
 
-    // --- 4. HERO PROFILE TUNER ---
-    function populateTuner() {
-      const ab = siteContent.about || {};
-      const pos = ab.heroPhotoPosition || { scale: 1, posX: 50, posY: 50 };
-      document.getElementById('tunerUrl').value = ab.heroPortrait || '';
-      document.getElementById('tunerZoom').value = Math.round(pos.scale * 100);
-      document.getElementById('tunerX').value = pos.posX;
-      document.getElementById('tunerY').value = pos.posY;
-      updateTunerPreview();
+    // --- 4. HQ HERO BACKGROUND & ANIMATION STUDIO (PC & MOBILE SEPARATELY) ---
+    const bgPreviewCache = { pc: [], mobile: [] };
+
+    function _getDefaultBgConfig(device) {
+      return {
+        mode: 'default',
+        url: '',
+        chunkPrefix: '',
+        chunkCount: 0,
+        mimeType: '',
+        frames: [],
+        totalFrames: 240,
+        videoPlayback: 'loop',
+        fit: 'smart',
+        posX: 50,
+        posY: 50,
+        updatedAt: ''
+      };
     }
 
-    function updateTunerPreview() {
-      const url = document.getElementById('tunerUrl').value.trim();
-      const zoom = document.getElementById('tunerZoom').value;
-      const x = document.getElementById('tunerX').value;
-      const y = document.getElementById('tunerY').value;
-
-      document.getElementById('zoomVal').textContent = zoom;
-      document.getElementById('xVal').textContent = x;
-      document.getElementById('yVal').textContent = y;
-
-      const img = document.getElementById('avatarPreview');
-      if (url) {
-        img.src = url;
-        const offsetX = (x - 50) * 1.5;
-        const offsetY = (y - 50) * 1.5;
-        img.style.objectFit = 'cover';
-        img.style.transformOrigin = 'center center';
-        img.style.objectPosition = 'center';
-        img.style.transform = `translate(${offsetX}%, ${offsetY}%) scale(${zoom / 100})`;
+    function _ensureHeroBackgroundStruct() {
+      if (!siteContent.about) siteContent.about = {};
+      if (!siteContent.about.heroBackground) {
+        siteContent.about.heroBackground = {
+          pc: _getDefaultBgConfig('pc'),
+          mobile: _getDefaultBgConfig('mobile')
+        };
       } else {
-        img.src = '';
+        if (!siteContent.about.heroBackground.pc) siteContent.about.heroBackground.pc = _getDefaultBgConfig('pc');
+        if (!siteContent.about.heroBackground.mobile) siteContent.about.heroBackground.mobile = _getDefaultBgConfig('mobile');
+      }
+      return siteContent.about.heroBackground;
+    }
+
+    function _setBgProgress(device, visible, text, pct) {
+      const wrap = document.getElementById(`bgProgressWrap_${device}`);
+      const txtEl = document.getElementById(`bgProgressText_${device}`);
+      const pctEl = document.getElementById(`bgProgressPct_${device}`);
+      const barEl = document.getElementById(`bgProgressBar_${device}`);
+      if (!wrap) return;
+      wrap.style.display = visible ? 'flex' : 'none';
+      if (text !== undefined && txtEl) txtEl.textContent = text;
+      if (pct !== undefined) {
+        const cleanPct = Math.max(0, Math.min(100, Math.round(pct)));
+        if (pctEl) pctEl.textContent = cleanPct + '%';
+        if (barEl) barEl.style.width = cleanPct + '%';
+      }
+    }
+
+    // Subtle studio-grade unsharp mask convolution on canvas for HQ visual clarity
+    function _applyCrispSharpen(canvas, strength = 0.28) {
+      if (strength <= 0) return canvas;
+      const w = canvas.width;
+      const h = canvas.height;
+      const ctx = canvas.getContext('2d');
+      const srcData = ctx.getImageData(0, 0, w, h);
+      const dstData = ctx.createImageData(w, h);
+      const s = srcData.data;
+      const d = dstData.data;
+
+      // Mild 3x3 sharpening kernel weighted by strength
+      const kCenter = 1 + 4 * strength;
+      const kEdge = -strength;
+
+      for (let y = 0; y < h; y++) {
+        const yUp = Math.max(0, y - 1) * w;
+        const yMid = y * w;
+        const yDn = Math.min(h - 1, y + 1) * w;
+
+        for (let x = 0; x < w; x++) {
+          const xL = Math.max(0, x - 1);
+          const xR = Math.min(w - 1, x + 1);
+          const idx = (yMid + x) * 4;
+          const idxUp = (yUp + x) * 4;
+          const idxDn = (yDn + x) * 4;
+          const idxL = (yMid + xL) * 4;
+          const idxR = (yMid + xR) * 4;
+
+          for (let c = 0; c < 3; c++) {
+            const val = s[idx + c] * kCenter + (s[idxUp + c] + s[idxDn + c] + s[idxL + c] + s[idxR + c]) * kEdge;
+            d[idx + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
+          }
+          d[idx + 3] = s[idx + 3];
+        }
+      }
+      ctx.putImageData(dstData, 0, 0);
+      return canvas;
+    }
+
+    // Enhances a source image/video frame to high-resolution crisp WebP blob
+    async function _encodeHqCanvasToWebp(sourceCanvas, enhanceClarity = true, quality = 0.92) {
+      if (enhanceClarity) {
+        _applyCrispSharpen(sourceCanvas, 0.25);
+      }
+      return await new Promise((resolve) => {
+        sourceCanvas.toBlob((b) => resolve(b), 'image/webp', quality);
+      });
+    }
+
+    // Batch uploads multiple files cleanly in ONE GitHub commit using Git Data API
+    async function _batchCommitAssetsToGitHub(fileEntries, commitMsg, conf, onProgress) {
+      const apiBase = `https://api.github.com/repos/${conf.owner}/${conf.repo}`;
+      const headers = {
+        'Authorization': `Bearer ${conf.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      };
+      const branch = conf.branch || 'main';
+
+      // Step 1: Upload all blobs with concurrency pool of 5
+      const blobResults = new Array(fileEntries.length);
+      let completed = 0;
+      let cursor = 0;
+
+      const toBase64 = (blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      async function worker() {
+        while (cursor < fileEntries.length) {
+          const i = cursor++;
+          const entry = fileEntries[i];
+          const b64 = await toBase64(entry.blob);
+          const blobRes = await fetch(`${apiBase}/git/blobs`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ content: b64, encoding: 'base64' })
+          });
+          if (!blobRes.ok) {
+            const err = await blobRes.json().catch(() => ({}));
+            throw new Error(err.message || `Blob upload failed (${blobRes.status})`);
+          }
+          const blobJson = await blobRes.json();
+          blobResults[i] = { path: entry.path, mode: '100644', type: 'blob', sha: blobJson.sha };
+          completed++;
+          if (onProgress) onProgress(completed, fileEntries.length);
+        }
+      }
+
+      const workers = [];
+      for (let w = 0; w < Math.min(5, fileEntries.length); w++) workers.push(worker());
+      await Promise.all(workers);
+
+      // Step 2: Get HEAD ref & base tree
+      const refRes = await fetch(`${apiBase}/git/ref/heads/${branch}`, { headers });
+      if (!refRes.ok) throw new Error('Failed to read GitHub branch ref.');
+      const refJson = await refRes.json();
+      const headSha = refJson.object.sha;
+
+      const commitRes = await fetch(`${apiBase}/git/commits/${headSha}`, { headers });
+      const commitJson = await commitRes.json();
+      const baseTreeSha = commitJson.tree.sha;
+
+      // Step 3: Create tree + commit + move branch ref atomically
+      const treeRes = await fetch(`${apiBase}/git/trees`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ base_tree: baseTreeSha, tree: blobResults })
+      });
+      if (!treeRes.ok) throw new Error('Failed to create GitHub asset tree.');
+      const treeJson = await treeRes.json();
+
+      const newCommitRes = await fetch(`${apiBase}/git/commits`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ message: commitMsg, tree: treeJson.sha, parents: [headSha] })
+      });
+      if (!newCommitRes.ok) throw new Error('Failed to create GitHub commit.');
+      const newCommitJson = await newCommitRes.json();
+
+      const patchRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ sha: newCommitJson.sha })
+      });
+      if (!patchRes.ok) throw new Error('Failed to update GitHub branch ref.');
+
+      return fileEntries.map(e => e.path);
+    }
+
+    // Firestore Chunked Storage helper (automatic fallback when GitHub PAT is not saved)
+    async function _saveChunkedSequenceToFirestore(prefix, dataUrls, onProgress) {
+      const db = initFirebase();
+      if (!db) throw new Error('Cloud Firestore not initialized.');
+
+      const chunks = [];
+      let currentBatch = [];
+      let currentBytes = 0;
+      const MAX_DOC_BYTES = 550000;
+
+      for (let i = 0; i < dataUrls.length; i++) {
+        const url = dataUrls[i];
+        if (currentBatch.length > 0 && currentBytes + url.length > MAX_DOC_BYTES) {
+          chunks.push(currentBatch);
+          currentBatch = [];
+          currentBytes = 0;
+        }
+        currentBatch.push(url);
+        currentBytes += url.length;
+      }
+      if (currentBatch.length > 0) chunks.push(currentBatch);
+
+      for (let c = 0; c < chunks.length; c++) {
+        await db.collection('content').doc(`${prefix}_${c}`).set({
+          frames: chunks[c],
+          chunkIndex: c,
+          totalChunks: chunks.length,
+          updatedAt: new Date().toISOString()
+        });
+        if (onProgress) onProgress(c + 1, chunks.length);
+      }
+      return chunks.length;
+    }
+
+    async function _saveChunkedBinaryToFirestore(prefix, blob, onProgress) {
+      const db = initFirebase();
+      if (!db) throw new Error('Cloud Firestore not initialized.');
+
+      const base64Full = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      const CHUNK_LEN = 600000;
+      const totalChunks = Math.ceil(base64Full.length / CHUNK_LEN);
+      for (let c = 0; c < totalChunks; c++) {
+        const slice = base64Full.slice(c * CHUNK_LEN, (c + 1) * CHUNK_LEN);
+        await db.collection('content').doc(`${prefix}_${c}`).set({
+          data: slice,
+          chunkIndex: c,
+          totalChunks,
+          mimeType: blob.type || 'application/octet-stream',
+          updatedAt: new Date().toISOString()
+        });
+        if (onProgress) onProgress(c + 1, totalChunks);
+      }
+      return totalChunks;
+    }
+
+    async function _blobToDataUrl(blob) {
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function _hydrateBgPreviewFromFirestore(device, cfg) {
+      if (!cfg || !cfg.chunkPrefix || !cfg.chunkCount || bgPreviewCache[device].length > 0) return;
+      const db = initFirebase();
+      if (!db) return;
+      try {
+        const docs = await Promise.all(
+          Array.from({ length: cfg.chunkCount }, (_, i) =>
+            db.collection('content').doc(`${cfg.chunkPrefix}_${i}`).get()
+          )
+        );
+        const first = docs[0] && docs[0].exists ? docs[0].data() : null;
+        if (first && Array.isArray(first.frames)) {
+          const frames = [];
+          docs.forEach(d => { if (d.exists && Array.isArray(d.data().frames)) frames.push(...d.data().frames); });
+          bgPreviewCache[device] = frames;
+        } else {
+          let b64 = '';
+          docs.forEach(d => { if (d.exists && d.data().data) b64 += d.data().data; });
+          if (b64) {
+            const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+            const blob = new Blob([bytes], { type: cfg.mimeType || 'application/octet-stream' });
+            bgPreviewCache[device] = [URL.createObjectURL(blob)];
+          }
+        }
+        renderBgCardUI(device, cfg);
+      } catch (e) {
+        console.warn('Preview hydration note:', e);
+      }
+    }
+
+    async function populateTuner() {
+      const bg = _ensureHeroBackgroundStruct();
+      ['pc', 'mobile'].forEach(dev => {
+        renderBgCardUI(dev, bg[dev]);
+        if (bg[dev].chunkPrefix) _hydrateBgPreviewFromFirestore(dev, bg[dev]);
+      });
+    }
+
+    function renderBgCardUI(device, cfg) {
+      const statusEl = document.getElementById(`bgStatus_${device}`);
+      const imgEl = document.getElementById(`bgPreviewImg_${device}`);
+      const vidEl = document.getElementById(`bgPreviewVid_${device}`);
+      const scrubWrap = document.getElementById(`bgScrubWrap_${device}`);
+      const scrubSlider = document.getElementById(`bgScrubSlider_${device}`);
+      const scrubLabel = document.getElementById(`bgScrubLabel_${device}`);
+      const fitEl = document.getElementById(`bgFit_${device}`);
+      const posXEl = document.getElementById(`bgPosX_${device}`);
+      const posYEl = document.getElementById(`bgPosY_${device}`);
+      const urlEl = document.getElementById(`bgDirectUrl_${device}`);
+
+      if (!cfg) cfg = _getDefaultBgConfig(device);
+      if (fitEl) fitEl.value = cfg.fit || 'smart';
+      if (posXEl) posXEl.value = cfg.posX !== undefined ? cfg.posX : 50;
+      if (posYEl) posYEl.value = cfg.posY !== undefined ? cfg.posY : 50;
+      document.getElementById(`bgXVal_${device}`).textContent = posXEl ? posXEl.value : 50;
+      document.getElementById(`bgYVal_${device}`).textContent = posYEl ? posYEl.value : 50;
+      if (urlEl) urlEl.value = cfg.url || '';
+
+      const fitCss = cfg.fit === 'contain' ? 'contain' : 'cover';
+      const posCss = `${cfg.posX ?? 50}% ${cfg.posY ?? 50}%`;
+      const vidSrc = bgPreviewCache[device][0] || (cfg.url ? resolveAssetUrl(cfg.url) : '');
+
+      if (cfg.mode === 'video' && vidSrc) {
+        if (statusEl) statusEl.textContent = `HQ Video (${cfg.videoPlayback === 'scroll' ? 'Scroll-Synced' : '60fps Loop'})`;
+        imgEl.style.display = 'none';
+        vidEl.style.display = 'block';
+        vidEl.style.objectFit = fitCss;
+        vidEl.style.objectPosition = posCss;
+        if (vidEl.getAttribute('src') !== vidSrc) {
+          vidEl.src = vidSrc;
+        }
+        scrubWrap.style.display = 'none';
+      } else if (cfg.mode === 'image' && (cfg.url || bgPreviewCache[device][0])) {
+        if (statusEl) statusEl.textContent = 'Single HQ Picture';
+        vidEl.pause();
+        vidEl.style.display = 'none';
+        imgEl.style.display = 'block';
+        imgEl.style.objectFit = fitCss;
+        imgEl.style.objectPosition = posCss;
+        imgEl.src = bgPreviewCache[device][0] || resolveAssetUrl(cfg.url);
+        scrubWrap.style.display = 'none';
+      } else if (cfg.mode === 'sequence') {
+        const count = (cfg.frames && cfg.frames.length) || bgPreviewCache[device].length || cfg.totalFrames || 0;
+        if (statusEl) statusEl.textContent = `Custom HQ Sequence (${count} Frames)`;
+        vidEl.pause();
+        vidEl.style.display = 'none';
+        imgEl.style.display = 'block';
+        imgEl.style.objectFit = fitCss;
+        imgEl.style.objectPosition = posCss;
+        const firstSrc = bgPreviewCache[device][0] || (cfg.frames && cfg.frames[0] ? resolveAssetUrl(cfg.frames[0]) : '');
+        if (firstSrc) imgEl.src = firstSrc;
+        scrubWrap.style.display = count > 1 ? 'flex' : 'none';
+        if (scrubSlider && count > 1) {
+          scrubSlider.max = count - 1;
+          scrubSlider.value = 0;
+          scrubLabel.textContent = `1/${count}`;
+        }
+      } else {
+        // Default 240-frame sequence
+        if (statusEl) statusEl.textContent = device === 'mobile' ? 'Default 9:16 Sequence (240 Frames)' : 'Default Sequence (240 Frames)';
+        vidEl.pause();
+        vidEl.style.display = 'none';
+        imgEl.style.display = 'block';
+        imgEl.style.objectFit = fitCss;
+        imgEl.style.objectPosition = posCss;
+        imgEl.src = device === 'mobile' ? 'assets/portrait-frames-mobile/frame-001.jpg' : 'assets/portrait-frames/ezgif-frame-001.jpg';
+        scrubWrap.style.display = 'flex';
+        if (scrubSlider) {
+          scrubSlider.max = 239;
+          scrubSlider.value = 0;
+          scrubLabel.textContent = '1/240';
+        }
+      }
+    }
+
+    function previewScrubFrame(device, val) {
+      const idx = parseInt(val, 10) || 0;
+      const bg = _ensureHeroBackgroundStruct();
+      const cfg = bg[device];
+      const imgEl = document.getElementById(`bgPreviewImg_${device}`);
+      const labelEl = document.getElementById(`bgScrubLabel_${device}`);
+
+      if (cfg && cfg.mode === 'sequence') {
+        const frames = bgPreviewCache[device].length > 0 ? bgPreviewCache[device] : (cfg.frames || []);
+        const total = frames.length || 1;
+        if (frames[idx]) {
+          imgEl.src = frames[idx].startsWith('data:') || frames[idx].startsWith('blob:') ? frames[idx] : resolveAssetUrl(frames[idx]);
+        }
+        if (labelEl) labelEl.textContent = `${idx + 1}/${total}`;
+      } else {
+        const num = String(idx + 1).padStart(3, '0');
+        imgEl.src = device === 'mobile'
+          ? `assets/portrait-frames-mobile/frame-${num}.jpg`
+          : `assets/portrait-frames/ezgif-frame-${num}.jpg`;
+        if (labelEl) labelEl.textContent = `${idx + 1}/240`;
+      }
+    }
+
+    function updateBgMetaFromInputs(device) {
+      const bg = _ensureHeroBackgroundStruct();
+      const cfg = bg[device];
+      cfg.fit = document.getElementById(`bgFit_${device}`).value;
+      cfg.posX = parseInt(document.getElementById(`bgPosX_${device}`).value, 10);
+      cfg.posY = parseInt(document.getElementById(`bgPosY_${device}`).value, 10);
+      document.getElementById(`bgXVal_${device}`).textContent = cfg.posX;
+      document.getElementById(`bgYVal_${device}`).textContent = cfg.posY;
+      renderBgCardUI(device, cfg);
+    }
+
+    function applyDirectBgUrl(device, rawVal) {
+      const val = (rawVal || '').trim();
+      const bg = _ensureHeroBackgroundStruct();
+      if (!val) {
+        bg[device].url = '';
+        if (bg[device].mode !== 'default') bg[device].mode = 'default';
+      } else if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(val)) {
+        bg[device].mode = 'video';
+        bg[device].url = val;
+        bg[device].videoPlayback = document.getElementById(`bgVideoMode_${device}`).value === 'video-scroll' ? 'scroll' : 'loop';
+      } else {
+        bg[device].mode = 'image';
+        bg[device].url = val;
+      }
+      bg[device].updatedAt = new Date().toISOString();
+      bgPreviewCache[device] = [];
+      renderBgCardUI(device, bg[device]);
+    }
+
+    function resetDeviceBackground(device) {
+      if (!confirm(`Reset ${device.toUpperCase()} background back to the default head-turn scroll animation?`)) return;
+      const bg = _ensureHeroBackgroundStruct();
+      bg[device] = _getDefaultBgConfig(device);
+      bgPreviewCache[device] = [];
+      renderBgCardUI(device, bg[device]);
+      _setBgProgress(device, false);
+    }
+
+    // Handles uploading 1 HQ Picture OR Multiple Animation Pictures (auto-sorted by filename)
+    async function handleBgPicturesUpload(event, device) {
+      const rawFiles = Array.from(event.target.files || []);
+      if (rawFiles.length === 0) return;
+
+      const enhanceHq = document.getElementById(`bgEnhanceHq_${device}`).checked;
+      const maxDim = device === 'mobile' ? 1440 : 1920;
+      const conf = getGitHubConfig();
+      const bg = _ensureHeroBackgroundStruct();
+
+      // Natural filename sort (frame-1, frame-2, ... frame-10)
+      const sortedFiles = rawFiles.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+      );
+
+      try {
+        _setBgProgress(device, true, `Preparing ${sortedFiles.length} HQ image(s)...`, 5);
+
+        // Single HQ image mode
+        if (sortedFiles.length === 1) {
+          const { blob } = await compressImageBlob(sortedFiles[0], {
+            maxDimension: maxDim,
+            quality: 0.94,
+            format: 'image/webp'
+          });
+          let finalBlob = blob;
+          if (enhanceHq) {
+            const bmp = await createImageBitmap(blob);
+            const c = document.createElement('canvas');
+            c.width = bmp.width;
+            c.height = bmp.height;
+            c.getContext('2d').drawImage(bmp, 0, 0);
+            bmp.close();
+            finalBlob = await _encodeHqCanvasToWebp(c, true, 0.94);
+          }
+
+          const localDataUrl = await _blobToDataUrl(finalBlob);
+          bgPreviewCache[device] = [localDataUrl];
+
+          if (conf.token && conf.owner && conf.repo) {
+            _setBgProgress(device, true, 'Uploading HQ image to repository...', 65);
+            const filename = `hero-bg-${device}-${Date.now()}.webp`;
+            const path = await uploadSmartAssetBlob(finalBlob, filename, conf);
+            bg[device] = {
+              ...bg[device],
+              mode: 'image',
+              url: path,
+              chunkPrefix: '',
+              chunkCount: 0,
+              frames: [],
+              updatedAt: new Date().toISOString()
+            };
+          } else {
+            _setBgProgress(device, true, 'Saving HQ image to Cloud Firestore...', 65);
+            const prefix = `bg_img_${device}_${Date.now()}`;
+            const chunkCount = await _saveChunkedBinaryToFirestore(prefix, finalBlob, (curr, tot) => {
+              _setBgProgress(device, true, `Syncing cloud chunk ${curr}/${tot}...`, 65 + (curr / tot) * 30);
+            });
+            bg[device] = {
+              ...bg[device],
+              mode: 'image',
+              url: '',
+              chunkPrefix: prefix,
+              chunkCount,
+              mimeType: 'image/webp',
+              frames: [],
+              updatedAt: new Date().toISOString()
+            };
+          }
+
+          _setBgProgress(device, true, '✓ HQ Picture Ready! Click Save & Sync to activate live.', 100);
+          renderBgCardUI(device, bg[device]);
+          return;
+        }
+
+        // Multi-frame animation pictures mode
+        const total = sortedFiles.length;
+        const processedItems = [];
+        const localUrls = [];
+        const folderStamp = `hero-seq-${device}-${Date.now()}`;
+
+        for (let i = 0; i < total; i++) {
+          const pct = Math.round(((i + 1) / total) * 55);
+          _setBgProgress(device, true, `Enhancing HQ frame ${i + 1}/${total}...`, pct);
+
+          const { blob } = await compressImageBlob(sortedFiles[i], {
+            maxDimension: maxDim,
+            quality: 0.91,
+            format: 'image/webp'
+          });
+          let finalBlob = blob;
+          if (enhanceHq) {
+            const bmp = await createImageBitmap(blob);
+            const c = document.createElement('canvas');
+            c.width = bmp.width;
+            c.height = bmp.height;
+            c.getContext('2d').drawImage(bmp, 0, 0);
+            bmp.close();
+            finalBlob = await _encodeHqCanvasToWebp(c, true, 0.91);
+          }
+
+          const frameName = `frame-${String(i + 1).padStart(3, '0')}.webp`;
+          processedItems.push({ blob: finalBlob, path: `assets/uploads/${folderStamp}/${frameName}` });
+          localUrls.push(await _blobToDataUrl(finalBlob));
+        }
+
+        bgPreviewCache[device] = localUrls;
+
+        if (conf.token && conf.owner && conf.repo) {
+          _setBgProgress(device, true, `Uploading ${total} HQ frames in 1 atomic commit...`, 60);
+          const paths = await _batchCommitAssetsToGitHub(
+            processedItems,
+            `Upload ${total} HQ ${device} background animation frames`,
+            conf,
+            (done, tot) => {
+              _setBgProgress(device, true, `Uploading HQ frames (${done}/${tot})...`, 60 + Math.round((done / tot) * 38));
+            }
+          );
+          bg[device] = {
+            ...bg[device],
+            mode: 'sequence',
+            url: '',
+            chunkPrefix: '',
+            chunkCount: 0,
+            frames: paths,
+            totalFrames: paths.length,
+            updatedAt: new Date().toISOString()
+          };
+        } else {
+          _setBgProgress(device, true, 'Syncing HQ frame sequence to Cloud Firestore...', 65);
+          const prefix = `bg_seq_${device}_${Date.now()}`;
+          const chunkCount = await _saveChunkedSequenceToFirestore(prefix, localUrls, (curr, tot) => {
+            _setBgProgress(device, true, `Uploading cloud batch ${curr}/${tot}...`, 65 + Math.round((curr / tot) * 33));
+          });
+          bg[device] = {
+            ...bg[device],
+            mode: 'sequence',
+            url: '',
+            chunkPrefix: prefix,
+            chunkCount,
+            frames: [],
+            totalFrames: localUrls.length,
+            updatedAt: new Date().toISOString()
+          };
+        }
+
+        _setBgProgress(device, true, `✓ ${total} HQ frames ready! Click "Save & Sync Backgrounds" to publish.`, 100);
+        renderBgCardUI(device, bg[device]);
+      } catch (err) {
+        console.error('Background pictures upload error:', err);
+        _setBgProgress(device, true, `❌ Error: ${err.message}`, 0);
+        alert('Upload error: ' + err.message);
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    // Extracts up to maxFrames crisp HQ WebP frames from an uploaded video file
+    async function _extractHqFramesFromVideoFile(file, device, enhanceHq, onProgress) {
+      return await new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        const objUrl = URL.createObjectURL(file);
+        video.src = objUrl;
+
+        video.onerror = () => {
+          URL.revokeObjectURL(objUrl);
+          reject(new Error('Could not decode uploaded video format in browser.'));
+        };
+
+        video.onloadedmetadata = async () => {
+          try {
+            const dur = video.duration || 1;
+            const targetFpsCount = Math.min(90, Math.max(24, Math.round(dur * 15)));
+            const maxDim = device === 'mobile' ? 1440 : 1920;
+            const vw = video.videoWidth || 1280;
+            const vh = video.videoHeight || 720;
+            const scale = Math.min(1, maxDim / Math.max(vw, vh));
+            const outW = Math.round(vw * scale);
+            const outH = Math.round(vh * scale);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = outW;
+            canvas.height = outH;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            const extracted = [];
+            for (let i = 0; i < targetFpsCount; i++) {
+              const seekTime = Math.min(dur - 0.02, (i / (targetFpsCount - 1)) * dur);
+              await new Promise((resSeek) => {
+                video.onseeked = () => resSeek();
+                video.currentTime = seekTime;
+              });
+              ctx.drawImage(video, 0, 0, outW, outH);
+              const blob = await _encodeHqCanvasToWebp(canvas, enhanceHq, 0.91);
+              extracted.push(blob);
+              if (onProgress) onProgress(i + 1, targetFpsCount);
+            }
+            URL.revokeObjectURL(objUrl);
+            resolve(extracted);
+          } catch (e) {
+            URL.revokeObjectURL(objUrl);
+            reject(e);
+          }
+        };
+      });
+    }
+
+    // Handles Video Upload (.mp4/.webm/.mov): supports HQ Frame Extraction OR Native 60fps Video
+    async function handleBgVideoUpload(event, device) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const videoMode = document.getElementById(`bgVideoMode_${device}`).value;
+      const enhanceHq = document.getElementById(`bgEnhanceHq_${device}`).checked;
+      const conf = getGitHubConfig();
+      const bg = _ensureHeroBackgroundStruct();
+
+      try {
+        if (videoMode === 'scroll-frames') {
+          _setBgProgress(device, true, 'Extracting HQ frames from video...', 5);
+          const frameBlobs = await _extractHqFramesFromVideoFile(file, device, enhanceHq, (curr, tot) => {
+            _setBgProgress(device, true, `Extracting & sharpening HQ frame ${curr}/${tot}...`, Math.round((curr / tot) * 55));
+          });
+
+          const total = frameBlobs.length;
+          const localUrls = [];
+          const processedItems = [];
+          const folderStamp = `hero-vidseq-${device}-${Date.now()}`;
+
+          for (let i = 0; i < total; i++) {
+            const frameName = `frame-${String(i + 1).padStart(3, '0')}.webp`;
+            processedItems.push({ blob: frameBlobs[i], path: `assets/uploads/${folderStamp}/${frameName}` });
+            localUrls.push(await _blobToDataUrl(frameBlobs[i]));
+          }
+
+          bgPreviewCache[device] = localUrls;
+
+          if (conf.token && conf.owner && conf.repo) {
+            _setBgProgress(device, true, `Uploading ${total} HQ frames in 1 atomic commit...`, 60);
+            const paths = await _batchCommitAssetsToGitHub(
+              processedItems,
+              `Upload ${total} HQ video-extracted frames for ${device}`,
+              conf,
+              (done, tot) => {
+                _setBgProgress(device, true, `Uploading HQ frames (${done}/${tot})...`, 60 + Math.round((done / tot) * 38));
+              }
+            );
+            bg[device] = {
+              ...bg[device],
+              mode: 'sequence',
+              url: '',
+              chunkPrefix: '',
+              chunkCount: 0,
+              frames: paths,
+              totalFrames: paths.length,
+              updatedAt: new Date().toISOString()
+            };
+          } else {
+            _setBgProgress(device, true, 'Syncing HQ frames to Cloud Firestore...', 65);
+            const prefix = `bg_seq_${device}_${Date.now()}`;
+            const chunkCount = await _saveChunkedSequenceToFirestore(prefix, localUrls, (curr, tot) => {
+              _setBgProgress(device, true, `Uploading cloud batch ${curr}/${tot}...`, 65 + Math.round((curr / tot) * 33));
+            });
+            bg[device] = {
+              ...bg[device],
+              mode: 'sequence',
+              url: '',
+              chunkPrefix: prefix,
+              chunkCount,
+              frames: [],
+              totalFrames: localUrls.length,
+              updatedAt: new Date().toISOString()
+            };
+          }
+
+          _setBgProgress(device, true, `✓ Extracted & synced ${total} HQ scroll frames! Click "Save & Sync Backgrounds".`, 100);
+          renderBgCardUI(device, bg[device]);
+        } else {
+          // Direct HQ Video upload (Loop or Scroll-synced)
+          const playbackType = videoMode === 'video-scroll' ? 'scroll' : 'loop';
+          const maxBytesNoGh = 8 * 1024 * 1024;
+
+          if (!conf.token && file.size > maxBytesNoGh) {
+            throw new Error('Videos over 8 MB require a GitHub Token in Settings, OR switch "When Uploading Video" to "Extract HQ Scroll Animation" above.');
+          }
+
+          const objUrl = URL.createObjectURL(file);
+          bgPreviewCache[device] = [objUrl];
+
+          if (conf.token && conf.owner && conf.repo) {
+            _setBgProgress(device, true, 'Uploading original HQ video to GitHub...', 45);
+            const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+            const filename = `hero-vid-${device}-${Date.now()}.${ext}`;
+            const paths = await _batchCommitAssetsToGitHub(
+              [{ blob: file, path: `assets/uploads/${filename}` }],
+              `Upload HQ ${device} background video`,
+              conf,
+              (d, t) => _setBgProgress(device, true, 'Committing video...', 80)
+            );
+            bg[device] = {
+              ...bg[device],
+              mode: 'video',
+              url: paths[0],
+              chunkPrefix: '',
+              chunkCount: 0,
+              videoPlayback: playbackType,
+              mimeType: file.type || 'video/mp4',
+              frames: [],
+              updatedAt: new Date().toISOString()
+            };
+          } else {
+            _setBgProgress(device, true, 'Chunking HQ video to Cloud Firestore...', 30);
+            const prefix = `bg_vid_${device}_${Date.now()}`;
+            const chunkCount = await _saveChunkedBinaryToFirestore(prefix, file, (curr, tot) => {
+              _setBgProgress(device, true, `Uploading cloud chunk ${curr}/${tot}...`, 30 + Math.round((curr / tot) * 65));
+            });
+            bg[device] = {
+              ...bg[device],
+              mode: 'video',
+              url: '',
+              chunkPrefix: prefix,
+              chunkCount,
+              videoPlayback: playbackType,
+              mimeType: file.type || 'video/mp4',
+              frames: [],
+              updatedAt: new Date().toISOString()
+            };
+          }
+
+          // Display immediate local preview
+          const vidEl = document.getElementById(`bgPreviewVid_${device}`);
+          const imgEl = document.getElementById(`bgPreviewImg_${device}`);
+          imgEl.style.display = 'none';
+          vidEl.style.display = 'block';
+          vidEl.src = objUrl;
+          vidEl.play().catch(() => {});
+          document.getElementById(`bgStatus_${device}`).textContent = `HQ Video (${playbackType === 'scroll' ? 'Scroll-Synced' : '60fps Loop'})`;
+          document.getElementById(`bgScrubWrap_${device}`).style.display = 'none';
+
+          _setBgProgress(device, true, '✓ HQ Video Ready! Click "Save & Sync Backgrounds" to publish live.', 100);
+        }
+      } catch (err) {
+        console.error('Background video upload error:', err);
+        _setBgProgress(device, true, `❌ ${err.message}`, 0);
+        alert('Video upload notice: ' + err.message);
+      } finally {
+        event.target.value = '';
       }
     }
 
     async function saveProfileTuner() {
-      if (!siteContent.about) siteContent.about = {};
-      const photoUrl = document.getElementById('tunerUrl').value.trim();
-      siteContent.about.heroPortrait = photoUrl;
-      siteContent.about.heroPhotoPosition = {
-        scale: parseInt(document.getElementById('tunerZoom').value, 10) / 100,
-        posX: parseInt(document.getElementById('tunerX').value, 10),
-        posY: parseInt(document.getElementById('tunerY').value, 10)
-      };
+      const bg = _ensureHeroBackgroundStruct();
+      ['pc', 'mobile'].forEach(dev => {
+        bg[dev].fit = document.getElementById(`bgFit_${dev}`).value;
+        bg[dev].posX = parseInt(document.getElementById(`bgPosX_${dev}`).value, 10);
+        bg[dev].posY = parseInt(document.getElementById(`bgPosY_${dev}`).value, 10);
+        bg[dev].updatedAt = new Date().toISOString();
+      });
+
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
       localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
 
       const db = initFirebase();
-      if (db) {
-        try {
-          await db.collection('content').doc('site').set(siteContent, { merge: true });
-          console.log('✓ Hero profile saved to Firestore Cloud');
-          alert("✓ Hero avatar saved and synced to cloud successfully!");
-        } catch (err) {
-          console.error('Firestore profile save error:', err);
-          alert("Cloud save error: " + err.message);
-          return;
-        }
-      } else {
-        alert("Hero avatar saved locally!");
-      }
-    }
-
-    async function handleTunerUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
       const conf = getGitHubConfig();
+      const btn = document.getElementById('btnSaveHeroBg');
+      const origTxt = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+
       try {
-        // Compress avatar with high quality to compact WebP (max 1200px)
-        const { blob, finalSize } = await compressImageBlob(file, {
-          maxDimension: 1200,
-          quality: 0.88,
-          format: 'image/webp'
-        });
-
-        let finalPath = '';
-        if (conf.token && conf.owner && conf.repo) {
-          const filename = `hero-portrait-${Date.now()}.webp`;
-          finalPath = await uploadSmartAssetBlob(blob, filename, conf);
-        } else {
-          // Optimized WebP Data URL (~100-180KB, safely under Firestore 1MB limit)
-          finalPath = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
+        if (db) {
+          await db.collection('content').doc('site').set(siteContent, { merge: true });
         }
-
-        document.getElementById('tunerUrl').value = finalPath;
-        updateTunerPreview();
+        // Auto-commit siteContent.json if GitHub PAT is configured so relative CDN paths match
+        if (conf.token && conf.owner && conf.repo) {
+          await _commitFile('data/siteContent.json', siteContent, conf);
+        }
+        alert('✓ PC & Mobile Hero Backgrounds saved and synced live!');
       } catch (err) {
-        console.error("Avatar upload error:", err);
-        alert("Could not process avatar: " + err.message);
+        console.error('Hero background save error:', err);
+        alert('Cloud save error: ' + err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origTxt; }
       }
     }
 

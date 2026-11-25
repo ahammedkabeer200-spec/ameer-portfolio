@@ -246,7 +246,15 @@ async function loadAndApplySiteContent() {
   setElementHtml('heroHeadlineText', ab.heroHeadline);
   setElementText('heroLeadText', ab.heroLead);
 
-  // Dynamic Hero Portrait Image
+  // Dispatch dynamic Hero Animation Background (PC & Mobile separate configs)
+  window.__heroBackgroundConfig = ab.heroBackground || null;
+  window.resolveAssetUrl = resolveAssetUrl;
+  window.initFirebase = initFirebase;
+  window.dispatchEvent(new CustomEvent('heroBackgroundUpdated', {
+    detail: window.__heroBackgroundConfig
+  }));
+
+  // Dynamic Hero Portrait Image (legacy fallback hidden behind animated canvas)
   const heroImg = document.getElementById('heroPortraitImg');
   if (heroImg) {
     if (ab.heroPortrait && ab.heroPortrait.trim() !== '') {
@@ -649,21 +657,21 @@ function renderProjectsGrid() {
 
     return `
       <article class="modal-project-card project-card-mini" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
-        <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
+        <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: transparent; flex-shrink: 0; border-radius: 12px;">
           <img src="${resolveAssetUrl(p.coverImage || '')}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
-          <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
+          <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.65); padding: 4px 8px; border-radius: 6px; color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
         </div>
 
-        <div class="modal-project-info" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: #141414; border-top: 1px solid #242424; flex: 1;">
+        <div class="modal-project-info" style="padding: 12px 2px; display: flex; flex-direction: column; gap: 6px; background: transparent; flex: 1;">
           <h3 class="modal-project-title" style="margin: 0; font-size: 1.05rem; color: #ffffff; font-weight: 700; line-height: 1.35; display: flex; align-items: flex-start; gap: 8px;">
             <span class="modal-project-num" style="color: #d4af37; font-family: monospace; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">${numStr}</span>
             <span style="color: #ffffff; font-weight: 700; word-break: break-word;">${p.title || 'Untitled'}</span>
           </h3>
 
-          <div style="font-size: 0.78rem; color: #a3a3a3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
-            <span class="modal-project-client" style="color: #e5e5e5; font-weight: 500;">${p.client || 'Client'}</span>
+          <div style="font-size: 0.78rem; color: #c8c3b8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+            <span class="modal-project-client" style="color: #f0ede6; font-weight: 500;">${p.client || 'Client'}</span>
             <span style="color: #d4af37;">&bull;</span>
             <span>${p.year || '2026'}</span>
             <span style="color: #d4af37;">&bull;</span>

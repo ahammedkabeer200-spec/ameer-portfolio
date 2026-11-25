@@ -9,96 +9,158 @@
 (function() {
   'use strict';
 
-  // ====== PHASE 0: FULL-PAGE BACKGROUND PORTRAIT SCROLL CANVAS ======
+  // ====== PHASE 0: ADAPTIVE HQ BACKGROUND ENGINE (PC & MOBILE: SEQUENCE / VIDEO / IMAGE) ======
   initBackgroundScrollCanvas();
 
   function initBackgroundScrollCanvas() {
     const canvas = document.getElementById('bgPortraitCanvas');
+    const videoEl = document.getElementById('bgPortraitVideo');
+    const staticImgEl = document.getElementById('bgPortraitStaticImg');
+    const bgWrap = document.querySelector('.bg-scroll-canvas-wrap');
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    const TOTAL_FRAMES = 240;
-    const desktopImages = new Array(TOTAL_FRAMES);
-    const mobileImages = new Array(TOTAL_FRAMES);
-    const loadedDesktop = new Set();
-    const loadedMobile = new Set();
+    const DEFAULT_FRAMES = 240;
+    const defaultDesktopImages = new Array(DEFAULT_FRAMES);
+    const defaultMobileImages = new Array(DEFAULT_FRAMES);
+    const loadedDefaultDesktop = new Set();
+    const loadedDefaultMobile = new Set();
+
+    // Custom admin-configured backgrounds cached per device
+    let heroBackgroundConfig = window.__heroBackgroundConfig || null;
+    const customCache = {
+      pc: { key: null, mode: 'default', frames: [], loaded: new Set(), images: [], objectUrl: null, totalFrames: 0, config: {} },
+      mobile: { key: null, mode: 'default', frames: [], loaded: new Set(), images: [], objectUrl: null, totalFrames: 0, config: {} }
+    };
 
     let targetProgress = 0;
     let currentProgress = 0;
     let lastDrawnIdx = -1;
     let lastDrawnImg = null;
     let forceRedraw = false;
-    let lastMode = null;
+    let lastIsMobile = null;
+    let activeRenderMode = 'sequence'; // 'sequence' | 'video-loop' | 'video-scroll' | 'image'
+    let activeVideoConfig = {};
 
     function isMobileMode() {
       return window.innerWidth < 768 || window.innerHeight > window.innerWidth;
     }
 
-    function getFrameUrl(idx, mobile) {
-      const num = String(idx + 1).padStart(3, '0');
-      if (mobile) {
-        return `assets/portrait-frames-mobile/frame-${num}.jpg?v=1`;
+    function resolveUrl(url) {
+      if (!url) return '';
+      if (typeof window.resolveAssetUrl === 'function') {
+        const resolved = window.resolveAssetUrl(url);
+        // For images uploaded to GitHub, fallback if relative doesn't exist locally yet
+        if (url.startsWith('assets/uploads/') && resolved === url && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+          return url;
+        }
+        return resolved;
       }
-      return `assets/portrait-frames/ezgif-frame-${num}.jpg?v=2`;
+      return url;
+    }
+
+    function getDefaultFrameUrl(idx, mobile) {
+      const num = String(idx + 1).padStart(3, '0');
+      return mobile
+        ? `assets/portrait-frames-mobile/frame-${num}.jpg?v=1`
+        : `assets/portrait-frames/ezgif-frame-${num}.jpg?v=2`;
     }
 
     function getBestAvailableImage(targetIdx, mobile) {
-      const loaded = mobile ? loadedMobile : loadedDesktop;
-      const images = mobile ? mobileImages : desktopImages;
+      const state = customCache[mobile ? 'mobile' : 'pc'];
+      if (state.mode === 'sequence' && state.images.length > 0) {
+        if (state.loaded.has(targetIdx)) return state.images[targetIdx];
+        for (let offset = 1; offset < state.totalFrames; offset++) {
+          const prev = targetIdx - offset;
+          if (prev >= 0 && state.loaded.has(prev)) return state.images[prev];
+          const next = targetIdx + offset;
+          if (next < state.totalFrames && state.loaded.has(next)) return state.images[next];
+        }
+        return state.images[0] || null;
+      }
 
+      const loaded = mobile ? loadedDefaultMobile : loadedDefaultDesktop;
+      const images = mobile ? defaultMobileImages : defaultDesktopImages;
       if (loaded.has(targetIdx)) return images[targetIdx];
-      for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
+      for (let offset = 1; offset < DEFAULT_FRAMES; offset++) {
         const prev = targetIdx - offset;
         if (prev >= 0 && loaded.has(prev)) return images[prev];
         const next = targetIdx + offset;
-        if (next < TOTAL_FRAMES && loaded.has(next)) return images[next];
+        if (next < DEFAULT_FRAMES && loaded.has(next)) return images[next];
       }
       return images[0] || null;
     }
 
-    function drawBgImage(img) {
-      if (!img || !img.complete || img.naturalWidth === 0) return;
+    function drawSourceToCanvas(source, iw, ih, opts) {
+      if (!source || !iw || !ih) return;
 
       const cw = canvas.width;
       const ch = canvas.height;
-      const iw = img.naturalWidth;
-      const ih = img.naturalHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const isMobile = isMobileMode();
 
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, cw, ch);
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const isMobile = isMobileMode();
+      const fit = (opts && opts.fit) || 'smart';
+      const posX = (opts && opts.posX !== undefined ? opts.posX : 50) / 100;
+      const posY = (opts && opts.posY !== undefined ? opts.posY : 50) / 100;
 
       let nw, nh, nx, ny;
 
-      if (isMobile) {
-        // Mobile 9:16 portrait mode (matches user sample 576x1024):
-        // Scale to cleanly fill viewport height and center, positioning headroom & subject with 100% natural presence
+      if (fit === 'cover') {
         const scale = Math.max(cw / iw, ch / ih);
         nw = iw * scale;
         nh = ih * scale;
-        nx = (cw - nw) / 2;
-        ny = (ch - nh) / 2;
-      } else {
-        // Desktop / landscape viewports (1280x720 frames):
-        // Fit cleanly to 92% of viewport height (capped at 1.35x), showing full head & shoulders in crisp clarity.
-        const cssScale = Math.min(1.35, Math.max(0.70, (window.innerHeight * 0.92) / ih));
-        const scale = cssScale * dpr;
+        nx = (cw - nw) * posX;
+        ny = (ch - nh) * posY;
+      } else if (fit === 'contain') {
+        const scale = Math.min(cw / iw, ch / ih);
         nw = iw * scale;
         nh = ih * scale;
-        nx = (cw - nw) / 2;
-        ny = Math.round((ch - nh) / 2);
+        nx = (cw - nw) * posX;
+        ny = (ch - nh) * posY;
+      } else if (fit === 'actual') {
+        const scale = dpr;
+        nw = iw * scale;
+        nh = ih * scale;
+        nx = (cw - nw) * posX;
+        ny = (ch - nh) * posY;
+      } else {
+        // Smart default framing
+        if (isMobile) {
+          const scale = Math.max(cw / iw, ch / ih);
+          nw = iw * scale;
+          nh = ih * scale;
+          nx = (cw - nw) * posX;
+          ny = (ch - nh) * posY;
+        } else {
+          const customSeq = customCache.pc.mode !== 'default';
+          if (customSeq) {
+            const scale = Math.max(cw / iw, ch / ih);
+            nw = iw * scale;
+            nh = ih * scale;
+            nx = (cw - nw) * posX;
+            ny = (ch - nh) * posY;
+          } else {
+            const cssScale = Math.min(1.35, Math.max(0.70, (window.innerHeight * 0.92) / ih));
+            const scale = cssScale * dpr;
+            nw = iw * scale;
+            nh = ih * scale;
+            nx = (cw - nw) / 2;
+            ny = Math.round((ch - nh) / 2);
+          }
+        }
       }
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, iw, ih, nx, ny, nw, nh);
+      ctx.drawImage(source, 0, 0, iw, ih, nx, ny, nw, nh);
 
-      // Feather outer edges only on desktop where frame does not span beyond canvas borders
-      if (!isMobile) {
+      // Subtle border feather only on default desktop frame if smaller than canvas
+      if (!isMobile && customCache.pc.mode === 'default' && fit === 'smart') {
         const fadeX = Math.min(48 * dpr, nw * 0.06);
         const fadeY = Math.min(24 * dpr, nh * 0.04);
 
@@ -133,35 +195,252 @@
     }
 
     function renderBgCurrent(force) {
-      const idx = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(currentProgress * (TOTAL_FRAMES - 1))));
       const mobile = isMobileMode();
+      const devKey = mobile ? 'mobile' : 'pc';
+      const customState = customCache[devKey];
+
+      if (activeRenderMode === 'video-loop' || activeRenderMode === 'image') {
+        return;
+      }
+
+      if (activeRenderMode === 'video-scroll') {
+        if (videoEl && videoEl.readyState >= 2) {
+          drawSourceToCanvas(videoEl, videoEl.videoWidth, videoEl.videoHeight, activeVideoConfig);
+        }
+        return;
+      }
+
+      const total = customState.mode === 'sequence' && customState.totalFrames > 0
+        ? customState.totalFrames
+        : DEFAULT_FRAMES;
+
+      const idx = Math.max(0, Math.min(total - 1, Math.round(currentProgress * (total - 1))));
       const img = getBestAvailableImage(idx, mobile);
-      if (img && (force || img !== lastDrawnImg)) {
-        drawBgImage(img);
+      if (img && img.complete && img.naturalWidth > 0 && (force || img !== lastDrawnImg)) {
+        drawSourceToCanvas(img, img.naturalWidth, img.naturalHeight, customState.config);
         lastDrawnIdx = idx;
         lastDrawnImg = img;
       }
     }
 
+    function updateScrollDimming() {
+      if (!bgWrap) return;
+      const y = window.scrollY || 0;
+      const vh = window.innerHeight || 800;
+      // Keep hero vivid (0 dim); gently dim up to 0.45 as user reads scrolled clean text sections
+      const dim = Math.min(0.45, Math.max(0, (y - vh * 0.15) / (vh * 0.7)) * 0.45);
+      bgWrap.style.setProperty('--bg-scroll-dim', dim.toFixed(3));
+    }
+
+    function setLayerVisibility(mode, cfg) {
+      activeRenderMode = mode;
+      activeVideoConfig = cfg || {};
+      const posX = (cfg && cfg.posX !== undefined) ? cfg.posX : 50;
+      const posY = (cfg && cfg.posY !== undefined) ? cfg.posY : 50;
+      const fit = (cfg && cfg.fit === 'contain') ? 'contain' : 'cover';
+
+      if (mode === 'video-loop') {
+        canvas.style.display = 'none';
+        if (staticImgEl) staticImgEl.style.display = 'none';
+        if (videoEl) {
+          videoEl.style.display = 'block';
+          videoEl.style.objectFit = fit;
+          videoEl.style.objectPosition = `${posX}% ${posY}%`;
+        }
+      } else if (mode === 'image') {
+        canvas.style.display = 'none';
+        if (videoEl) {
+          videoEl.pause();
+          videoEl.style.display = 'none';
+        }
+        if (staticImgEl) {
+          staticImgEl.style.display = 'block';
+          staticImgEl.style.objectFit = fit;
+          staticImgEl.style.objectPosition = `${posX}% ${posY}%`;
+        }
+      } else {
+        // 'sequence' or 'video-scroll' rendered onto crisp Retina Canvas
+        canvas.style.display = 'block';
+        if (staticImgEl) staticImgEl.style.display = 'none';
+        if (videoEl) {
+          videoEl.pause();
+          videoEl.style.display = 'none';
+        }
+      }
+    }
+
+    // Reconstruct Firestore chunked assets if uploaded without GitHub PAT
+    async function loadFirestoreChunkedAsset(prefix, count, mimeType) {
+      const db = typeof window.initFirebase === 'function' ? window.initFirebase() : null;
+      if (!db || !prefix || !count) return null;
+
+      const docPromises = [];
+      for (let i = 0; i < count; i++) {
+        docPromises.push(db.collection('content').doc(`${prefix}_${i}`).get());
+      }
+      const docs = await Promise.all(docPromises);
+
+      // Case 1: Sequence chunks ({ frames: [...] })
+      const firstData = docs[0] && docs[0].exists ? docs[0].data() : null;
+      if (firstData && Array.isArray(firstData.frames)) {
+        const allFrames = [];
+        docs.forEach(d => {
+          if (d.exists && Array.isArray(d.data().frames)) {
+            allFrames.push(...d.data().frames);
+          }
+        });
+        return { type: 'sequence', frames: allFrames };
+      }
+
+      // Case 2: Base64 file chunks ({ data: "..." })
+      let combinedBase64 = '';
+      docs.forEach(d => {
+        if (d.exists && d.data().data) {
+          combinedBase64 += d.data().data;
+        }
+      });
+      if (!combinedBase64) return null;
+
+      const byteChars = atob(combinedBase64);
+      const byteNums = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNums[i] = byteChars.charCodeAt(i);
+      }
+      const blob = new Blob([byteNums], { type: mimeType || 'application/octet-stream' });
+      return { type: 'blobUrl', url: URL.createObjectURL(blob) };
+    }
+
+    async function applyDeviceConfig(mobile) {
+      const devKey = mobile ? 'mobile' : 'pc';
+      const state = customCache[devKey];
+      const cfg = heroBackgroundConfig && heroBackgroundConfig[devKey];
+
+      if (!cfg || !cfg.mode || cfg.mode === 'default') {
+        state.mode = 'default';
+        state.config = cfg || {};
+        setLayerVisibility('sequence', state.config);
+        loadDefaultFrame(0, mobile, function () {
+          renderBgCurrent(true);
+          startDefaultQueue(mobile);
+        });
+        return;
+      }
+
+      const cfgKey = JSON.stringify({ m: cfg.mode, u: cfg.url, p: cfg.chunkPrefix, c: cfg.chunkCount, vp: cfg.videoPlayback, f: cfg.frames ? cfg.frames.length : 0, t: cfg.updatedAt });
+      state.config = cfg;
+
+      if (cfg.mode === 'image') {
+        setLayerVisibility('image', cfg);
+        let srcUrl = cfg.url ? resolveUrl(cfg.url) : '';
+        if (!srcUrl && cfg.chunkPrefix && state.key !== cfgKey) {
+          const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, cfg.mimeType || 'image/webp');
+          if (loaded && loaded.url) {
+            state.objectUrl = loaded.url;
+            srcUrl = loaded.url;
+          }
+        } else if (state.objectUrl && state.key === cfgKey) {
+          srcUrl = state.objectUrl;
+        }
+        state.mode = 'image';
+        state.key = cfgKey;
+        if (staticImgEl && srcUrl) {
+          staticImgEl.src = srcUrl;
+        }
+        return;
+      }
+
+      if (cfg.mode === 'video') {
+        const playback = cfg.videoPlayback === 'scroll' ? 'video-scroll' : 'video-loop';
+        setLayerVisibility(playback, cfg);
+        let vidUrl = cfg.url ? resolveUrl(cfg.url) : '';
+        if (!vidUrl && cfg.chunkPrefix && state.key !== cfgKey) {
+          const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, cfg.mimeType || 'video/mp4');
+          if (loaded && loaded.url) {
+            state.objectUrl = loaded.url;
+            vidUrl = loaded.url;
+          }
+        } else if (state.objectUrl && state.key === cfgKey) {
+          vidUrl = state.objectUrl;
+        }
+        state.mode = 'video';
+        state.key = cfgKey;
+        if (videoEl && vidUrl) {
+          if (videoEl.getAttribute('src') !== vidUrl) {
+            videoEl.src = vidUrl;
+            videoEl.load();
+          }
+          if (playback === 'video-loop') {
+            videoEl.loop = true;
+            videoEl.play().catch(() => {});
+          } else {
+            videoEl.loop = false;
+            videoEl.pause();
+            videoEl.onloadeddata = () => renderBgCurrent(true);
+            videoEl.onseeked = () => renderBgCurrent(true);
+          }
+        }
+        return;
+      }
+
+      if (cfg.mode === 'sequence') {
+        setLayerVisibility('sequence', cfg);
+        if (state.key !== cfgKey) {
+          let frameList = Array.isArray(cfg.frames) ? cfg.frames.map(resolveUrl) : [];
+          if (frameList.length === 0 && cfg.chunkPrefix) {
+            const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, 'image/webp');
+            if (loaded && loaded.frames) {
+              frameList = loaded.frames;
+            }
+          }
+          if (frameList.length > 0) {
+            state.mode = 'sequence';
+            state.frames = frameList;
+            state.totalFrames = frameList.length;
+            state.images = new Array(frameList.length);
+            state.loaded = new Set();
+            state.key = cfgKey;
+            lastDrawnImg = null;
+            loadCustomFrame(0, devKey, function () {
+              renderBgCurrent(true);
+              startCustomQueue(devKey);
+            });
+          } else {
+            // Fallback to default if empty
+            state.mode = 'default';
+            loadDefaultFrame(0, mobile, function () {
+              renderBgCurrent(true);
+              startDefaultQueue(mobile);
+            });
+          }
+        } else {
+          state.mode = 'sequence';
+          renderBgCurrent(true);
+        }
+      }
+    }
+
     function resizeBgCanvas() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
-      const currentMode = isMobileMode();
-      if (lastMode !== currentMode) {
-        lastMode = currentMode;
-        loadFrame(0, currentMode, function () {
-          renderBgCurrent(true);
-          startRemainingQueue(currentMode);
-        });
+      const currentMobile = isMobileMode();
+      if (lastIsMobile !== currentMobile) {
+        lastIsMobile = currentMobile;
+        applyDeviceConfig(currentMobile);
       } else {
         renderBgCurrent(true);
       }
     }
 
     window.addEventListener('resize', resizeBgCanvas, { passive: true });
+    window.addEventListener('heroBackgroundUpdated', function (e) {
+      heroBackgroundConfig = e.detail || null;
+      applyDeviceConfig(isMobileMode());
+    });
 
     function bgAnimationLoop() {
+      updateScrollDimming();
+
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       if (maxScroll > 0) {
         targetProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
@@ -175,16 +454,24 @@
           currentProgress = targetProgress;
         }
         forceRedraw = false;
-        renderBgCurrent(false);
+
+        if (activeRenderMode === 'video-scroll' && videoEl && videoEl.duration && !videoEl.seeking) {
+          const targetTime = Math.max(0, Math.min(videoEl.duration - 0.02, currentProgress * videoEl.duration));
+          if (Math.abs(videoEl.currentTime - targetTime) > 0.025) {
+            videoEl.currentTime = targetTime;
+          }
+        } else {
+          renderBgCurrent(false);
+        }
       }
 
       requestAnimationFrame(bgAnimationLoop);
     }
 
-    // High-performance preloader with off-thread decode
-    function loadFrame(idx, mobile, onDone) {
-      const loaded = mobile ? loadedMobile : loadedDesktop;
-      const images = mobile ? mobileImages : desktopImages;
+    // Default sequence loader
+    function loadDefaultFrame(idx, mobile, onDone) {
+      const loaded = mobile ? loadedDefaultMobile : loadedDefaultDesktop;
+      const images = mobile ? defaultMobileImages : defaultDesktopImages;
 
       if (loaded.has(idx)) {
         if (onDone) onDone();
@@ -199,7 +486,6 @@
         }
         if (onDone) onDone();
       }
-
       img.onload = function () {
         if (img.decode) {
           img.decode().then(onReady).catch(onReady);
@@ -207,47 +493,74 @@
           onReady();
         }
       };
-      img.onerror = function () {
-        if (onDone) onDone();
-      };
-      img.src = getFrameUrl(idx, mobile);
+      img.onerror = function () { if (onDone) onDone(); };
+      img.src = getDefaultFrameUrl(idx, mobile);
     }
 
-    function startRemainingQueue(mobile) {
+    function startDefaultQueue(mobile) {
       const queue = [];
-      // Keyframes first (every 6th frame) for immediate scrub coverage across entire timeline
-      for (let i = 6; i < TOTAL_FRAMES; i += 6) {
-        queue.push(i);
+      for (let i = 6; i < DEFAULT_FRAMES; i += 6) queue.push(i);
+      if (!queue.includes(DEFAULT_FRAMES - 1)) queue.push(DEFAULT_FRAMES - 1);
+      for (let i = 1; i < DEFAULT_FRAMES; i++) {
+        if (i % 6 !== 0 && i !== DEFAULT_FRAMES - 1) queue.push(i);
       }
-      if (!queue.includes(TOTAL_FRAMES - 1)) queue.push(TOTAL_FRAMES - 1);
-      // Intermediate frames next
-      for (let i = 1; i < TOTAL_FRAMES; i++) {
-        if (i % 6 !== 0 && i !== TOTAL_FRAMES - 1) {
-          queue.push(i);
-        }
-      }
-
       let cursor = 0;
       const WORKERS = 10;
-
       function nextWorker() {
         if (cursor >= queue.length) return;
-        const idx = queue[cursor++];
-        loadFrame(idx, mobile, nextWorker);
+        loadDefaultFrame(queue[cursor++], mobile, nextWorker);
       }
+      for (let w = 0; w < WORKERS; w++) nextWorker();
+    }
 
-      for (let w = 0; w < WORKERS; w++) {
-        nextWorker();
+    // Custom uploaded sequence loader
+    function loadCustomFrame(idx, devKey, onDone) {
+      const state = customCache[devKey];
+      if (!state || state.loaded.has(idx) || !state.frames[idx]) {
+        if (onDone) onDone();
+        return;
       }
+      const img = new Image();
+      function onReady() {
+        state.images[idx] = img;
+        state.loaded.add(idx);
+        const curKey = isMobileMode() ? 'mobile' : 'pc';
+        if (Math.abs(idx - lastDrawnIdx) <= 8 && curKey === devKey) {
+          forceRedraw = true;
+        }
+        if (onDone) onDone();
+      }
+      img.onload = function () {
+        if (img.decode) {
+          img.decode().then(onReady).catch(onReady);
+        } else {
+          onReady();
+        }
+      };
+      img.onerror = function () { if (onDone) onDone(); };
+      img.src = state.frames[idx];
+    }
+
+    function startCustomQueue(devKey) {
+      const state = customCache[devKey];
+      const total = state.totalFrames;
+      if (!total) return;
+      const queue = [];
+      for (let i = 4; i < total; i += 4) queue.push(i);
+      if (!queue.includes(total - 1)) queue.push(total - 1);
+      for (let i = 1; i < total; i++) {
+        if (i % 4 !== 0 && i !== total - 1) queue.push(i);
+      }
+      let cursor = 0;
+      const WORKERS = 10;
+      function nextWorker() {
+        if (cursor >= queue.length) return;
+        loadCustomFrame(queue[cursor++], devKey, nextWorker);
+      }
+      for (let w = 0; w < WORKERS; w++) nextWorker();
     }
 
     resizeBgCanvas();
-    const initMobile = isMobileMode();
-    lastMode = initMobile;
-    loadFrame(0, initMobile, function () {
-      renderBgCurrent(true);
-      startRemainingQueue(initMobile);
-    });
     requestAnimationFrame(bgAnimationLoop);
   }
 

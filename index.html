@@ -33,13 +33,15 @@
   <meta property="twitter:description" content="Senior Graphic Designer delivering high-impact visual design, branding, and campaign solutions across government and corporate sectors.">
   <meta property="twitter:image" content="https://ameersuhail.com/assets/hero-portrait.png">
 
-  <link rel="stylesheet" href="style.css?v=6.2">
+  <link rel="stylesheet" href="style.css?v=7.0">
 </head>
 <body>
 
-  <!-- Scroll-Driven Portrait Sequence Background Canvas -->
+  <!-- Scroll-Driven Portrait Sequence / Video / HQ Background Layer -->
   <div class="bg-scroll-canvas-wrap" aria-hidden="true">
     <canvas id="bgPortraitCanvas"></canvas>
+    <video id="bgPortraitVideo" muted playsinline loop preload="auto" aria-hidden="true"></video>
+    <img id="bgPortraitStaticImg" alt="" aria-hidden="true">
   </div>
 
   <!-- Ambient Cursor Glow -->
@@ -526,10 +528,10 @@
           <textarea id="contactMessage" placeholder="How can I help you?" required rows="3" class="native-input"></textarea>
           <div class="quick-cta-btn-group" style="margin-top: 0.5rem;">
             <button type="submit" class="quick-btn-gold" style="border: none; cursor: pointer; font-family: inherit;">
-              <span>Send Message</span>
+              <span>Send Message →</span>
             </button>
             <a href="https://wa.me/971561480139" target="_blank" rel="noopener" class="quick-btn-dark" id="btnWhatsappLink">
-              <span>WhatsApp Instead</span>
+              <span>WhatsApp Instead ↗</span>
             </a>
           </div>
         </form>
@@ -699,7 +701,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  <script src="script.js?v=5.0" defer></script>
-  <script src="animations.js?v=2.2" defer></script>
+  <script src="script.js?v=6.0" defer></script>
+  <script src="animations.js?v=3.0" defer></script>
 </body>
 </html>
