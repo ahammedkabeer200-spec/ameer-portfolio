@@ -760,8 +760,153 @@
       document.getElementById('loginPassInput').value = '';
     }
 
+    function _safeLocalSet(key, val) {
+      try {
+        localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+      } catch (e) {
+        console.warn('Local cache quota note (' + key + '):', e.message);
+      }
+    }
+
+    // --- CLOUD FIRESTORE ASSET STORE (Zero data loss & bypasses 1 MiB doc limits) ---
+    const cloudAssetUrlCache = new Map();
+    const cloudAssetInflight = new Map();
+    const CLOUD_TRANSPARENT_PX = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+    function _parseCloudAssetUri(uri) {
+      if (!uri || !uri.startsWith('cloud://asset/')) return null;
+      const [base, query = ''] = uri.replace('cloud://asset/', '').split('?');
+      const params = new URLSearchParams(query);
+      return {
+        assetId: base,
+        chunks: Math.max(1, parseInt(params.get('c') || '1', 10)),
+        mime: params.get('m') || 'application/octet-stream'
+      };
+    }
+
+    async function _saveBlobToCloudAssetStore(blob, filename = '') {
+      const db = initFirebase();
+      if (!db) throw new Error('Cloud Firestore is unavailable to store uploaded asset.');
+      const assetId = 'asset_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      const prefix = 'cloud_' + assetId;
+      const chunkCount = await _saveChunkedBinaryToFirestore(prefix, blob);
+      const mime = blob.type || (filename.endsWith('.pdf') ? 'application/pdf' : 'image/webp');
+      const uri = `cloud://asset/${assetId}?c=${chunkCount}&m=${encodeURIComponent(mime)}`;
+      try {
+        cloudAssetUrlCache.set(uri, URL.createObjectURL(blob));
+      } catch (e) {}
+      return uri;
+    }
+
+    async function resolveCloudAssetBlobUrl(uri) {
+      const info = _parseCloudAssetUri(uri);
+      if (!info) return uri || '';
+      if (cloudAssetUrlCache.has(uri)) return cloudAssetUrlCache.get(uri);
+      if (cloudAssetInflight.has(uri)) return cloudAssetInflight.get(uri);
+
+      const task = (async () => {
+        const db = initFirebase();
+        if (!db) return '';
+        try {
+          const docs = await Promise.all(
+            Array.from({ length: info.chunks }, (_, i) =>
+              db.collection('content').doc(`cloud_${info.assetId}_${i}`).get()
+            )
+          );
+          let b64 = '';
+          let mime = info.mime;
+          docs.forEach(d => {
+            if (d.exists && d.data().data) {
+              b64 += d.data().data;
+              if (d.data().mimeType) mime = d.data().mimeType;
+            }
+          });
+          if (!b64) return '';
+          const binStr = atob(b64);
+          const bytes = new Uint8Array(binStr.length);
+          for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+          const blob = new Blob([bytes], { type: mime });
+          const blobUrl = URL.createObjectURL(blob);
+          cloudAssetUrlCache.set(uri, blobUrl);
+          return blobUrl;
+        } catch (e) {
+          console.warn('Cloud asset hydration note:', e);
+          return '';
+        } finally {
+          cloudAssetInflight.delete(uri);
+        }
+      })();
+
+      cloudAssetInflight.set(uri, task);
+      return task;
+    }
+
+    function _buildMediaSrcAttrs(url) {
+      if (!url) return `src=""`;
+      if (url.startsWith('cloud://asset/')) {
+        const cached = cloudAssetUrlCache.get(url);
+        return cached
+          ? `src="${cached}"`
+          : `src="${CLOUD_TRANSPARENT_PX}" data-cloud-src="${url}"`;
+      }
+      return `src="${resolveAssetUrl(url)}"`;
+    }
+
+    async function hydrateCloudMedia(rootEl) {
+      const root = rootEl || document;
+      const imgs = Array.from(root.querySelectorAll('img[data-cloud-src]'));
+      await Promise.all(imgs.map(async (img) => {
+        const uri = img.getAttribute('data-cloud-src');
+        const resolved = await resolveCloudAssetBlobUrl(uri);
+        if (resolved && img.getAttribute('data-cloud-src') === uri) {
+          img.removeAttribute('data-cloud-src');
+          img.src = resolved;
+        }
+      }));
+    }
+
+    async function _migrateDataUrlToCloud(dataUrl, fallbackName = 'migrated-asset') {
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:') || dataUrl.length <= 25000) {
+        return dataUrl;
+      }
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        return await _saveBlobToCloudAssetStore(blob, fallbackName);
+      } catch (e) {
+        console.warn('Inline asset migration note:', e);
+        return dataUrl;
+      }
+    }
+
+    async function _migrateProjectInlineAssetsToCloud(proj) {
+      if (!proj || typeof proj !== 'object') return proj;
+      if (proj.coverImage) {
+        proj.coverImage = await _migrateDataUrlToCloud(proj.coverImage, 'cover');
+      }
+      if (proj.pdfUrl) {
+        proj.pdfUrl = await _migrateDataUrlToCloud(proj.pdfUrl, 'deck.pdf');
+      }
+      if (Array.isArray(proj.images)) {
+        for (let i = 0; i < proj.images.length; i++) {
+          proj.images[i] = await _migrateDataUrlToCloud(proj.images[i], `slide-${i + 1}`);
+        }
+      }
+      if (Array.isArray(proj.gallery)) {
+        for (let i = 0; i < proj.gallery.length; i++) {
+          const g = proj.gallery[i];
+          if (g && g.image) g.image = await _migrateDataUrlToCloud(g.image, `gallery-${i + 1}`);
+          if (g && g.url) g.url = await _migrateDataUrlToCloud(g.url, `gallery-${i + 1}`);
+        }
+      }
+      return proj;
+    }
+
     function resolveAssetUrl(url) {
       if (!url) return '';
+      if (url.startsWith('cloud://asset/')) {
+        return cloudAssetUrlCache.get(url) || CLOUD_TRANSPARENT_PX;
+      }
       if (url.startsWith('assets/uploads/')) {
         try {
           const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
@@ -791,6 +936,13 @@
 
       if (url) {
         img.src = resolveAssetUrl(url);
+        if (url.startsWith('cloud://asset/') && !cloudAssetUrlCache.has(url)) {
+          resolveCloudAssetBlobUrl(url).then(resolved => {
+            if (resolved && document.getElementById('inpCover').value.trim() === url) {
+              img.src = resolved;
+            }
+          });
+        }
         const scale = zoom / 100;
         const offsetX = (x - 50) * 1.0;
         const offsetY = (y - 50) * 1.0;
@@ -967,65 +1119,63 @@
       return slides;
     }
 
-    // Uploads blob either directly to GitHub repo, or returns optimized Data URL fallback
+    // Uploads blob either to GitHub repo (if PAT configured) or directly into Cloud Firestore Asset Store
     async function uploadSmartAssetBlob(blob, filename, conf) {
       if (conf && conf.token && conf.owner && conf.repo) {
-        const path = `assets/uploads/${filename}`;
-        const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${path}`;
-
-        // Get existing file SHA to prevent conflicts
-        let sha = null;
         try {
-          const getRes = await fetch(apiUrl, {
+          const path = `assets/uploads/${filename}`;
+          const apiUrl = `https://api.github.com/repos/${conf.owner}/${conf.repo}/contents/${path}`;
+
+          let sha = null;
+          try {
+            const getRes = await fetch(apiUrl, {
+              headers: {
+                'Authorization': `Bearer ${conf.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+              }
+            });
+            if (getRes.ok) {
+              const data = await getRes.json();
+              sha = data.sha;
+            }
+          } catch (e) {}
+
+          const base64Content = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+
+          const bodyPayload = {
+            message: `Upload optimized portfolio asset: ${filename}`,
+            content: base64Content,
+            branch: conf.branch || 'main'
+          };
+          if (sha) bodyPayload.sha = sha;
+
+          const res = await fetch(apiUrl, {
+            method: 'PUT',
             headers: {
               'Authorization': `Bearer ${conf.token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            }
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bodyPayload)
           });
-          if (getRes.ok) {
-            const data = await getRes.json();
-            sha = data.sha;
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || `Upload failed with status ${res.status}`);
           }
-        } catch (e) {}
 
-        const base64Content = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-
-        const bodyPayload = {
-          message: `Upload optimized portfolio asset: ${filename}`,
-          content: base64Content,
-          branch: conf.branch || 'main'
-        };
-        if (sha) bodyPayload.sha = sha;
-
-        const res = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${conf.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(bodyPayload)
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || `Upload failed with status ${res.status}`);
+          return path;
+        } catch (ghErr) {
+          console.warn('GitHub upload failed, storing directly in Cloud Firestore:', ghErr);
         }
-
-        return path;
-      } else {
-        // Return optimized data URL
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
       }
+
+      // Store directly in Cloud Firestore chunked storage (zero local-only loss & zero 1 MiB overflow)
+      return await _saveBlobToCloudAssetStore(blob, filename);
     }
 
     // Handles Cover / Single Asset Upload
@@ -1135,9 +1285,9 @@
           // Set format type to slides for best viewing experience
           document.getElementById('inpType').value = 'slides';
 
-          // If GitHub PAT is active, upload original raw PDF as well
-          if (conf.token) {
-            progressEl.textContent = "Uploading original PDF for download...";
+          // Save original PDF to Cloud (GitHub if PAT set, or Cloud Firestore if <= 15 MB)
+          if (conf.token || file.size <= 15 * 1024 * 1024) {
+            progressEl.textContent = "Storing original PDF in Cloud Storage...";
             const rawPdfName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
             const pdfPath = await uploadSmartAssetBlob(file, rawPdfName, conf);
             document.getElementById('inpPdf').value = pdfPath;
@@ -1238,39 +1388,50 @@
     async function bootstrapData() {
       // 1. Fetch live data from Cloud Firestore first
       const db = initFirebase();
-      let cloudLoaded = false;
+      let cloudProjLoaded = false;
+      let cloudSiteLoaded = false;
       if (db) {
         try {
-          const snap = await db.collection('projects').get();
-          if (!snap.empty) {
+          const [projSnap, siteDoc, binDoc] = await Promise.all([
+            db.collection('projects').get().catch(() => null),
+            db.collection('content').doc('site').get().catch(() => null),
+            db.collection('content').doc('recycle_bin').get().catch(() => null)
+          ]);
+
+          const hasEmptyCloudProjects = !!(siteDoc && siteDoc.exists && siteDoc.data()._sync && siteDoc.data()._sync.projectsCount === 0);
+
+          if (projSnap && !projSnap.empty) {
             const list = [];
-            snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+            projSnap.forEach(d => list.push({ id: d.id, ...d.data() }));
             if (list.length > 0) {
               list.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? (a.order - b.order) : 0);
               projectsData = list;
-              localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-              cloudLoaded = true;
+              _safeLocalSet(DB_KEY_PROJ, projectsData);
+              cloudProjLoaded = true;
             }
+          } else if (hasEmptyCloudProjects) {
+            projectsData = [];
+            _safeLocalSet(DB_KEY_PROJ, projectsData);
+            cloudProjLoaded = true;
+          }
+
+          if (siteDoc && siteDoc.exists) {
+            siteContent = _sanitizeSiteContentForFirestore(siteDoc.data());
+            if (Array.isArray(siteContent.categories)) {
+              _safeLocalSet('ameer_portfolio_categories', siteContent.categories);
+            }
+            _safeLocalSet(DB_KEY_CONT, siteContent);
+            _safeLocalSet('ameer_portfolio_site_content', siteContent);
+            cloudSiteLoaded = true;
+          }
+
+          if (binDoc && binDoc.exists && Array.isArray(binDoc.data().items)) {
+            recycleBin = binDoc.data().items;
+            _safeLocalSet(DB_KEY_BIN, recycleBin);
           }
         } catch (e) {
           console.warn("Firestore fetch note:", e);
         }
-
-        try {
-          const doc = await db.collection('content').doc('site').get();
-          if (doc.exists) {
-            siteContent = doc.data();
-            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-          }
-        } catch (e) {}
-
-        try {
-          const binDoc = await db.collection('content').doc('recycle_bin').get();
-          if (binDoc.exists && binDoc.data().items) {
-            recycleBin = binDoc.data().items;
-            localStorage.setItem(DB_KEY_BIN, JSON.stringify(recycleBin));
-          }
-        } catch (e) {}
       }
 
       // Load recycle bin from localStorage if empty
@@ -1284,47 +1445,48 @@
       }
 
       // 2. If not loaded from Firestore, check localStorage
-      if (!cloudLoaded) {
+      if (!cloudProjLoaded) {
         try {
           const localProj = JSON.parse(localStorage.getItem(DB_KEY_PROJ));
           if (localProj && Array.isArray(localProj) && localProj.length > 0) {
             projectsData = localProj;
-            cloudLoaded = true;
+            cloudProjLoaded = true;
           }
         } catch (e) {}
       }
 
-      if (!siteContent || (!siteContent.about && !siteContent.profile)) {
+      if (!cloudSiteLoaded && (!siteContent || (!siteContent.about && !siteContent.profile))) {
         try {
           const localCont = JSON.parse(localStorage.getItem(DB_KEY_CONT) || localStorage.getItem('ameer_portfolio_site_content'));
           if (localCont && (localCont.about || localCont.profile)) {
-            siteContent = localCont;
+            siteContent = _sanitizeSiteContentForFirestore(localCont);
           }
         } catch (e) {}
       }
 
-      // 3. Fallback to local files if completely empty
-      if (!projectsData || projectsData.length === 0) {
+      // 3. Fallback to local files ONLY if Cloud has neither projects nor empty-count flag
+      if (!cloudProjLoaded && (!projectsData || projectsData.length === 0)) {
         try {
           const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
           if (projRes.ok) {
             const remoteProj = await projRes.json();
             if (remoteProj && Array.isArray(remoteProj) && remoteProj.length > 0) {
               projectsData = remoteProj;
-              localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+              _safeLocalSet(DB_KEY_PROJ, projectsData);
             }
           }
         } catch (err) {}
       }
 
-      if (!siteContent || (!siteContent.about && !siteContent.profile)) {
+      if (!cloudSiteLoaded && (!siteContent || (!siteContent.about && !siteContent.profile))) {
         try {
           const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
           if (contRes.ok) {
             const remoteCont = await contRes.json();
             if (remoteCont) {
-              siteContent = remoteCont;
-              localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+              siteContent = _sanitizeSiteContentForFirestore(remoteCont);
+              _safeLocalSet(DB_KEY_CONT, siteContent);
+              _safeLocalSet('ameer_portfolio_site_content', siteContent);
             }
           }
         } catch (err) {}
@@ -1373,7 +1535,28 @@
         projectsCount: Array.isArray(projectsData) ? projectsData.length : 0,
         updatedAt: new Date().toISOString()
       };
+      try {
+        const savedCats = localStorage.getItem('ameer_portfolio_categories');
+        if (savedCats && !cloned.categories) {
+          cloned.categories = JSON.parse(savedCats);
+        }
+      } catch (e) {}
       return _stripUndefinedForFirestore(cloned);
+    }
+
+    async function _autoPersistSiteToCloud() {
+      const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+      siteContent = cleanSite;
+      _safeLocalSet(DB_KEY_CONT, cleanSite);
+      _safeLocalSet('ameer_portfolio_site_content', cleanSite);
+      const db = initFirebase();
+      if (db) {
+        try {
+          await _saveSiteContentDoc(db, cleanSite);
+        } catch (err) {
+          console.warn('Auto cloud save note:', err);
+        }
+      }
     }
 
     function _collectAllUiEditsIntoState() {
@@ -1473,7 +1656,7 @@
 
           if (binDoc && binDoc.exists && Array.isArray(binDoc.data().items)) {
             recycleBin = binDoc.data().items;
-            localStorage.setItem(DB_KEY_BIN, JSON.stringify(recycleBin));
+            _safeLocalSet(DB_KEY_BIN, recycleBin);
           }
         }
 
@@ -1494,9 +1677,9 @@
 
         bgPreviewCache.pc = [];
         bgPreviewCache.mobile = [];
-        localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-        localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-        localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+        _safeLocalSet(DB_KEY_PROJ, projectsData);
+        _safeLocalSet(DB_KEY_CONT, siteContent);
+        _safeLocalSet('ameer_portfolio_site_content', siteContent);
 
         renderProjectsGrid();
         renderRecycleBin();
@@ -1543,7 +1726,7 @@
         return `
           <div class="project-card">
             <div class="card-thumb" style="overflow: hidden; position: relative;">
-              <img src="${resolveAssetUrl(cover)}" alt="${proj.title || ''}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
+              <img ${_buildMediaSrcAttrs(cover)} alt="${proj.title || ''}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=Image+Error'" />
               <div class="card-badge">${badge}</div>
             </div>
             <div class="card-body">
@@ -1558,6 +1741,7 @@
           </div>
         `;
       }).join('');
+      hydrateCloudMedia(container);
     }
 
     function openProjectModal(index = -1) {
@@ -1603,62 +1787,68 @@
     }
 
     async function saveProjectForm() {
-      const idx = parseInt(document.getElementById('editProjectIndex').value, 10);
-      
-      const galleryText = document.getElementById('inpGallery').value.trim();
-      const imagesArray = galleryText ? galleryText.split('\n').map(l => l.trim()).filter(l => l !== '') : [];
-      const catVal = document.getElementById('inpCategory').value.trim() || 'General';
-      const typeVal = document.getElementById('inpType').value;
+      const btnSave = document.getElementById('btnSaveProject');
+      const origBtnText = btnSave ? btnSave.textContent : '';
+      if (btnSave) { btnSave.disabled = true; btnSave.textContent = 'SAVING TO CLOUD...'; }
 
-      const projectObj = {
-        title: document.getElementById('inpTitle').value.trim() || 'Untitled Project',
-        client: document.getElementById('inpClient').value.trim() || 'Client',
-        category: catVal,
-        categories: [catVal],
-        year: document.getElementById('inpYear').value.trim() || '2026',
-        coverImage: document.getElementById('inpCover').value.trim(),
-        type: typeVal,
-        presentationType: typeVal,
-        pdfUrl: document.getElementById('inpPdf').value.trim(),
-        images: imagesArray,
-        gallery: imagesArray.map(url => ({ image: url })),
-        coverZoom: parseInt(document.getElementById('inpCoverZoom').value, 10),
-        coverX: parseInt(document.getElementById('inpCoverX').value, 10),
-        coverY: parseInt(document.getElementById('inpCoverY').value, 10)
-      };
+      try {
+        const idx = parseInt(document.getElementById('editProjectIndex').value, 10);
+        const galleryText = document.getElementById('inpGallery').value.trim();
+        const imagesArray = galleryText ? galleryText.split('\n').map(l => l.trim()).filter(l => l !== '') : [];
+        const catVal = document.getElementById('inpCategory').value.trim() || 'General';
+        const typeVal = document.getElementById('inpType').value;
 
-      let savedDocId = '';
-      if (idx >= 0) {
-        const existingId = projectsData[idx].id;
-        projectsData[idx] = { ...projectsData[idx], ...projectObj, id: existingId || ('proj_' + Date.now()), order: idx };
-        savedDocId = projectsData[idx].id;
-      } else {
-        projectObj.id = 'proj_' + Date.now();
-        projectObj.order = 0;
-        savedDocId = projectObj.id;
-        projectsData.unshift(projectObj);
-      }
+        const projectObj = {
+          title: document.getElementById('inpTitle').value.trim() || 'Untitled Project',
+          client: document.getElementById('inpClient').value.trim() || 'Client',
+          category: catVal,
+          categories: [catVal],
+          year: document.getElementById('inpYear').value.trim() || '2026',
+          coverImage: document.getElementById('inpCover').value.trim(),
+          type: typeVal,
+          presentationType: typeVal,
+          pdfUrl: document.getElementById('inpPdf').value.trim(),
+          images: imagesArray,
+          gallery: imagesArray.map(url => ({ image: url })),
+          coverZoom: parseInt(document.getElementById('inpCoverZoom').value, 10),
+          coverX: parseInt(document.getElementById('inpCoverX').value, 10),
+          coverY: parseInt(document.getElementById('inpCoverY').value, 10)
+        };
 
-      projectsData.forEach((p, i) => { p.order = i; });
-      localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-      renderProjectsGrid();
-      closeProjectModal();
-
-      // Realtime Cloud Firestore Save (full project list order + site sync count)
-      const db = initFirebase();
-      if (db && savedDocId) {
-        try {
-          await _syncAllProjectsToFirestore(db);
-          const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
-          siteContent = cleanSite;
-          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-          localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
-          await _saveSiteContentDoc(db, cleanSite);
-          console.log('✓ Project & order synced live to Cloud Firestore:', savedDocId);
-        } catch (err) {
-          console.error('Firestore project save error:', err);
-          alert('Saved locally, but Cloud sync failed: ' + err.message);
+        let savedDocId = '';
+        if (idx >= 0) {
+          const existingId = projectsData[idx].id;
+          projectsData[idx] = { ...projectsData[idx], ...projectObj, id: existingId || ('proj_' + Date.now()), order: idx };
+          savedDocId = projectsData[idx].id;
+        } else {
+          projectObj.id = 'proj_' + Date.now();
+          projectObj.order = 0;
+          savedDocId = projectObj.id;
+          projectsData.unshift(projectObj);
         }
+
+        const targetProj = projectsData.find(p => p.id === savedDocId);
+        if (targetProj) {
+          await _migrateProjectInlineAssetsToCloud(targetProj);
+        }
+
+        projectsData.forEach((p, i) => { p.order = i; });
+        _safeLocalSet(DB_KEY_PROJ, projectsData);
+        renderProjectsGrid();
+        closeProjectModal();
+
+        // Realtime Cloud Firestore Save (full project list order + site sync count)
+        const db = initFirebase();
+        if (db && savedDocId) {
+          await _syncAllProjectsToFirestore(db);
+          await _autoPersistSiteToCloud();
+          console.log('✓ Project & assets stored safely in Cloud Firestore:', savedDocId);
+        }
+      } catch (err) {
+        console.error('Firestore project save error:', err);
+        alert('Cloud save error: ' + err.message);
+      } finally {
+        if (btnSave) { btnSave.disabled = false; btnSave.textContent = origBtnText || 'Save Project'; }
       }
     }
 
@@ -1676,7 +1866,7 @@
       // 1. Remove from active projects list
       projectsData.splice(idx, 1);
       projectsData.forEach((p, i) => { p.order = i; });
-      localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+      _safeLocalSet(DB_KEY_PROJ, projectsData);
       renderProjectsGrid();
 
       // 2. Sync deletion & updated order to Cloud Firestore
@@ -1685,11 +1875,7 @@
         try {
           await db.collection('projects').doc(proj.id).delete();
           await _syncAllProjectsToFirestore(db);
-          const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
-          siteContent = cleanSite;
-          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-          localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
-          await _saveSiteContentDoc(db, cleanSite);
+          await _autoPersistSiteToCloud();
           console.log('✓ Removed from active Cloud Firestore:', proj.id);
         } catch (err) {
           console.warn('Firestore active doc remove note:', err);
@@ -1733,7 +1919,7 @@
     }
 
     async function saveRecycleBin() {
-      localStorage.setItem(DB_KEY_BIN, JSON.stringify(recycleBin));
+      _safeLocalSet(DB_KEY_BIN, recycleBin);
       const db = initFirebase();
       if (db) {
         try {
@@ -1786,7 +1972,7 @@
         return `
           <div class="project-card" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(26, 15, 15, 0.6);">
             <div class="card-thumb" style="overflow: hidden; position: relative;">
-              <img src="${resolveAssetUrl(thumb)}" alt="${item.title || ''}" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(40%);" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=No+Preview'" />
+              <img ${_buildMediaSrcAttrs(thumb)} alt="${item.title || ''}" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(40%);" onerror="this.src='https://placehold.co/600x375/141414/d4af37?text=No+Preview'" />
               <div class="card-badge" style="background: rgba(239, 68, 68, 0.9); color: #fff;">Slot ${idx + 1} of ${MAX_BIN_CAPACITY}</div>
             </div>
             <div class="card-body">
@@ -1801,6 +1987,7 @@
           </div>
         `;
       }).join('');
+      hydrateCloudMedia(container);
     }
 
     async function restoreFromRecycleBin(binId) {
@@ -1810,9 +1997,10 @@
       const item = recycleBin[idx];
       if (item.type === 'project' && item.data) {
         const restoredProj = item.data;
+        await _migrateProjectInlineAssetsToCloud(restoredProj);
         projectsData.unshift(restoredProj);
         projectsData.forEach((p, i) => { p.order = i; });
-        localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+        _safeLocalSet(DB_KEY_PROJ, projectsData);
         renderProjectsGrid();
 
         // Restore back to Cloud Firestore
@@ -1820,11 +2008,7 @@
         if (db && restoredProj.id) {
           try {
             await _syncAllProjectsToFirestore(db);
-            const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
-            siteContent = cleanSite;
-            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-            localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
-            await _saveSiteContentDoc(db, cleanSite);
+            await _autoPersistSiteToCloud();
             console.log('✓ Restored to Cloud Firestore:', restoredProj.id);
           } catch (err) {
             console.warn('Firestore restore note:', err);
@@ -1869,21 +2053,35 @@
       alert("✓ Recycle Bin emptied. All files permanently purged from Cloud Storage.");
     }
 
-    // Permanently purges physical files from GitHub Repository / Cloud Storage
+    // Permanently purges physical files from GitHub Repository / Cloud Storage / Cloud Firestore Asset Store
     async function permanentlyPurgeCloudFiles(item) {
       if (!item) return;
       const filePaths = item.filePaths || [];
       const conf = getGitHubConfig();
+      const db = initFirebase();
 
       for (const filePath of filePaths) {
         if (!filePath || typeof filePath !== 'string') continue;
 
-        // 1. Purge from GitHub repo if under assets/uploads/
+        // 1. Purge chunked asset from Cloud Firestore
+        if (filePath.startsWith('cloud://asset/') && db) {
+          const info = _parseCloudAssetUri(filePath);
+          if (info) {
+            const delPromises = [];
+            for (let i = 0; i < info.chunks; i++) {
+              delPromises.push(db.collection('content').doc(`cloud_${info.assetId}_${i}`).delete().catch(() => {}));
+            }
+            await Promise.all(delPromises);
+            cloudAssetUrlCache.delete(filePath);
+          }
+        }
+
+        // 2. Purge from GitHub repo if under assets/uploads/
         if (filePath.startsWith('assets/uploads/') && conf && conf.token) {
           await _deleteGitHubFile(filePath, conf);
         }
 
-        // 2. Purge from Firebase Storage if it was uploaded to storage bucket
+        // 3. Purge from Firebase Storage if it was uploaded to storage bucket
         if (filePath.startsWith('gs://') || filePath.includes('firebasestorage.googleapis.com')) {
           await _deleteFirebaseStorageFile(filePath);
         }
@@ -2341,7 +2539,7 @@
       renderBgCardUI(device, cfg);
     }
 
-    function applyDirectBgUrl(device, rawVal) {
+    async function applyDirectBgUrl(device, rawVal) {
       const val = (rawVal || '').trim();
       const bg = _ensureHeroBackgroundStruct();
       if (!val) {
@@ -2358,15 +2556,18 @@
       bg[device].updatedAt = new Date().toISOString();
       bgPreviewCache[device] = [];
       renderBgCardUI(device, bg[device]);
+      await _autoPersistSiteToCloud();
     }
 
-    function resetDeviceBackground(device) {
+    async function resetDeviceBackground(device) {
       if (!confirm(`Reset ${device.toUpperCase()} background back to the default head-turn scroll animation?`)) return;
       const bg = _ensureHeroBackgroundStruct();
       bg[device] = _getDefaultBgConfig(device);
       bgPreviewCache[device] = [];
       renderBgCardUI(device, bg[device]);
-      _setBgProgress(device, false);
+      _setBgProgress(device, true, 'Saving reset to Cloud...', 60);
+      await _autoPersistSiteToCloud();
+      _setBgProgress(device, true, '✓ Reset & saved to Cloud!', 100);
     }
 
     // Handles uploading 1 HQ Picture OR Multiple Animation Pictures (auto-sorted by filename)
@@ -2439,7 +2640,8 @@
             };
           }
 
-          _setBgProgress(device, true, '✓ HQ Picture Ready! Click Save & Sync to activate live.', 100);
+          await _autoPersistSiteToCloud();
+          _setBgProgress(device, true, '✓ HQ Picture uploaded & saved to Cloud!', 100);
           renderBgCardUI(device, bg[device]);
           return;
         }
@@ -2515,7 +2717,8 @@
           };
         }
 
-        _setBgProgress(device, true, `✓ ${total} HQ frames ready! Click "Save & Sync Backgrounds" to publish.`, 100);
+        await _autoPersistSiteToCloud();
+        _setBgProgress(device, true, `✓ ${total} HQ frames uploaded & saved to Cloud!`, 100);
         renderBgCardUI(device, bg[device]);
       } catch (err) {
         console.error('Background pictures upload error:', err);
@@ -2649,15 +2852,16 @@
             };
           }
 
-          _setBgProgress(device, true, `✓ Extracted & synced ${total} HQ scroll frames! Click "Save & Sync Backgrounds".`, 100);
+          await _autoPersistSiteToCloud();
+          _setBgProgress(device, true, `✓ ${total} HQ scroll frames uploaded & saved to Cloud!`, 100);
           renderBgCardUI(device, bg[device]);
         } else {
           // Direct HQ Video upload (Loop or Scroll-synced)
           const playbackType = videoMode === 'video-scroll' ? 'scroll' : 'loop';
-          const maxBytesNoGh = 8 * 1024 * 1024;
+          const maxBytesNoGh = 20 * 1024 * 1024;
 
           if (!conf.token && file.size > maxBytesNoGh) {
-            throw new Error('Videos over 8 MB require a GitHub Token in Settings, OR switch "When Uploading Video" to "Extract HQ Scroll Animation" above.');
+            throw new Error('Videos over 20 MB require a GitHub Token in Settings, OR switch "When Uploading Video" to "Extract HQ Scroll Animation" above.');
           }
 
           const objUrl = URL.createObjectURL(file);
@@ -2713,7 +2917,8 @@
           document.getElementById(`bgStatus_${device}`).textContent = `HQ Video (${playbackType === 'scroll' ? 'Scroll-Synced' : '60fps Loop'})`;
           document.getElementById(`bgScrubWrap_${device}`).style.display = 'none';
 
-          _setBgProgress(device, true, '✓ HQ Video Ready! Click "Save & Sync Backgrounds" to publish live.', 100);
+          await _autoPersistSiteToCloud();
+          _setBgProgress(device, true, '✓ HQ Video uploaded & saved to Cloud!', 100);
         }
       } catch (err) {
         console.error('Background video upload error:', err);
@@ -2735,8 +2940,8 @@
 
       const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
       siteContent = cleanSite;
-      localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+      _safeLocalSet(DB_KEY_CONT, siteContent);
+      _safeLocalSet('ameer_portfolio_site_content', siteContent);
 
       const db = initFirebase();
       const conf = getGitHubConfig();
@@ -2836,8 +3041,8 @@
       const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
       siteContent = cleanSite;
 
-      localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+      _safeLocalSet(DB_KEY_CONT, siteContent);
+      _safeLocalSet('ameer_portfolio_site_content', siteContent);
 
       const db = initFirebase();
       try {
@@ -2970,9 +3175,16 @@
       btn.style.opacity = '0.6';
 
       try {
-        localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-        localStorage.setItem(DB_KEY_CONT, JSON.stringify(cleanSite));
-        localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(cleanSite));
+        btn.innerHTML = 'SECURING ASSETS...';
+        if (Array.isArray(projectsData)) {
+          for (let i = 0; i < projectsData.length; i++) {
+            await _migrateProjectInlineAssetsToCloud(projectsData[i]);
+          }
+        }
+
+        _safeLocalSet(DB_KEY_PROJ, projectsData);
+        _safeLocalSet(DB_KEY_CONT, cleanSite);
+        _safeLocalSet('ameer_portfolio_site_content', cleanSite);
 
         const db = initFirebase();
         let syncedCloud = false;
@@ -3032,30 +3244,47 @@
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target.result);
           
           if (data.projects && Array.isArray(data.projects)) {
             projectsData = data.projects;
-            localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
           } else if (Array.isArray(data)) {
             projectsData = data;
-            localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
           }
 
           if (data.siteContent) {
             siteContent = _sanitizeSiteContentForFirestore(data.siteContent);
-            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-            localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+          }
+
+          for (let i = 0; i < projectsData.length; i++) {
+            await _migrateProjectInlineAssetsToCloud(projectsData[i]);
+            projectsData[i].order = i;
+          }
+
+          _safeLocalSet(DB_KEY_PROJ, projectsData);
+          _safeLocalSet(DB_KEY_CONT, siteContent);
+          _safeLocalSet('ameer_portfolio_site_content', siteContent);
+
+          const db = initFirebase();
+          let cloudSaved = false;
+          if (db) {
+            await _syncAllProjectsToFirestore(db);
+            await _autoPersistSiteToCloud();
+            cloudSaved = true;
           }
 
           renderProjectsGrid();
           populateContentForm();
-          populateTuner();
-          alert('Backup restored locally! Click PUBLISH LIVE to push these changes to your live website.');
+          await populateTuner();
+          alert(cloudSaved
+            ? '✓ Backup restored and synced safely to Cloud Storage!'
+            : '✓ Backup restored locally!');
         } catch (err) {
-          alert('Invalid backup JSON file.');
+          alert('Restore error: ' + err.message);
+        } finally {
+          event.target.value = '';
         }
       };
       reader.readAsText(file);
@@ -3064,9 +3293,9 @@
     // --- 8. UTILS ---
     function openPreviewSite() {
       _collectAllUiEditsIntoState();
-      localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-      localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+      _safeLocalSet(DB_KEY_PROJ, projectsData);
+      _safeLocalSet(DB_KEY_CONT, siteContent);
+      _safeLocalSet('ameer_portfolio_site_content', siteContent);
       const currentPath = window.location.pathname;
       const baseDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
       const targetUrl = window.location.origin + baseDir + 'index.html?preview=true';

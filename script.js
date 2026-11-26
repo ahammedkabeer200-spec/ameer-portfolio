@@ -36,8 +36,102 @@ function initFirebase() {
   return firebaseDb;
 }
 
+// Cloud Firestore Asset Store hydration (supports images & PDFs saved without GitHub PAT)
+const cloudAssetUrlCache = new Map();
+const cloudAssetInflight = new Map();
+const CLOUD_TRANSPARENT_PX = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function _parseCloudAssetUri(uri) {
+  if (!uri || !uri.startsWith('cloud://asset/')) return null;
+  const [base, query = ''] = uri.replace('cloud://asset/', '').split('?');
+  const params = new URLSearchParams(query);
+  return {
+    assetId: base,
+    chunks: Math.max(1, parseInt(params.get('c') || '1', 10)),
+    mime: params.get('m') || 'application/octet-stream'
+  };
+}
+
+async function resolveCloudAssetBlobUrl(uri) {
+  const info = _parseCloudAssetUri(uri);
+  if (!info) return uri || '';
+  if (cloudAssetUrlCache.has(uri)) return cloudAssetUrlCache.get(uri);
+  if (cloudAssetInflight.has(uri)) return cloudAssetInflight.get(uri);
+
+  const task = (async () => {
+    const db = initFirebase();
+    if (!db) return '';
+    try {
+      const docs = await Promise.all(
+        Array.from({ length: info.chunks }, (_, i) =>
+          db.collection('content').doc(`cloud_${info.assetId}_${i}`).get()
+        )
+      );
+      let b64 = '';
+      let mime = info.mime;
+      docs.forEach(d => {
+        if (d.exists && d.data().data) {
+          b64 += d.data().data;
+          if (d.data().mimeType) mime = d.data().mimeType;
+        }
+      });
+      if (!b64) return '';
+      const binStr = atob(b64);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      cloudAssetUrlCache.set(uri, blobUrl);
+      return blobUrl;
+    } catch (e) {
+      console.warn('Cloud asset hydration note:', e);
+      return '';
+    } finally {
+      cloudAssetInflight.delete(uri);
+    }
+  })();
+
+  cloudAssetInflight.set(uri, task);
+  return task;
+}
+
+function getRenderableSrcAttrs(url) {
+  if (!url) return `src=""`;
+  if (url.startsWith('cloud://asset/')) {
+    const cached = cloudAssetUrlCache.get(url);
+    return cached
+      ? `src="${cached}"`
+      : `src="${CLOUD_TRANSPARENT_PX}" data-cloud-src="${url}"`;
+  }
+  return `src="${resolveAssetUrl(url)}"`;
+}
+
+async function hydrateCloudMedia(rootEl) {
+  const root = rootEl || document;
+  const imgTasks = Array.from(root.querySelectorAll('img[data-cloud-src]')).map(async (img) => {
+    const uri = img.getAttribute('data-cloud-src');
+    const resolved = await resolveCloudAssetBlobUrl(uri);
+    if (resolved && img.getAttribute('data-cloud-src') === uri) {
+      img.removeAttribute('data-cloud-src');
+      img.src = resolved;
+    }
+  });
+  const linkTasks = Array.from(root.querySelectorAll('a[data-cloud-href]')).map(async (a) => {
+    const uri = a.getAttribute('data-cloud-href');
+    const resolved = await resolveCloudAssetBlobUrl(uri);
+    if (resolved && a.getAttribute('data-cloud-href') === uri) {
+      a.removeAttribute('data-cloud-href');
+      a.href = resolved;
+    }
+  });
+  await Promise.all([...imgTasks, ...linkTasks]);
+}
+
 function resolveAssetUrl(url) {
   if (!url) return '';
+  if (url.startsWith('cloud://asset/')) {
+    return cloudAssetUrlCache.get(url) || CLOUD_TRANSPARENT_PX;
+  }
   if (url.startsWith('assets/uploads/')) {
     try {
       const conf = JSON.parse(localStorage.getItem('ameer_github_config') || '{}');
@@ -238,6 +332,10 @@ async function loadAndApplySiteContent() {
   }
   
   if (!siteContent) siteContent = defaultSiteContent;
+
+  if (Array.isArray(siteContent.categories)) {
+    try { localStorage.setItem('ameer_portfolio_categories', JSON.stringify(siteContent.categories)); } catch (e) {}
+  }
 
   const milestones = calculateCareerMilestones();
 
@@ -486,15 +584,19 @@ async function loadProjectsData() {
   }
 }
 
-function getCategoryDisplayName(catId) {
+function _getCustomCategories() {
+  if (siteContent && Array.isArray(siteContent.categories)) return siteContent.categories;
   try {
     const saved = localStorage.getItem('ameer_portfolio_categories');
-    if (saved) {
-      const cats = JSON.parse(saved);
-      const found = cats.find(c => c.id === catId);
-      if (found) return found.name;
-    }
+    if (saved) return JSON.parse(saved);
   } catch (e) {}
+  return [];
+}
+
+function getCategoryDisplayName(catId) {
+  const cats = _getCustomCategories();
+  const found = cats.find(c => c.id === catId);
+  if (found) return found.name;
   return (catId || 'Brand Identity').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
@@ -540,11 +642,7 @@ function renderModalCategoryFilters() {
   if (!container) return;
 
   const usedCatIds = new Set(projectsData.map(p => p.category).filter(Boolean));
-  let customCats = [];
-  try {
-    const saved = localStorage.getItem('ameer_portfolio_categories');
-    if (saved) customCats = JSON.parse(saved);
-  } catch (err) {}
+  const customCats = _getCustomCategories();
 
   const catList = [{ id: 'all', name: 'All Projects' }];
   usedCatIds.forEach(id => {
@@ -597,7 +695,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
     return `
       <article class="modal-project-card" onclick="openCaseStudyFromModal('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000; flex-shrink: 0; border-radius: 12px 12px 0 0;">
-          <img src="${resolveAssetUrl(p.coverImage)}" alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <img ${getRenderableSrcAttrs(p.coverImage)} alt="${p.title}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
@@ -620,6 +718,7 @@ function renderModalProjectsGrid(filterCat = 'all') {
       </article>
     `;
   }).join('');
+  hydrateCloudMedia(container);
 }
 
 let originalBodyOverflow = '';
@@ -668,7 +767,7 @@ function renderProjectsGrid() {
     return `
       <article class="modal-project-card project-card-mini" onclick="openCaseStudy('${p.slug || p.id}')" tabindex="0" role="button" aria-label="Open Project: ${p.title || 'Untitled'}">
         <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: transparent; flex-shrink: 0; border-radius: 12px;">
-          <img src="${resolveAssetUrl(p.coverImage || '')}" alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
+          <img ${getRenderableSrcAttrs(p.coverImage || '')} alt="${p.title || 'Untitled'}" class="modal-project-thumb" style="width: 100%; height: 100%; object-fit: cover; display: block; object-position: center; transform-origin: center center; transform: translate(${offsetX}%, ${offsetY}%) scale(${scale}); transition: transform 0.2s;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';">
           <span class="modal-project-format" style="position: absolute; top: 10px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.65); padding: 4px 8px; border-radius: 6px; color: #fff; font-weight: 600; z-index: 2; display: flex; align-items: center;">
             ${isPdf ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>PDF Deck' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Slides'}
           </span>
@@ -691,6 +790,7 @@ function renderProjectsGrid() {
       </article>
     `;
   }).join('');
+  hydrateCloudMedia(grid);
 
   // Re-sync kinetic horizontal scroller with GSAP ScrollTrigger
   if (typeof window.initKineticTrack === 'function') {
@@ -739,8 +839,9 @@ function openCaseStudy(identifier) {
       });
     }
 
+    const isCloudPdf = pdfUrl && pdfUrl.startsWith('cloud://asset/');
     let finalPdfUrl = '';
-    if (pdfUrl) {
+    if (pdfUrl && !isCloudPdf) {
       finalPdfUrl = resolveAssetUrl(pdfUrl);
       if (!finalPdfUrl.startsWith('http') && !finalPdfUrl.startsWith('data:')) {
         const baseHref = window.location.href.split('#')[0].split('?')[0];
@@ -753,9 +854,17 @@ function openCaseStudy(identifier) {
     const hasMultipleImages = allImages.length > 1;
 
     // Case A: Project has an image gallery with multiple slides -> Render full vertical Behance image deck
-    if (hasMultipleImages || (allImages.length === 1 && !finalPdfUrl)) {
+    if (hasMultipleImages || (allImages.length === 1 && !finalPdfUrl && !isCloudPdf)) {
       let topBarHtml = '';
-      if (finalPdfUrl) {
+      if (isCloudPdf) {
+        const cachedPdf = cloudAssetUrlCache.get(pdfUrl);
+        topBarHtml = `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(20,20,20,0.85); border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+            <span style="color: #a3a3a3; font-size: 0.85rem; font-weight: 600;">Presentation Deck &bull; ${allImages.length} High-Res Slides</span>
+            <a ${cachedPdf ? `href="${cachedPdf}"` : `href="#" data-cloud-href="${pdfUrl}"`} target="_blank" rel="noopener noreferrer" style="background: rgba(205, 248, 99, 0.15); border: 1px solid var(--accent-lime, #cdf863); color: var(--accent-lime, #cdf863); padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">Download Original PDF &darr;</a>
+          </div>
+        `;
+      } else if (finalPdfUrl) {
         topBarHtml = `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(20,20,20,0.85); border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
             <span style="color: #a3a3a3; font-size: 0.85rem; font-weight: 600;">Presentation Deck &bull; ${allImages.length} High-Res Slides</span>
@@ -766,12 +875,12 @@ function openCaseStudy(identifier) {
 
       const galleryHtml = allImages.map(url => `
         <div style="width: 100%; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-          <img src="${resolveAssetUrl(url)}" alt="${project.title}" style="width: 100%; height: auto; display: block; object-fit: cover;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';" />
+          <img ${getRenderableSrcAttrs(url)} alt="${project.title}" style="width: 100%; height: auto; display: block; object-fit: cover;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'%231a1a1a\\'><rect width=\\'100%\\' height=\\'100%\\'/></svg>';" />
         </div>
       `).join('');
 
       let externalBtnHtml = '';
-      const externalLink = project.externalUrl || (pdfUrl && !pdfUrl.toLowerCase().includes('.pdf') ? pdfUrl : null);
+      const externalLink = project.externalUrl || (pdfUrl && !isCloudPdf && !pdfUrl.toLowerCase().includes('.pdf') ? pdfUrl : null);
       if (externalLink && externalLink.startsWith('http')) {
         externalBtnHtml = `<div style="margin-bottom: 2rem;"><a href="${externalLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: rgba(205, 248, 99, 0.15); border: 1px solid var(--accent-lime, #cdf863); color: var(--accent-lime, #cdf863); padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; text-decoration: none;">Visit Live Site &#x2197;</a></div>`;
       }
@@ -786,6 +895,13 @@ function openCaseStudy(identifier) {
           ${galleryHtml}
         </div>
       `;
+      hydrateCloudMedia(presBody);
+    } else if (isCloudPdf) {
+      presBody.innerHTML = `<div style="padding: 3rem; color: #a3a3a3; text-align: center;">Loading PDF deck from Cloud Storage...</div>`;
+      resolveCloudAssetBlobUrl(pdfUrl).then(resolvedPdf => {
+        if (resolvedPdf) renderPdfToImageSlides(resolvedPdf, presBody, project);
+        else presBody.innerHTML = `<div style="padding: 3rem; color: #ef4444; text-align: center;">Could not load Cloud PDF deck.</div>`;
+      });
     } else if (finalPdfUrl) {
       // Case B: Project has a PDF presentation deck -> Render ALL pages dynamically as high-res slides via PDF.js!
       renderPdfToImageSlides(finalPdfUrl, presBody, project);
