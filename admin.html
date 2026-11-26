@@ -1677,6 +1677,8 @@
 
         bgPreviewCache.pc = [];
         bgPreviewCache.mobile = [];
+        bgPreviewCacheKey.pc = '';
+        bgPreviewCacheKey.mobile = '';
         _safeLocalSet(DB_KEY_PROJ, projectsData);
         _safeLocalSet(DB_KEY_CONT, siteContent);
         _safeLocalSet('ameer_portfolio_site_content', siteContent);
@@ -2139,6 +2141,8 @@
 
     // --- 4. HQ HERO BACKGROUND & ANIMATION STUDIO (PC & MOBILE SEPARATELY) ---
     const bgPreviewCache = { pc: [], mobile: [] };
+    const bgPreviewCacheKey = { pc: '', mobile: '' };
+    const activeBgUploads = { pc: null, mobile: null };
 
     function _getDefaultBgConfig(device) {
       return {
@@ -2176,6 +2180,7 @@
       const txtEl = document.getElementById(`bgProgressText_${device}`);
       const pctEl = document.getElementById(`bgProgressPct_${device}`);
       const barEl = document.getElementById(`bgProgressBar_${device}`);
+      const statusEl = document.getElementById(`bgStatus_${device}`);
       if (!wrap) return;
       wrap.style.display = visible ? 'flex' : 'none';
       if (text !== undefined && txtEl) txtEl.textContent = text;
@@ -2183,6 +2188,9 @@
         const cleanPct = Math.max(0, Math.min(100, Math.round(pct)));
         if (pctEl) pctEl.textContent = cleanPct + '%';
         if (barEl) barEl.style.width = cleanPct + '%';
+        if (visible && cleanPct < 100 && statusEl && text) {
+          statusEl.textContent = `⏳ ${cleanPct}% — ${text.slice(0, 32)}`;
+        }
       }
     }
 
@@ -2320,6 +2328,22 @@
       return fileEntries.map(e => e.path);
     }
 
+    async function _runChunkUploadPool(total, workerFn, onProgress, concurrency = 4) {
+      let cursor = 0;
+      let done = 0;
+      async function worker() {
+        while (cursor < total) {
+          const i = cursor++;
+          await workerFn(i);
+          done++;
+          if (onProgress) onProgress(done, total);
+        }
+      }
+      const pool = [];
+      for (let w = 0; w < Math.min(concurrency, Math.max(1, total)); w++) pool.push(worker());
+      await Promise.all(pool);
+    }
+
     // Firestore Chunked Storage helper (automatic fallback when GitHub PAT is not saved)
     async function _saveChunkedSequenceToFirestore(prefix, dataUrls, onProgress) {
       const db = initFirebase();
@@ -2342,15 +2366,15 @@
       }
       if (currentBatch.length > 0) chunks.push(currentBatch);
 
-      for (let c = 0; c < chunks.length; c++) {
+      await _runChunkUploadPool(chunks.length, async (c) => {
         await db.collection('content').doc(`${prefix}_${c}`).set({
           frames: chunks[c],
           chunkIndex: c,
           totalChunks: chunks.length,
           updatedAt: new Date().toISOString()
         });
-        if (onProgress) onProgress(c + 1, chunks.length);
-      }
+      }, onProgress, 4);
+
       return chunks.length;
     }
 
@@ -2367,7 +2391,7 @@
 
       const CHUNK_LEN = 600000;
       const totalChunks = Math.ceil(base64Full.length / CHUNK_LEN);
-      for (let c = 0; c < totalChunks; c++) {
+      await _runChunkUploadPool(totalChunks, async (c) => {
         const slice = base64Full.slice(c * CHUNK_LEN, (c + 1) * CHUNK_LEN);
         await db.collection('content').doc(`${prefix}_${c}`).set({
           data: slice,
@@ -2376,8 +2400,8 @@
           mimeType: blob.type || 'application/octet-stream',
           updatedAt: new Date().toISOString()
         });
-        if (onProgress) onProgress(c + 1, totalChunks);
-      }
+      }, onProgress, 4);
+
       return totalChunks;
     }
 
@@ -2391,7 +2415,9 @@
     }
 
     async function _hydrateBgPreviewFromFirestore(device, cfg) {
-      if (!cfg || !cfg.chunkPrefix || !cfg.chunkCount || bgPreviewCache[device].length > 0) return;
+      if (!cfg || !cfg.chunkPrefix || !cfg.chunkCount) return;
+      const cacheKey = `${cfg.chunkPrefix}_${cfg.updatedAt || ''}`;
+      if (bgPreviewCache[device].length > 0 && bgPreviewCacheKey[device] === cacheKey) return;
       const db = initFirebase();
       if (!db) return;
       try {
@@ -2405,6 +2431,7 @@
           const frames = [];
           docs.forEach(d => { if (d.exists && Array.isArray(d.data().frames)) frames.push(...d.data().frames); });
           bgPreviewCache[device] = frames;
+          bgPreviewCacheKey[device] = cacheKey;
         } else {
           let b64 = '';
           docs.forEach(d => { if (d.exists && d.data().data) b64 += d.data().data; });
@@ -2412,6 +2439,7 @@
             const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
             const blob = new Blob([bytes], { type: cfg.mimeType || 'application/octet-stream' });
             bgPreviewCache[device] = [URL.createObjectURL(blob)];
+            bgPreviewCacheKey[device] = cacheKey;
           }
         }
         renderBgCardUI(device, cfg);
@@ -2555,6 +2583,7 @@
       }
       bg[device].updatedAt = new Date().toISOString();
       bgPreviewCache[device] = [];
+      bgPreviewCacheKey[device] = '';
       renderBgCardUI(device, bg[device]);
       await _autoPersistSiteToCloud();
     }
@@ -2564,6 +2593,7 @@
       const bg = _ensureHeroBackgroundStruct();
       bg[device] = _getDefaultBgConfig(device);
       bgPreviewCache[device] = [];
+      bgPreviewCacheKey[device] = '';
       renderBgCardUI(device, bg[device]);
       _setBgProgress(device, true, 'Saving reset to Cloud...', 60);
       await _autoPersistSiteToCloud();
@@ -2608,6 +2638,7 @@
 
           const localDataUrl = await _blobToDataUrl(finalBlob);
           bgPreviewCache[device] = [localDataUrl];
+          bgPreviewCacheKey[device] = String(Date.now());
 
           if (conf.token && conf.owner && conf.repo) {
             _setBgProgress(device, true, 'Uploading HQ image to repository...', 65);
@@ -2678,6 +2709,7 @@
         }
 
         bgPreviewCache[device] = localUrls;
+        bgPreviewCacheKey[device] = String(Date.now());
 
         if (conf.token && conf.owner && conf.repo) {
           _setBgProgress(device, true, `Uploading ${total} HQ frames in 1 atomic commit...`, 60);
@@ -2729,76 +2761,142 @@
       }
     }
 
-    // Extracts up to maxFrames crisp HQ WebP frames from an uploaded video file
+    // Extracts up to maxFrames crisp HQ WebP frames reliably on desktop and mobile browsers
     async function _extractHqFramesFromVideoFile(file, device, enhanceHq, onProgress) {
       return await new Promise((resolve, reject) => {
         const video = document.createElement('video');
         video.muted = true;
         video.playsInline = true;
+        video.setAttribute('muted', '');
+        video.setAttribute('playsinline', '');
         video.preload = 'auto';
         const objUrl = URL.createObjectURL(file);
         video.src = objUrl;
 
-        video.onerror = () => {
+        let started = false;
+        let settled = false;
+        const failClean = (err) => {
+          if (settled) return;
+          settled = true;
           URL.revokeObjectURL(objUrl);
-          reject(new Error('Could not decode uploaded video format in browser.'));
+          reject(err);
         };
 
-        video.onloadedmetadata = async () => {
+        const metaTimer = setTimeout(() => {
+          if (!started) {
+            failClean(new Error('Video codec timed out loading in browser. Try MP4 (H.264) or WebM format.'));
+          }
+        }, 15000);
+
+        video.onerror = () => {
+          clearTimeout(metaTimer);
+          failClean(new Error('Could not decode uploaded video format in browser.'));
+        };
+
+        const startExtraction = async () => {
+          if (started || settled) return;
+          started = true;
+          clearTimeout(metaTimer);
           try {
-            const dur = video.duration || 1;
-            const targetFpsCount = Math.min(90, Math.max(24, Math.round(dur * 15)));
-            const maxDim = device === 'mobile' ? 1440 : 1920;
-            const vw = video.videoWidth || 1280;
-            const vh = video.videoHeight || 720;
+            let dur = video.duration;
+            if (!Number.isFinite(dur) || dur <= 0) dur = 3.0;
+            const maxFrames = device === 'mobile' ? 44 : 56;
+            const targetFpsCount = Math.min(maxFrames, Math.max(18, Math.round(dur * 12)));
+            const maxDim = device === 'mobile' ? 1080 : 1600;
+            const vw = video.videoWidth || 1080;
+            const vh = video.videoHeight || 1920;
             const scale = Math.min(1, maxDim / Math.max(vw, vh));
-            const outW = Math.round(vw * scale);
-            const outH = Math.round(vh * scale);
+            const outW = Math.max(2, Math.round(vw * scale));
+            const outH = Math.max(2, Math.round(vh * scale));
 
             const canvas = document.createElement('canvas');
             canvas.width = outW;
             canvas.height = outH;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const ctx = canvas.getContext('2d', { alpha: false });
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
+            if (enhanceHq && 'filter' in ctx) {
+              ctx.filter = 'contrast(1.06) saturate(1.04)';
+            }
+
+            const seekTo = (t) => new Promise((resSeek) => {
+              if (Math.abs(video.currentTime - t) < 0.005 && video.readyState >= 2) {
+                resSeek();
+                return;
+              }
+              let done = false;
+              const finish = () => {
+                if (done) return;
+                done = true;
+                video.removeEventListener('seeked', finish);
+                clearTimeout(guard);
+                resSeek();
+              };
+              const guard = setTimeout(finish, 1200);
+              video.addEventListener('seeked', finish, { once: true });
+              video.currentTime = t;
+            });
 
             const extracted = [];
+            const safeMaxTime = Math.max(0.05, dur - 0.04);
             for (let i = 0; i < targetFpsCount; i++) {
-              const seekTime = Math.min(dur - 0.02, (i / (targetFpsCount - 1)) * dur);
-              await new Promise((resSeek) => {
-                video.onseeked = () => resSeek();
-                video.currentTime = seekTime;
-              });
+              const seekTime = i === 0
+                ? Math.min(0.02, safeMaxTime)
+                : Math.min(safeMaxTime, (i / (targetFpsCount - 1)) * safeMaxTime);
+              await seekTo(seekTime);
               ctx.drawImage(video, 0, 0, outW, outH);
-              const blob = await _encodeHqCanvasToWebp(canvas, enhanceHq, 0.91);
+              const blob = await new Promise((res) => canvas.toBlob(res, 'image/webp', 0.90));
+              if (!blob) throw new Error('Failed to encode video frame.');
               extracted.push(blob);
               if (onProgress) onProgress(i + 1, targetFpsCount);
             }
+            settled = true;
             URL.revokeObjectURL(objUrl);
             resolve(extracted);
           } catch (e) {
-            URL.revokeObjectURL(objUrl);
-            reject(e);
+            failClean(e);
           }
         };
+
+        video.addEventListener('loadeddata', startExtraction, { once: true });
+        video.addEventListener('loadedmetadata', () => {
+          setTimeout(() => { if (!started) startExtraction(); }, 350);
+        }, { once: true });
+        video.load();
       });
     }
 
     // Handles Video Upload (.mp4/.webm/.mov): supports HQ Frame Extraction OR Native 60fps Video
     async function handleBgVideoUpload(event, device) {
-      const file = event.target.files[0];
+      const file = event.target && event.target.files && event.target.files[0];
       if (!file) return;
 
-      const videoMode = document.getElementById(`bgVideoMode_${device}`).value;
+      let videoMode = document.getElementById(`bgVideoMode_${device}`).value;
       const enhanceHq = document.getElementById(`bgEnhanceHq_${device}`).checked;
       const conf = getGitHubConfig();
       const bg = _ensureHeroBackgroundStruct();
 
-      try {
+      const maxBytesNoGh = 20 * 1024 * 1024;
+      if (videoMode !== 'scroll-frames' && !conf.token && file.size > maxBytesNoGh) {
+        const useFrames = confirm(`This video is ${formatBytes(file.size)} (over 20 MB direct limit without a GitHub Token).\n\nExtract smooth HQ Scroll Animation frames instead so it saves cleanly to Cloud?`);
+        if (!useFrames) {
+          event.target.value = '';
+          return;
+        }
+        videoMode = 'scroll-frames';
+        document.getElementById(`bgVideoMode_${device}`).value = 'scroll-frames';
+      }
+
+      const publishBtn = document.querySelector('.btn-publish');
+      const runUpload = async () => {
+        if (publishBtn) publishBtn.dataset.uploadingBg = 'true';
+        const wrapEl = document.getElementById(`bgProgressWrap_${device}`);
+        if (wrapEl) wrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
         if (videoMode === 'scroll-frames') {
           _setBgProgress(device, true, 'Extracting HQ frames from video...', 5);
           const frameBlobs = await _extractHqFramesFromVideoFile(file, device, enhanceHq, (curr, tot) => {
-            _setBgProgress(device, true, `Extracting & sharpening HQ frame ${curr}/${tot}...`, Math.round((curr / tot) * 55));
+            _setBgProgress(device, true, `Extracting HQ frame ${curr}/${tot}...`, Math.round((curr / tot) * 55));
           });
 
           const total = frameBlobs.length;
@@ -2812,16 +2910,14 @@
             localUrls.push(await _blobToDataUrl(frameBlobs[i]));
           }
 
-          bgPreviewCache[device] = localUrls;
-
           if (conf.token && conf.owner && conf.repo) {
-            _setBgProgress(device, true, `Uploading ${total} HQ frames in 1 atomic commit...`, 60);
+            _setBgProgress(device, true, `Uploading ${total} HQ frames in 1 commit...`, 60);
             const paths = await _batchCommitAssetsToGitHub(
               processedItems,
               `Upload ${total} HQ video-extracted frames for ${device}`,
               conf,
               (done, tot) => {
-                _setBgProgress(device, true, `Uploading HQ frames (${done}/${tot})...`, 60 + Math.round((done / tot) * 38));
+                _setBgProgress(device, true, `Uploading HQ frames (${done}/${tot})...`, 60 + Math.round((done / tot) * 35));
               }
             );
             bg[device] = {
@@ -2834,12 +2930,16 @@
               totalFrames: paths.length,
               updatedAt: new Date().toISOString()
             };
+            bgPreviewCache[device] = localUrls;
+        bgPreviewCacheKey[device] = String(Date.now());
+            bgPreviewCacheKey[device] = paths[0] || String(Date.now());
           } else {
-            _setBgProgress(device, true, 'Syncing HQ frames to Cloud Firestore...', 65);
+            _setBgProgress(device, true, 'Syncing HQ frames to Cloud...', 60);
             const prefix = `bg_seq_${device}_${Date.now()}`;
             const chunkCount = await _saveChunkedSequenceToFirestore(prefix, localUrls, (curr, tot) => {
-              _setBgProgress(device, true, `Uploading cloud batch ${curr}/${tot}...`, 65 + Math.round((curr / tot) * 33));
+              _setBgProgress(device, true, `Uploading cloud batch ${curr}/${tot}...`, 60 + Math.round((curr / tot) * 35));
             });
+            const updatedAt = new Date().toISOString();
             bg[device] = {
               ...bg[device],
               mode: 'sequence',
@@ -2848,34 +2948,30 @@
               chunkCount,
               frames: [],
               totalFrames: localUrls.length,
-              updatedAt: new Date().toISOString()
+              updatedAt
             };
+            bgPreviewCache[device] = localUrls;
+        bgPreviewCacheKey[device] = String(Date.now());
+            bgPreviewCacheKey[device] = `${prefix}_${updatedAt}`;
           }
 
+          _setBgProgress(device, true, 'Activating on live website...', 97);
           await _autoPersistSiteToCloud();
-          _setBgProgress(device, true, `✓ ${total} HQ scroll frames uploaded & saved to Cloud!`, 100);
+          _setBgProgress(device, true, `✓ New ${total}-frame video animation LIVE in Cloud!`, 100);
           renderBgCardUI(device, bg[device]);
         } else {
-          // Direct HQ Video upload (Loop or Scroll-synced)
           const playbackType = videoMode === 'video-scroll' ? 'scroll' : 'loop';
-          const maxBytesNoGh = 20 * 1024 * 1024;
-
-          if (!conf.token && file.size > maxBytesNoGh) {
-            throw new Error('Videos over 20 MB require a GitHub Token in Settings, OR switch "When Uploading Video" to "Extract HQ Scroll Animation" above.');
-          }
-
           const objUrl = URL.createObjectURL(file);
-          bgPreviewCache[device] = [objUrl];
 
           if (conf.token && conf.owner && conf.repo) {
-            _setBgProgress(device, true, 'Uploading original HQ video to GitHub...', 45);
+            _setBgProgress(device, true, 'Uploading HQ video to GitHub...', 45);
             const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
             const filename = `hero-vid-${device}-${Date.now()}.${ext}`;
             const paths = await _batchCommitAssetsToGitHub(
               [{ blob: file, path: `assets/uploads/${filename}` }],
               `Upload HQ ${device} background video`,
               conf,
-              (d, t) => _setBgProgress(device, true, 'Committing video...', 80)
+              () => _setBgProgress(device, true, 'Committing video...', 80)
             );
             bg[device] = {
               ...bg[device],
@@ -2888,12 +2984,15 @@
               frames: [],
               updatedAt: new Date().toISOString()
             };
+            bgPreviewCache[device] = [objUrl];
+            bgPreviewCacheKey[device] = paths[0];
           } else {
-            _setBgProgress(device, true, 'Chunking HQ video to Cloud Firestore...', 30);
+            _setBgProgress(device, true, 'Saving HQ video chunks to Cloud...', 25);
             const prefix = `bg_vid_${device}_${Date.now()}`;
             const chunkCount = await _saveChunkedBinaryToFirestore(prefix, file, (curr, tot) => {
-              _setBgProgress(device, true, `Uploading cloud chunk ${curr}/${tot}...`, 30 + Math.round((curr / tot) * 65));
+              _setBgProgress(device, true, `Uploading chunk ${curr}/${tot}...`, 25 + Math.round((curr / tot) * 70));
             });
+            const updatedAt = new Date().toISOString();
             bg[device] = {
               ...bg[device],
               mode: 'video',
@@ -2903,33 +3002,51 @@
               videoPlayback: playbackType,
               mimeType: file.type || 'video/mp4',
               frames: [],
-              updatedAt: new Date().toISOString()
+              updatedAt
             };
+            bgPreviewCache[device] = [objUrl];
+            bgPreviewCacheKey[device] = `${prefix}_${updatedAt}`;
           }
 
-          // Display immediate local preview
-          const vidEl = document.getElementById(`bgPreviewVid_${device}`);
-          const imgEl = document.getElementById(`bgPreviewImg_${device}`);
-          imgEl.style.display = 'none';
-          vidEl.style.display = 'block';
-          vidEl.src = objUrl;
-          vidEl.play().catch(() => {});
-          document.getElementById(`bgStatus_${device}`).textContent = `HQ Video (${playbackType === 'scroll' ? 'Scroll-Synced' : '60fps Loop'})`;
-          document.getElementById(`bgScrubWrap_${device}`).style.display = 'none';
-
           await _autoPersistSiteToCloud();
-          _setBgProgress(device, true, '✓ HQ Video uploaded & saved to Cloud!', 100);
+          renderBgCardUI(device, bg[device]);
+          const vidEl = document.getElementById(`bgPreviewVid_${device}`);
+          if (vidEl) vidEl.play().catch(() => {});
+          _setBgProgress(device, true, '✓ New HQ Video LIVE in Cloud!', 100);
         }
+      };
+
+      const task = runUpload();
+      activeBgUploads[device] = task;
+      try {
+        await task;
       } catch (err) {
         console.error('Background video upload error:', err);
         _setBgProgress(device, true, `❌ ${err.message}`, 0);
-        alert('Video upload notice: ' + err.message);
+        alert('Video upload error: ' + err.message);
       } finally {
+        activeBgUploads[device] = null;
+        if (publishBtn) delete publishBtn.dataset.uploadingBg;
         event.target.value = '';
       }
     }
 
+    async function _waitForActiveBgUploads(btn, waitText = 'FINISHING VIDEO UPLOAD...') {
+      const pending = Object.values(activeBgUploads).filter(Boolean);
+      if (pending.length === 0) return;
+      const prevTxt = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = waitText; }
+      try {
+        await Promise.all(pending);
+      } catch (e) {}
+      if (btn) btn.innerHTML = prevTxt;
+    }
+
     async function saveProfileTuner() {
+      const btn = document.getElementById('btnSaveHeroBg');
+      const origTxt = btn ? btn.textContent : '';
+      await _waitForActiveBgUploads(btn, 'Finishing Upload...');
+
       const bg = _ensureHeroBackgroundStruct();
       ['pc', 'mobile'].forEach(dev => {
         bg[dev].fit = document.getElementById(`bgFit_${dev}`).value;
@@ -2945,8 +3062,6 @@
 
       const db = initFirebase();
       const conf = getGitHubConfig();
-      const btn = document.getElementById('btnSaveHeroBg');
-      const origTxt = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
 
       try {
@@ -3155,6 +3270,10 @@
     }
 
     async function publishToGitHub() {
+      const btn = document.querySelector('.btn-publish');
+      const originalText = btn ? btn.innerHTML : 'PUBLISH LIVE';
+      await _waitForActiveBgUploads(btn, 'FINISHING VIDEO UPLOAD...');
+
       // Collect any pending edits from Global Text & Hero Background inputs
       _collectAllUiEditsIntoState();
       const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
@@ -3162,15 +3281,17 @@
 
       // Safeguard against publishing empty projects accidentally
       if (!projectsData || projectsData.length === 0) {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
         const proceedEmpty = confirm("⚠️ Warning: Your projects list is currently EMPTY (0 projects).\n\nPublishing this will remove all projects from the live website!\n\nAre you sure you want to proceed?");
         if (!proceedEmpty) return;
       }
 
-      if (!confirm("Publish all latest Projects, Global Content & Hero Backgrounds live to your website now?")) return;
+      if (!confirm("Publish all latest Projects, Global Content & Hero Backgrounds live to your website now?")) {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        return;
+      }
 
       const conf = getGitHubConfig();
-      const btn = document.querySelector('.btn-publish');
-      const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.style.opacity = '0.6';
 

@@ -43,6 +43,8 @@
     let lastIsMobile = null;
     let activeRenderMode = 'sequence'; // 'sequence' | 'video-loop' | 'video-scroll' | 'image'
     let activeVideoConfig = {};
+    let defaultQueueGen = 0;
+    let defaultBootTimer = null;
 
     function isMobileMode() {
       return window.innerWidth < 768 || window.innerHeight > window.innerWidth;
@@ -269,16 +271,25 @@
       }
     }
 
-    // Reconstruct Firestore chunked assets if uploaded without GitHub PAT
+    // Reconstruct Firestore chunked assets reliably (with per-chunk retry)
     async function loadFirestoreChunkedAsset(prefix, count, mimeType) {
       const db = typeof window.initFirebase === 'function' ? window.initFirebase() : null;
       if (!db || !prefix || !count) return null;
 
-      const docPromises = [];
-      for (let i = 0; i < count; i++) {
-        docPromises.push(db.collection('content').doc(`${prefix}_${i}`).get());
+      async function fetchChunkWithRetry(i, retries = 2) {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            return await db.collection('content').doc(`${prefix}_${i}`).get();
+          } catch (err) {
+            if (attempt === retries) throw err;
+            await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+          }
+        }
       }
-      const docs = await Promise.all(docPromises);
+
+      const docs = await Promise.all(
+        Array.from({ length: count }, (_, i) => fetchChunkWithRetry(i))
+      );
 
       // Case 1: Sequence chunks ({ frames: [...] })
       const firstData = docs[0] && docs[0].exists ? docs[0].data() : null;
@@ -316,6 +327,28 @@
       const activeRoot = heroBackgroundConfig || window.__heroBackgroundConfig;
       const cfg = activeRoot && activeRoot[devKey];
 
+      if (defaultBootTimer) {
+        clearTimeout(defaultBootTimer);
+        defaultBootTimer = null;
+      }
+
+      if (!activeRoot) {
+        // Defer full 240-frame default queue until Firestore config arrives (load only frame 0 immediately)
+        state.mode = 'default';
+        state.config = {};
+        setLayerVisibility('sequence', {});
+        const pendingGen = defaultQueueGen;
+        loadDefaultFrame(0, mobile, function () {
+          renderBgCurrent(true);
+        });
+        defaultBootTimer = setTimeout(() => {
+          if (pendingGen === defaultQueueGen && !(heroBackgroundConfig || window.__heroBackgroundConfig)) {
+            startDefaultQueue(mobile);
+          }
+        }, 850);
+        return;
+      }
+
       if (!cfg || !cfg.mode || cfg.mode === 'default') {
         state.mode = 'default';
         state.config = cfg || {};
@@ -327,7 +360,9 @@
         return;
       }
 
-      const cfgKey = JSON.stringify({ m: cfg.mode, u: cfg.url, p: cfg.chunkPrefix, c: cfg.chunkCount, vp: cfg.videoPlayback, f: cfg.frames ? cfg.frames.length : 0, t: cfg.updatedAt });
+      // Cancel any background default frame queue immediately for custom media
+      defaultQueueGen++;
+      const cfgKey = JSON.stringify({ m: cfg.mode, u: cfg.url, p: cfg.chunkPrefix, c: cfg.chunkCount, vp: cfg.videoPlayback, f: cfg.frames ? cfg.frames.length : 0 });
       state.config = cfg;
 
       if (cfg.mode === 'image') {
@@ -336,6 +371,7 @@
         if (!srcUrl && cfg.chunkPrefix && state.key !== cfgKey) {
           const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, cfg.mimeType || 'image/webp');
           if (loaded && loaded.url) {
+            if (state.objectUrl) try { URL.revokeObjectURL(state.objectUrl); } catch (e) {}
             state.objectUrl = loaded.url;
             srcUrl = loaded.url;
           }
@@ -357,6 +393,7 @@
         if (!vidUrl && cfg.chunkPrefix && state.key !== cfgKey) {
           const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, cfg.mimeType || 'video/mp4');
           if (loaded && loaded.url) {
+            if (state.objectUrl) try { URL.revokeObjectURL(state.objectUrl); } catch (e) {}
             state.objectUrl = loaded.url;
             vidUrl = loaded.url;
           }
@@ -366,13 +403,29 @@
         state.mode = 'video';
         state.key = cfgKey;
         if (videoEl && vidUrl) {
+          videoEl.muted = true;
+          videoEl.playsInline = true;
+          videoEl.setAttribute('muted', '');
+          videoEl.setAttribute('playsinline', '');
           if (videoEl.getAttribute('src') !== vidUrl) {
+            videoEl.pause();
             videoEl.src = vidUrl;
             videoEl.load();
           }
           if (playback === 'video-loop') {
             videoEl.loop = true;
-            videoEl.play().catch(() => {});
+            const p = videoEl.play();
+            if (p && typeof p.catch === 'function') {
+              p.catch(() => {
+                const kick = () => {
+                  videoEl.play().catch(() => {});
+                  window.removeEventListener('touchstart', kick);
+                  window.removeEventListener('pointerdown', kick);
+                };
+                window.addEventListener('touchstart', kick, { once: true, passive: true });
+                window.addEventListener('pointerdown', kick, { once: true, passive: true });
+              });
+            }
           } else {
             videoEl.loop = false;
             videoEl.pause();
@@ -386,6 +439,13 @@
       if (cfg.mode === 'sequence') {
         setLayerVisibility('sequence', cfg);
         if (state.key !== cfgKey) {
+          state.mode = 'loading';
+          state.frames = [];
+          state.images = [];
+          state.loaded = new Set();
+          lastDrawnImg = null;
+          lastDrawnIdx = -1;
+
           let frameList = Array.isArray(cfg.frames) ? cfg.frames.map(resolveUrl) : [];
           if (frameList.length === 0 && cfg.chunkPrefix) {
             const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, 'image/webp');
@@ -401,6 +461,7 @@
             state.loaded = new Set();
             state.key = cfgKey;
             lastDrawnImg = null;
+            lastDrawnIdx = -1;
             loadCustomFrame(0, devKey, function () {
               renderBgCurrent(true);
               startCustomQueue(devKey);
@@ -471,6 +532,8 @@
 
     // Default sequence loader
     function loadDefaultFrame(idx, mobile, onDone) {
+      const devState = customCache[mobile ? 'mobile' : 'pc'];
+      if (devState && devState.mode !== 'default') return;
       const loaded = mobile ? loadedDefaultMobile : loadedDefaultDesktop;
       const images = mobile ? defaultMobileImages : defaultDesktopImages;
 
@@ -499,6 +562,7 @@
     }
 
     function startDefaultQueue(mobile) {
+      const gen = defaultQueueGen;
       const queue = [];
       for (let i = 6; i < DEFAULT_FRAMES; i += 6) queue.push(i);
       if (!queue.includes(DEFAULT_FRAMES - 1)) queue.push(DEFAULT_FRAMES - 1);
@@ -508,6 +572,9 @@
       let cursor = 0;
       const WORKERS = 10;
       function nextWorker() {
+        if (gen !== defaultQueueGen) return;
+        const devState = customCache[mobile ? 'mobile' : 'pc'];
+        if (devState && devState.mode !== 'default') return;
         if (cursor >= queue.length) return;
         loadDefaultFrame(queue[cursor++], mobile, nextWorker);
       }
