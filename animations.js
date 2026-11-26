@@ -446,28 +446,113 @@
           lastDrawnImg = null;
           lastDrawnIdx = -1;
 
-          let frameList = Array.isArray(cfg.frames) ? cfg.frames.map(resolveUrl) : [];
-          if (frameList.length === 0 && cfg.chunkPrefix) {
-            const loaded = await loadFirestoreChunkedAsset(cfg.chunkPrefix, cfg.chunkCount || 1, 'image/webp');
-            if (loaded && loaded.frames) {
-              frameList = loaded.frames;
-            }
-          }
-          if (frameList.length > 0) {
+          const directFrames = Array.isArray(cfg.frames) ? cfg.frames.map(resolveUrl) : [];
+          if (directFrames.length > 0) {
             state.mode = 'sequence';
-            state.frames = frameList;
-            state.totalFrames = frameList.length;
-            state.images = new Array(frameList.length);
+            state.frames = directFrames;
+            state.totalFrames = directFrames.length;
+            state.images = new Array(directFrames.length);
             state.loaded = new Set();
             state.key = cfgKey;
-            lastDrawnImg = null;
-            lastDrawnIdx = -1;
             loadCustomFrame(0, devKey, function () {
               renderBgCurrent(true);
               startCustomQueue(devKey);
             });
+          } else if (cfg.chunkPrefix) {
+            const db = typeof window.initFirebase === 'function' ? window.initFirebase() : null;
+            const totalChunks = cfg.chunkCount || 1;
+            const prefix = cfg.chunkPrefix;
+            if (!db) return;
+
+            async function fetchDocRetry(idx, retries = 2) {
+              for (let a = 0; a <= retries; a++) {
+                try {
+                  return await db.collection('content').doc(`${prefix}_${idx}`).get();
+                } catch (err) {
+                  if (a === retries) throw err;
+                  await new Promise(r => setTimeout(r, 300 * (a + 1)));
+                }
+              }
+            }
+
+            try {
+              const doc0 = await fetchDocRetry(0);
+              const d0 = doc0 && doc0.exists ? doc0.data() : null;
+              if (!d0 || !Array.isArray(d0.frames) || d0.frames.length === 0) {
+                throw new Error('Chunk 0 missing frames');
+              }
+
+              const expectedTotal = d0.totalSequenceFrames || cfg.totalFrames || d0.frames.length;
+              state.mode = 'sequence';
+              state.frames = new Array(expectedTotal);
+              state.totalFrames = expectedTotal;
+              state.images = new Array(expectedTotal);
+              state.loaded = new Set();
+              state.key = cfgKey;
+
+              d0.frames.forEach((f, idx) => { state.frames[idx] = f; });
+              loadCustomFrame(0, devKey, function () {
+                renderBgCurrent(true);
+                for (let k = 1; k < d0.frames.length; k++) loadCustomFrame(k, devKey);
+              });
+
+              if (totalChunks > 1) {
+                let cursorChunk = 1;
+                let sequentialOffset = d0.frames.length;
+                const chunkDocs = new Array(totalChunks);
+                chunkDocs[0] = doc0;
+
+                async function streamWorker() {
+                  while (cursorChunk < totalChunks) {
+                    const c = cursorChunk++;
+                    if (state.key !== cfgKey) return;
+                    const snap = await fetchDocRetry(c);
+                    chunkDocs[c] = snap;
+                    if (snap && snap.exists && Array.isArray(snap.data().frames) && state.key === cfgKey) {
+                      const data = snap.data();
+                      const startIdx = typeof data.startFrameIndex === 'number' ? data.startFrameIndex : null;
+                      if (startIdx !== null) {
+                        data.frames.forEach((f, idx) => { state.frames[startIdx + idx] = f; });
+                        for (let k = 0; k < data.frames.length; k += 2) {
+                          loadCustomFrame(startIdx + k, devKey);
+                        }
+                      }
+                    }
+                  }
+                }
+                const workers = Array.from({ length: Math.min(6, totalChunks - 1) }, () => streamWorker());
+                await Promise.all(workers);
+
+                if (state.key === cfgKey) {
+                  // Finalize sequential fallback chunks (if old chunk format without startFrameIndex)
+                  let pos = sequentialOffset;
+                  for (let c = 1; c < totalChunks; c++) {
+                    const snap = chunkDocs[c];
+                    if (snap && snap.exists && Array.isArray(snap.data().frames)) {
+                      const data = snap.data();
+                      if (typeof data.startFrameIndex !== 'number') {
+                        data.frames.forEach((f, idx) => { state.frames[pos + idx] = f; });
+                        pos += data.frames.length;
+                      }
+                    }
+                  }
+                  const validLen = state.frames.filter(Boolean).length;
+                  if (validLen > 0 && validLen !== state.totalFrames && state.frames.some(x => !x)) {
+                    state.frames = state.frames.filter(Boolean);
+                    state.totalFrames = state.frames.length;
+                  }
+                  startCustomQueue(devKey);
+                }
+              }
+            } catch (seqErr) {
+              console.warn('Sequence load fallback:', seqErr);
+              state.mode = 'default';
+              loadDefaultFrame(0, mobile, function () {
+                renderBgCurrent(true);
+                startDefaultQueue(mobile);
+              });
+            }
           } else {
-            // Fallback to default if empty
             state.mode = 'default';
             loadDefaultFrame(0, mobile, function () {
               renderBgCurrent(true);
