@@ -349,35 +349,26 @@ async function loadAndApplySiteContent() {
 
   // Dispatch dynamic Hero Animation Background (PC & Mobile separate configs)
   window.__heroBackgroundConfig = ab.heroBackground || null;
+  if (!window.location.search.includes('preview=')) {
+    try {
+      if (ab.heroBackground) {
+        localStorage.setItem('ameer_cached_hero_bg_cfg', JSON.stringify(ab.heroBackground));
+      } else {
+        localStorage.removeItem('ameer_cached_hero_bg_cfg');
+      }
+    } catch (e) {}
+  }
   window.resolveAssetUrl = resolveAssetUrl;
   window.initFirebase = initFirebase;
   window.dispatchEvent(new CustomEvent('heroBackgroundUpdated', {
     detail: window.__heroBackgroundConfig
   }));
 
-  // Dynamic Hero Portrait Image (legacy fallback hidden behind animated canvas)
+  // Keep legacy foreground portrait image hidden permanently (Hero Background Canvas drives visuals)
   const heroImg = document.getElementById('heroPortraitImg');
   if (heroImg) {
-    if (ab.heroPortrait && ab.heroPortrait.trim() !== '') {
-      heroImg.src = ab.heroPortrait;
-      heroImg.style.display = 'block';
-      
-      if (ab.heroPhotoPosition) {
-        const offsetX = (ab.heroPhotoPosition.posX - 50) * 1.5;
-        const offsetY = (ab.heroPhotoPosition.posY - 50) * 1.5;
-        heroImg.style.objectFit = 'cover';
-        heroImg.style.transformOrigin = 'center center';
-        heroImg.style.objectPosition = 'center';
-        heroImg.style.transform = `translate(${offsetX}%, ${offsetY}%) scale(${ab.heroPhotoPosition.scale})`;
-      } else {
-        heroImg.style.objectFit = 'contain';
-        heroImg.style.transformOrigin = 'bottom center';
-        heroImg.style.objectPosition = 'bottom center';
-        heroImg.style.transform = 'scale(1)';
-      }
-    } else {
-      heroImg.style.display = 'none';
-    }
+    heroImg.removeAttribute('src');
+    heroImg.style.display = 'none';
   }
 
   setElementText('signatureScriptText', ab.signatureScript);

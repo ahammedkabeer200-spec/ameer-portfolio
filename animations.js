@@ -212,6 +212,10 @@
         return;
       }
 
+      if (customState.mode === 'pending' || customState.mode === 'loading') {
+        return;
+      }
+
       const total = customState.mode === 'sequence' && customState.totalFrames > 0
         ? customState.totalFrames
         : DEFAULT_FRAMES;
@@ -333,23 +337,49 @@
       }
 
       if (!activeRoot) {
-        // Defer full 240-frame default queue until Firestore config arrives (load only frame 0 immediately)
-        state.mode = 'default';
+        // Check cached custom frame 0 so repeat opens draw the exact custom photo at 0ms without flashing old defaults!
+        try {
+          const cachedRaw = localStorage.getItem(`ameer_cached_bg_frame0_${devKey}`);
+          const cachedCfgRaw = localStorage.getItem('ameer_cached_hero_bg_cfg');
+          const cachedCfg = cachedCfgRaw ? JSON.parse(cachedCfgRaw) : null;
+          const devCachedCfg = cachedCfg && cachedCfg[devKey];
+          if (!window.location.search.includes('preview=') && cachedRaw && devCachedCfg && devCachedCfg.mode && devCachedCfg.mode !== 'default') {
+            const parsed = JSON.parse(cachedRaw);
+            if (parsed && parsed.frame0) {
+              state.mode = 'sequence';
+              state.config = devCachedCfg;
+              state.frames = [parsed.frame0];
+              state.totalFrames = 1;
+              state.images = [null];
+              state.loaded = new Set();
+              setLayerVisibility('sequence', devCachedCfg);
+              loadCustomFrame(0, devKey, function () { renderBgCurrent(true); });
+              return;
+            }
+          }
+        } catch (e) {}
+
+        // Otherwise hold clean black canvas silently until Cloud Firestore resolves (never flash old default frames!)
+        state.mode = 'pending';
         state.config = {};
         setLayerVisibility('sequence', {});
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         const pendingGen = defaultQueueGen;
-        loadDefaultFrame(0, mobile, function () {
-          renderBgCurrent(true);
-        });
         defaultBootTimer = setTimeout(() => {
           if (pendingGen === defaultQueueGen && !(heroBackgroundConfig || window.__heroBackgroundConfig)) {
-            startDefaultQueue(mobile);
+            state.mode = 'default';
+            loadDefaultFrame(0, mobile, function () {
+              renderBgCurrent(true);
+              startDefaultQueue(mobile);
+            });
           }
-        }, 850);
+        }, 3500);
         return;
       }
 
       if (!cfg || !cfg.mode || cfg.mode === 'default') {
+        try { localStorage.removeItem(`ameer_cached_bg_frame0_${devKey}`); } catch (e) {}
         state.mode = 'default';
         state.config = cfg || {};
         setLayerVisibility('sequence', state.config);
@@ -491,6 +521,11 @@
               state.key = cfgKey;
 
               d0.frames.forEach((f, idx) => { state.frames[idx] = f; });
+              try {
+                if (d0.frames[0] && d0.frames[0].length < 250000) {
+                  localStorage.setItem(`ameer_cached_bg_frame0_${devKey}`, JSON.stringify({ key: cfgKey, frame0: d0.frames[0] }));
+                }
+              } catch (e) {}
               loadCustomFrame(0, devKey, function () {
                 renderBgCurrent(true);
                 for (let k = 1; k < d0.frames.length; k++) loadCustomFrame(k, devKey);
