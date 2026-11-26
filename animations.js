@@ -778,7 +778,9 @@
         wheelMultiplier: 1,
         touchMultiplier: 2,
         infinite: false,
+        prevent: (node) => !!(node && node.closest && node.closest('#caseStudyModal, #allProjectsModal, [data-lenis-prevent]'))
       });
+      window.__lenis = lenis;
 
       // Connect Lenis to GSAP's ticker for perfect sync
       if (typeof gsap !== 'undefined') {

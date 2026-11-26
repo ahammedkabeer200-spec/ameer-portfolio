@@ -596,6 +596,19 @@ function getCategoryDisplayName(catId) {
 // =========================================================================
 let currentModalFilterCat = 'all';
 
+function _syncModalScrollLock() {
+  const csOpen = !!document.getElementById('caseStudyModal')?.classList.contains('active');
+  const allOpen = !!document.getElementById('allProjectsModal')?.classList.contains('active');
+  const anyOpen = csOpen || allOpen;
+  if (anyOpen) {
+    document.body.style.overflow = 'hidden';
+    if (window.__lenis && typeof window.__lenis.stop === 'function') window.__lenis.stop();
+  } else {
+    document.body.style.overflow = originalBodyOverflow || '';
+    if (window.__lenis && typeof window.__lenis.start === 'function') window.__lenis.start();
+  }
+}
+
 function openAllProjectsModal(e) {
   if (e) e.preventDefault();
   const modal = document.getElementById('allProjectsModal');
@@ -611,7 +624,8 @@ function openAllProjectsModal(e) {
   renderModalProjectsGrid('all');
 
   modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
+  modal.setAttribute('aria-hidden', 'false');
+  _syncModalScrollLock();
 }
 window.openAllProjectsModal = openAllProjectsModal;
 
@@ -620,13 +634,11 @@ function closeAllProjectsModal(e) {
   const modal = document.getElementById('allProjectsModal');
   if (modal) {
     modal.classList.remove('active');
-    
-    const csModal = document.getElementById('caseStudyModal');
-    if (!csModal || !csModal.classList.contains('active')) {
-      document.body.style.overflow = '';
-    }
+    modal.setAttribute('aria-hidden', 'true');
+    _syncModalScrollLock();
   }
-}window.closeAllProjectsModal = closeAllProjectsModal;
+}
+window.closeAllProjectsModal = closeAllProjectsModal;
 
 function renderModalCategoryFilters() {
   const container = document.getElementById('modalCategoryFilters');
@@ -917,10 +929,10 @@ function openCaseStudy(identifier) {
   if (modal) {
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');
-    
-    // 1. Lock background scrolling when modal mounts
-    originalBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (!originalBodyOverflow && document.body.style.overflow && document.body.style.overflow !== 'hidden') {
+      originalBodyOverflow = document.body.style.overflow;
+    }
+    _syncModalScrollLock();
   }
 }
 
@@ -1111,9 +1123,7 @@ function closeCaseStudy(e) {
   if (modal) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
-    
-    // 2. Unlock background scrolling when modal unmounts / closes
-    document.body.style.overflow = originalBodyOverflow || '';
+    _syncModalScrollLock();
   }
 
   if (window.location.hash.startsWith('#project=')) {

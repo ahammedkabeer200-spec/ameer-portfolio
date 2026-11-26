@@ -33,7 +33,7 @@
   <meta property="twitter:description" content="Senior Graphic Designer delivering high-impact visual design, branding, and campaign solutions across government and corporate sectors.">
   <meta property="twitter:image" content="https://ameersuhail.com/assets/hero-portrait.png">
 
-  <link rel="stylesheet" href="style.css?v=7.1">
+  <link rel="stylesheet" href="style.css?v=7.2">
 </head>
 <body>
 
@@ -579,8 +579,8 @@
   <!-- ====================================================================
        7. ALL PROJECTS ARCHIVE & CATALOG POPUP MODAL
        ==================================================================== -->
-  <div class="case-study-overlay" id="allProjectsModal" onclick="closeAllProjectsModal(event)" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="presentation-modal-card all-projects-modal-card" onclick="event.stopPropagation()">
+  <div class="case-study-overlay" id="allProjectsModal" data-lenis-prevent onclick="closeAllProjectsModal(event)" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="presentation-modal-card all-projects-modal-card" data-lenis-prevent onclick="event.stopPropagation()">
       
       <!-- Top Header Bar -->
       <div class="pres-header-bar">
@@ -616,7 +616,7 @@
       </div>
 
       <!-- Scrollable Projects Grid -->
-      <div class="all-projects-modal-body archive-container--grid" id="modalAllProjectsGrid">
+      <div class="all-projects-modal-body archive-container--grid" id="modalAllProjectsGrid" data-lenis-prevent>
         <!-- All projects rendered dynamically by script.js -->
       </div>
 
@@ -626,8 +626,8 @@
   <!-- ====================================================================
        8. CLEAN FULLSCREEN PRESENTATION VIEWER (PDF / LIST GALLERY)
        ==================================================================== -->
-  <div class="case-study-overlay" id="caseStudyModal" onclick="closeCaseStudy(event)" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="presentation-modal-card" onclick="event.stopPropagation()">
+  <div class="case-study-overlay" id="caseStudyModal" data-lenis-prevent onclick="closeCaseStudy(event)" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="presentation-modal-card" data-lenis-prevent onclick="event.stopPropagation()">
       
       <!-- Minimalist Presentation Top Bar -->
       <div class="pres-header-bar">
@@ -650,7 +650,7 @@
       </div>
 
       <!-- Pure Presentation Scroll Body -->
-      <div class="pres-body-container" id="csPresBody">
+      <div class="pres-body-container" id="csPresBody" data-lenis-prevent>
       
         <!-- Project Info Block (Designer Meta) -->
         <div id="csProjectInfoBlock" style="padding: 2rem 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: none;">
@@ -701,7 +701,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  <script src="script.js?v=6.3" defer></script>
-  <script src="animations.js?v=3.4" defer></script>
+  <script src="script.js?v=6.4" defer></script>
+  <script src="animations.js?v=3.5" defer></script>
 </body>
 </html>
