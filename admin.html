@@ -457,7 +457,7 @@
           <!-- GitHub Config -->
           <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
             <h3 style="color: var(--gold); margin-bottom: 0.5rem; font-size: 1.2rem;">GitHub API Configuration</h3>
-            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Required to use the PUBLISH LIVE button.</p>
+            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Optional &mdash; <strong>PUBLISH LIVE</strong> syncs projects, texts &amp; backgrounds directly to your live site via Cloud Firestore without a token. Add a PAT only if you want raw &gt;8 MB video commits or GitHub JSON snapshots.</p>
             
             <div class="form-group">
               <label>Personal Access Token (PAT)</label>
@@ -765,10 +765,13 @@
       if (url.startsWith('assets/uploads/')) {
         try {
           const conf = JSON.parse(localStorage.getItem(GH_CONF_KEY) || '{}');
-          if (conf.owner && conf.repo) {
-            return `https://raw.githubusercontent.com/${conf.owner}/${conf.repo}/${conf.branch || 'main'}/${url}`;
-          }
-        } catch (e) {}
+          const owner = conf.owner || 'ahammedkabeer200-spec';
+          const repo = conf.repo || 'ameer-portfolio';
+          const branch = conf.branch || 'main';
+          return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${url}`;
+        } catch (e) {
+          return `https://raw.githubusercontent.com/ahammedkabeer200-spec/ameer-portfolio/main/${url}`;
+        }
       }
       return url;
     }
@@ -1339,8 +1342,99 @@
       populateContentForm();
     }
 
+    function _stripUndefinedForFirestore(val) {
+      if (Array.isArray(val)) {
+        return val.map(_stripUndefinedForFirestore).filter(v => v !== undefined);
+      }
+      if (val && typeof val === 'object') {
+        const out = {};
+        Object.keys(val).forEach(k => {
+          const v = val[k];
+          if (v !== undefined) {
+            out[k] = _stripUndefinedForFirestore(v);
+          }
+        });
+        return out;
+      }
+      return val;
+    }
+
+    function _sanitizeSiteContentForFirestore(raw) {
+      const cloned = JSON.parse(JSON.stringify(raw || {}));
+      if (!cloned.about) cloned.about = {};
+      // Remove legacy ~960KB inline PNG data URI that risks Firestore's 1 MiB document limit
+      if (typeof cloned.about.heroPortrait === 'string' && cloned.about.heroPortrait.startsWith('data:') && cloned.about.heroPortrait.length > 80000) {
+        cloned.about.heroPortrait = 'assets/hero-portrait.png';
+      }
+      if (cloned.profile && typeof cloned.profile.url === 'string' && cloned.profile.url.startsWith('data:') && cloned.profile.url.length > 80000) {
+        cloned.profile.url = 'assets/hero-portrait.png';
+      }
+      cloned._sync = {
+        projectsCount: Array.isArray(projectsData) ? projectsData.length : 0,
+        updatedAt: new Date().toISOString()
+      };
+      return _stripUndefinedForFirestore(cloned);
+    }
+
+    function _collectAllUiEditsIntoState() {
+      if (typeof editablePaths !== 'undefined' && Array.isArray(editablePaths)) {
+        editablePaths.forEach((field, i) => {
+          const input = document.getElementById(`dynFld_${i}`);
+          if (input) {
+            setNestedValue(siteContent, field.path, input.value.trim());
+          }
+        });
+      }
+      if (typeof _ensureHeroBackgroundStruct === 'function') {
+        const bg = _ensureHeroBackgroundStruct();
+        ['pc', 'mobile'].forEach(dev => {
+          const fitEl = document.getElementById(`bgFit_${dev}`);
+          const posXEl = document.getElementById(`bgPosX_${dev}`);
+          const posYEl = document.getElementById(`bgPosY_${dev}`);
+          if (fitEl) bg[dev].fit = fitEl.value;
+          if (posXEl) bg[dev].posX = parseInt(posXEl.value, 10);
+          if (posYEl) bg[dev].posY = parseInt(posYEl.value, 10);
+        });
+      }
+      if (Array.isArray(projectsData)) {
+        projectsData.forEach((p, idx) => {
+          if (!p.id) p.id = 'proj_' + Date.now() + '_' + idx;
+          p.order = idx;
+        });
+      }
+    }
+
+    async function _saveSiteContentDoc(db, cleanSite) {
+      if (!db) throw new Error('Cloud database unavailable.');
+      await db.collection('content').doc('site').set(cleanSite);
+    }
+
+    async function _syncAllProjectsToFirestore(db) {
+      if (!db) throw new Error('Cloud database unavailable.');
+      const existingSnap = await db.collection('projects').get();
+      const validIds = new Set();
+      const writePromises = [];
+
+      projectsData.forEach((proj, idx) => {
+        const docId = proj.id || ('proj_' + Date.now() + '_' + idx);
+        proj.id = docId;
+        proj.order = idx;
+        validIds.add(docId);
+        const cleanProj = _stripUndefinedForFirestore(proj);
+        writePromises.push(db.collection('projects').doc(docId).set(cleanProj));
+      });
+
+      existingSnap.forEach(doc => {
+        if (!validIds.has(doc.id)) {
+          writePromises.push(db.collection('projects').doc(doc.id).delete());
+        }
+      });
+
+      await Promise.all(writePromises);
+    }
+
     async function forceSyncFromGitHub() {
-      if (!confirm("Overwrite local cache and force download live data from the server?")) return;
+      if (!confirm("Overwrite local browser cache with the latest live data from Cloud & Server?")) return;
       
       const btn = document.querySelector('[onclick="forceSyncFromGitHub()"]');
       const originalText = btn.innerHTML;
@@ -1348,26 +1442,69 @@
       btn.disabled = true;
 
       try {
-        const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (projRes.ok) {
-          projectsData = await projRes.json();
-          localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
-        } else {
-          throw new Error("Failed to load projects.json");
+        let loadedProjFromCloud = false;
+        let loadedSiteFromCloud = false;
+        const db = initFirebase();
+
+        if (db) {
+          const [projSnap, siteDoc, binDoc] = await Promise.all([
+            db.collection('projects').get().catch(() => null),
+            db.collection('content').doc('site').get().catch(() => null),
+            db.collection('content').doc('recycle_bin').get().catch(() => null)
+          ]);
+
+          const hasCloudSyncState = !!(siteDoc && siteDoc.exists);
+
+          if (projSnap && !projSnap.empty) {
+            const cloudProjs = [];
+            projSnap.forEach(doc => cloudProjs.push({ id: doc.id, ...doc.data() }));
+            cloudProjs.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? (a.order - b.order) : 0);
+            projectsData = cloudProjs;
+            loadedProjFromCloud = true;
+          } else if (hasCloudSyncState && siteDoc.data()._sync && siteDoc.data()._sync.projectsCount === 0) {
+            projectsData = [];
+            loadedProjFromCloud = true;
+          }
+
+          if (hasCloudSyncState) {
+            siteContent = _sanitizeSiteContentForFirestore(siteDoc.data());
+            loadedSiteFromCloud = true;
+          }
+
+          if (binDoc && binDoc.exists && Array.isArray(binDoc.data().items)) {
+            recycleBin = binDoc.data().items;
+            localStorage.setItem(DB_KEY_BIN, JSON.stringify(recycleBin));
+          }
         }
 
-        const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (contRes.ok) {
-          siteContent = await contRes.json();
-          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
-        } else {
-          throw new Error("Failed to load siteContent.json");
+        // Fallback to static JSON only for sections not yet initialized in Cloud Firestore
+        if (!loadedSiteFromCloud || !siteContent || Object.keys(siteContent).length === 0) {
+          const contRes = await fetch(`data/siteContent.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (contRes.ok) {
+            siteContent = _sanitizeSiteContentForFirestore(await contRes.json());
+          }
         }
+
+        if (!loadedProjFromCloud) {
+          const projRes = await fetch(`data/projects.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (projRes.ok) {
+            projectsData = await projRes.json();
+          }
+        }
+
+        bgPreviewCache.pc = [];
+        bgPreviewCache.mobile = [];
+        localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+        localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+        localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
 
         renderProjectsGrid();
-        populateTuner();
+        renderRecycleBin();
+        await populateTuner();
         populateContentForm();
-        alert("✓ Auto-sync complete! All columns successfully updated with live data.");
+        alert((loadedProjFromCloud || loadedSiteFromCloud)
+          ? "✓ Live sync complete! Admin panel now matches your live Cloud website."
+          : "✓ Sync complete! Loaded data from server JSON.");
       } catch (err) {
         alert("Sync failed: " + err.message);
       } finally {
@@ -1440,9 +1577,12 @@
         document.getElementById('inpCategory').value = p.category || '';
         document.getElementById('inpYear').value = p.year || '2026';
         document.getElementById('inpCover').value = p.coverImage || '';
-        document.getElementById('inpType').value = p.type || 'slides';
+        document.getElementById('inpType').value = p.type || p.presentationType || 'slides';
         document.getElementById('inpPdf').value = p.pdfUrl || '';
-        document.getElementById('inpGallery').value = (p.images && Array.isArray(p.images)) ? p.images.join('\n') : '';
+        const existingImgs = (p.images && Array.isArray(p.images) && p.images.length > 0)
+          ? p.images
+          : (Array.isArray(p.gallery) ? p.gallery.map(g => g.image || g.url).filter(Boolean) : []);
+        document.getElementById('inpGallery').value = existingImgs.join('\n');
         
         document.getElementById('inpCoverZoom').value = p.coverZoom || 100;
         document.getElementById('inpCoverX').value = p.coverX || 50;
@@ -1462,21 +1602,26 @@
       document.getElementById('projectModal').classList.remove('active');
     }
 
-    function saveProjectForm() {
+    async function saveProjectForm() {
       const idx = parseInt(document.getElementById('editProjectIndex').value, 10);
       
       const galleryText = document.getElementById('inpGallery').value.trim();
       const imagesArray = galleryText ? galleryText.split('\n').map(l => l.trim()).filter(l => l !== '') : [];
+      const catVal = document.getElementById('inpCategory').value.trim() || 'General';
+      const typeVal = document.getElementById('inpType').value;
 
       const projectObj = {
         title: document.getElementById('inpTitle').value.trim() || 'Untitled Project',
         client: document.getElementById('inpClient').value.trim() || 'Client',
-        category: document.getElementById('inpCategory').value.trim() || 'General',
+        category: catVal,
+        categories: [catVal],
         year: document.getElementById('inpYear').value.trim() || '2026',
         coverImage: document.getElementById('inpCover').value.trim(),
-        type: document.getElementById('inpType').value,
+        type: typeVal,
+        presentationType: typeVal,
         pdfUrl: document.getElementById('inpPdf').value.trim(),
         images: imagesArray,
+        gallery: imagesArray.map(url => ({ image: url })),
         coverZoom: parseInt(document.getElementById('inpCoverZoom').value, 10),
         coverX: parseInt(document.getElementById('inpCoverX').value, 10),
         coverY: parseInt(document.getElementById('inpCoverY').value, 10)
@@ -1485,25 +1630,35 @@
       let savedDocId = '';
       if (idx >= 0) {
         const existingId = projectsData[idx].id;
-        projectsData[idx] = { ...projectsData[idx], ...projectObj, id: existingId || ('proj_' + Date.now()) };
+        projectsData[idx] = { ...projectsData[idx], ...projectObj, id: existingId || ('proj_' + Date.now()), order: idx };
         savedDocId = projectsData[idx].id;
       } else {
         projectObj.id = 'proj_' + Date.now();
+        projectObj.order = 0;
         savedDocId = projectObj.id;
         projectsData.unshift(projectObj);
       }
 
+      projectsData.forEach((p, i) => { p.order = i; });
       localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
       renderProjectsGrid();
       closeProjectModal();
 
-      // Realtime Cloud Firestore Save
+      // Realtime Cloud Firestore Save (full project list order + site sync count)
       const db = initFirebase();
       if (db && savedDocId) {
-        const targetProj = (idx >= 0) ? projectsData[idx] : projectsData[0];
-        db.collection('projects').doc(savedDocId).set(targetProj, { merge: true })
-          .then(() => console.log('✓ Saved directly to Cloud Firestore:', savedDocId))
-          .catch(err => console.warn('Firestore save note:', err));
+        try {
+          await _syncAllProjectsToFirestore(db);
+          const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+          siteContent = cleanSite;
+          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+          localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+          await _saveSiteContentDoc(db, cleanSite);
+          console.log('✓ Project & order synced live to Cloud Firestore:', savedDocId);
+        } catch (err) {
+          console.error('Firestore project save error:', err);
+          alert('Saved locally, but Cloud sync failed: ' + err.message);
+        }
       }
     }
 
@@ -1520,15 +1675,25 @@
 
       // 1. Remove from active projects list
       projectsData.splice(idx, 1);
+      projectsData.forEach((p, i) => { p.order = i; });
       localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
       renderProjectsGrid();
 
-      // 2. Remove active doc from Firestore
+      // 2. Sync deletion & updated order to Cloud Firestore
       const db = initFirebase();
       if (db && proj.id) {
-        db.collection('projects').doc(proj.id).delete()
-          .then(() => console.log('✓ Removed from active Cloud Firestore:', proj.id))
-          .catch(err => console.warn('Firestore active doc remove note:', err));
+        try {
+          await db.collection('projects').doc(proj.id).delete();
+          await _syncAllProjectsToFirestore(db);
+          const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+          siteContent = cleanSite;
+          localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+          localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+          await _saveSiteContentDoc(db, cleanSite);
+          console.log('✓ Removed from active Cloud Firestore:', proj.id);
+        } catch (err) {
+          console.warn('Firestore active doc remove note:', err);
+        }
       }
 
       // 3. Collect associated storage file paths for cleanup
@@ -1646,15 +1811,24 @@
       if (item.type === 'project' && item.data) {
         const restoredProj = item.data;
         projectsData.unshift(restoredProj);
+        projectsData.forEach((p, i) => { p.order = i; });
         localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
         renderProjectsGrid();
 
         // Restore back to Cloud Firestore
         const db = initFirebase();
         if (db && restoredProj.id) {
-          db.collection('projects').doc(restoredProj.id).set(restoredProj, { merge: true })
-            .then(() => console.log('✓ Restored to Cloud Firestore:', restoredProj.id))
-            .catch(err => console.warn('Firestore restore note:', err));
+          try {
+            await _syncAllProjectsToFirestore(db);
+            const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+            siteContent = cleanSite;
+            localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+            localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
+            await _saveSiteContentDoc(db, cleanSite);
+            console.log('✓ Restored to Cloud Firestore:', restoredProj.id);
+          } catch (err) {
+            console.warn('Firestore restore note:', err);
+          }
         }
       }
 
@@ -2559,6 +2733,8 @@
         bg[dev].updatedAt = new Date().toISOString();
       });
 
+      const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+      siteContent = cleanSite;
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
       localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
 
@@ -2570,11 +2746,11 @@
 
       try {
         if (db) {
-          await db.collection('content').doc('site').set(siteContent, { merge: true });
+          await _saveSiteContentDoc(db, cleanSite);
         }
-        // Auto-commit siteContent.json if GitHub PAT is configured so relative CDN paths match
+        // Auto-commit siteContent.json only if GitHub PAT is configured
         if (conf.token && conf.owner && conf.repo) {
-          await _commitFile('data/siteContent.json', siteContent, conf);
+          await _commitFile('data/siteContent.json', cleanSite, conf);
         }
         alert('✓ PC & Mobile Hero Backgrounds saved and synced live!');
       } catch (err) {
@@ -2655,23 +2831,29 @@
       });
     }
 
-    function saveSiteContent() {
-      editablePaths.forEach((field, i) => {
-        const input = document.getElementById(`dynFld_${i}`);
-        if (input) {
-          setNestedValue(siteContent, field.path, input.value.trim());
-        }
-      });
+    async function saveSiteContent() {
+      _collectAllUiEditsIntoState();
+      const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+      siteContent = cleanSite;
+
       localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
       localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
 
       const db = initFirebase();
-      if (db) {
-        db.collection('content').doc('site').set(siteContent, { merge: true })
-          .then(() => console.log('✓ Site content saved to Firestore Cloud'))
-          .catch(err => console.warn('Firestore site content save note:', err));
+      try {
+        if (db) {
+          await _saveSiteContentDoc(db, cleanSite);
+          console.log('✓ Site content saved to Firestore Cloud');
+        }
+        const conf = getGitHubConfig();
+        if (conf.token && conf.owner && conf.repo) {
+          await _commitFile('data/siteContent.json', cleanSite, conf);
+        }
+        alert('✓ All global text content saved and synced live to cloud!');
+      } catch (err) {
+        console.error('Firestore site content save error:', err);
+        alert('Saved locally, but Cloud save failed: ' + err.message);
       }
-      alert('All global text content saved and synced to cloud!');
     }
 
     // --- 6. GITHUB REST API SYNC ---
@@ -2768,11 +2950,10 @@
     }
 
     async function publishToGitHub() {
-      const conf = getGitHubConfig();
-      if (!conf.token) {
-        switchTab('settingsTab', document.querySelectorAll('.nav-btn')[3]);
-        return alert("GitHub Personal Access Token (PAT) is required to publish live to your repository.\n\nPlease go to 'Settings & Security', paste your GitHub Token, and click 'Save GitHub Settings'.");
-      }
+      // Collect any pending edits from Global Text & Hero Background inputs
+      _collectAllUiEditsIntoState();
+      const cleanSite = _sanitizeSiteContentForFirestore(siteContent);
+      siteContent = cleanSite;
 
       // Safeguard against publishing empty projects accidentally
       if (!projectsData || projectsData.length === 0) {
@@ -2780,21 +2961,50 @@
         if (!proceedEmpty) return;
       }
 
-      if (!confirm("Are you sure you want to publish these changes directly to your live website?")) return;
+      if (!confirm("Publish all latest Projects, Global Content & Hero Backgrounds live to your website now?")) return;
 
+      const conf = getGitHubConfig();
       const btn = document.querySelector('.btn-publish');
       const originalText = btn.innerHTML;
-      btn.innerHTML = 'PUBLISHING (1/2)...';
       btn.disabled = true;
-      btn.style.opacity = '0.5';
+      btn.style.opacity = '0.6';
 
       try {
-        await _commitFile('data/projects.json', projectsData, conf);
-        btn.innerHTML = 'PUBLISHING (2/2)...';
-        await _commitFile('data/siteContent.json', siteContent, conf);
-        alert("✓ Successfully published live to GitHub! Your changes will deploy in ~30 seconds.");
+        localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+        localStorage.setItem(DB_KEY_CONT, JSON.stringify(cleanSite));
+        localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(cleanSite));
+
+        const db = initFirebase();
+        let syncedCloud = false;
+        if (db) {
+          btn.innerHTML = 'SYNCING CONTENT...';
+          await _saveSiteContentDoc(db, cleanSite);
+          btn.innerHTML = 'SYNCING PROJECTS...';
+          await _syncAllProjectsToFirestore(db);
+          await saveRecycleBin();
+          syncedCloud = true;
+        }
+
+        let syncedGitHub = false;
+        if (conf.token && conf.owner && conf.repo) {
+          btn.innerHTML = 'SYNCING GITHUB (1/2)...';
+          await _commitFile('data/projects.json', projectsData, conf);
+          btn.innerHTML = 'SYNCING GITHUB (2/2)...';
+          await _commitFile('data/siteContent.json', cleanSite, conf);
+          syncedGitHub = true;
+        }
+
+        if (syncedCloud && syncedGitHub) {
+          alert("✓ Published LIVE to Cloud & GitHub! All Projects, Texts & Hero Backgrounds are synced on PC and Mobile.");
+        } else if (syncedCloud) {
+          alert("✓ Published LIVE! All Projects, Texts & Hero Backgrounds are synced directly to Cloud and active on your website immediately.");
+        } else if (syncedGitHub) {
+          alert("✓ Published to GitHub! Your changes will deploy in ~30 seconds.");
+        } else {
+          throw new Error("Neither Cloud Firestore nor GitHub PAT is available.");
+        }
       } catch (err) {
-        alert("Publish failed: " + err.message + "\n\nTip: Ensure your GitHub token has 'repo' or 'contents:write' permissions.");
+        alert("Publish failed: " + err.message);
       } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -2835,14 +3045,15 @@
           }
 
           if (data.siteContent) {
-            siteContent = data.siteContent;
+            siteContent = _sanitizeSiteContentForFirestore(data.siteContent);
             localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+            localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
           }
 
           renderProjectsGrid();
           populateContentForm();
           populateTuner();
-          alert('Backup successfully restored!');
+          alert('Backup restored locally! Click PUBLISH LIVE to push these changes to your live website.');
         } catch (err) {
           alert('Invalid backup JSON file.');
         }
@@ -2852,6 +3063,10 @@
 
     // --- 8. UTILS ---
     function openPreviewSite() {
+      _collectAllUiEditsIntoState();
+      localStorage.setItem(DB_KEY_PROJ, JSON.stringify(projectsData));
+      localStorage.setItem(DB_KEY_CONT, JSON.stringify(siteContent));
+      localStorage.setItem('ameer_portfolio_site_content', JSON.stringify(siteContent));
       const currentPath = window.location.pathname;
       const baseDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
       const targetUrl = window.location.origin + baseDir + 'index.html?preview=true';

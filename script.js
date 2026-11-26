@@ -41,10 +41,13 @@ function resolveAssetUrl(url) {
   if (url.startsWith('assets/uploads/')) {
     try {
       const conf = JSON.parse(localStorage.getItem('ameer_github_config') || '{}');
-      if (conf.owner && conf.repo) {
-        return `https://raw.githubusercontent.com/${conf.owner}/${conf.repo}/${conf.branch || 'main'}/${url}`;
-      }
-    } catch (e) {}
+      const owner = conf.owner || 'ahammedkabeer200-spec';
+      const repo = conf.repo || 'ameer-portfolio';
+      const branch = conf.branch || 'main';
+      return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${url}`;
+    } catch (e) {
+      return `https://raw.githubusercontent.com/ahammedkabeer200-spec/ameer-portfolio/main/${url}`;
+    }
   }
   return url;
 }
@@ -424,10 +427,13 @@ async function loadProjectsData() {
   const isPreview = window.location.search.includes('preview=');
   if (isPreview) {
     const localData = localStorage.getItem('ameer_portfolio_projects');
-    if (localData) {
+    if (localData !== null) {
       try {
-        projectsData = JSON.parse(localData);
-        if (Array.isArray(projectsData) && projectsData.length > 0) return;
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed)) {
+          projectsData = parsed;
+          return;
+        }
       } catch (e) {}
     }
   }
@@ -447,6 +453,10 @@ async function loadProjectsData() {
           projectsData = cloudProjs;
           return;
         }
+      } else if (siteContent && siteContent._sync && siteContent._sync.projectsCount === 0) {
+        // Respect explicit empty state synced from Admin Panel
+        projectsData = [];
+        return;
       }
     } catch (e) {
       console.warn("Firestore projects note:", e);

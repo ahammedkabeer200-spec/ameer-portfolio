@@ -313,7 +313,8 @@
     async function applyDeviceConfig(mobile) {
       const devKey = mobile ? 'mobile' : 'pc';
       const state = customCache[devKey];
-      const cfg = heroBackgroundConfig && heroBackgroundConfig[devKey];
+      const activeRoot = heroBackgroundConfig || window.__heroBackgroundConfig;
+      const cfg = activeRoot && activeRoot[devKey];
 
       if (!cfg || !cfg.mode || cfg.mode === 'default') {
         state.mode = 'default';
