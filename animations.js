@@ -816,28 +816,26 @@
     const pills = document.querySelectorAll('.role-pill');
     if (pills.length) {
       pills.forEach((pill, i) => {
-        // Entrance animation
+        // Quick subtle entrance that never leaves pills dim or hidden on first paint
         gsap.fromTo(pill, {
-          opacity: 0,
-          y: 20,
-          scale: 0.8
+          opacity: 0.9,
+          y: 6
         }, {
           opacity: 1,
           y: 0,
-          scale: 1,
-          duration: 0.6,
-          delay: 0.8 + i * 0.15,
-          ease: 'back.out(1.7)'
+          duration: 0.35,
+          delay: i * 0.06,
+          ease: 'power2.out'
         });
 
         // Subtle continuous floating animation (bounded to avoid row overlap)
         gsap.to(pill, {
-          y: i % 2 === 0 ? -3 : 3,
-          duration: 2 + i * 0.4,
+          y: i % 2 === 0 ? -2 : 2,
+          duration: 2.2 + i * 0.4,
           repeat: -1,
           yoyo: true,
           ease: 'sine.inOut',
-          delay: i * 0.3
+          delay: 0.35 + i * 0.25
         });
       });
     }
@@ -850,13 +848,13 @@
     const heroSig = document.querySelector('.signature-wrapper');
 
     if (heroHeadline) {
-      gsap.fromTo(heroHeadline, { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 1, ease: 'power3.out', delay: 0.2 });
+      gsap.fromTo(heroHeadline, { opacity: 0.92, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'transform,opacity' });
     }
     if (heroLead) {
-      gsap.fromTo(heroLead, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', delay: 0.5 });
+      gsap.fromTo(heroLead, { opacity: 0.92, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', delay: 0.05, clearProps: 'transform,opacity' });
     }
     if (heroBg) {
-      gsap.fromTo(heroBg, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 1.2, ease: 'power2.out', delay: 0.1 });
+      gsap.fromTo(heroBg, { opacity: 0.85, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' });
       // Parallax on scroll
       gsap.to(heroBg, {
         yPercent: -30,
@@ -870,10 +868,10 @@
       });
     }
     if (heroImg) {
-      gsap.fromTo(heroImg, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1, ease: 'power2.out', delay: 0.3 });
+      gsap.fromTo(heroImg, { opacity: 0.9, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'transform,opacity' });
     }
     if (heroSig) {
-      gsap.fromTo(heroSig, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.8, ease: 'power2.out', delay: 0.7 });
+      gsap.fromTo(heroSig, { opacity: 0.92, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', delay: 0.08, clearProps: 'transform,opacity' });
     }
 
     // ====== PHASE 4: KINETIC HORIZONTAL WORK SCROLLER ======
