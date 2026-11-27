@@ -940,68 +940,47 @@
     setTimeout(initKineticTrack, 1500);
 
     // ====== PHASE 5: GENERAL SCROLL REVEAL ANIMATIONS ======
-    // Animate all .reveal-up sections
-    document.querySelectorAll('.reveal-up').forEach(el => {
-      gsap.fromTo(el, { opacity: 0, y: 50 }, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 85%',
-          toggleActions: 'play none none reverse'
-        }
+    // Vertical-only reveals prevent horizontal viewport overflow and stay visible once triggered
+    function bindScrollReveal(selector, fromY, staggerCap) {
+      document.querySelectorAll(selector).forEach((el, i) => {
+        if (el.dataset.revealBound === '1') return;
+        el.dataset.revealBound = '1';
+        gsap.fromTo(el, { opacity: 0, y: fromY }, {
+          opacity: 1,
+          y: 0,
+          duration: 0.48,
+          delay: Math.min(i * 0.05, staggerCap),
+          ease: 'power2.out',
+          clearProps: 'transform,opacity',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 97%',
+            toggleActions: 'play none none none'
+          }
+        });
       });
-    });
+    }
 
-    // Animate metric numbers
-    document.querySelectorAll('.about-metric-item').forEach((item, i) => {
-      gsap.fromTo(item, { opacity: 0, x: 30 }, {
-        opacity: 1,
-        x: 0,
-        duration: 0.6,
-        delay: i * 0.1,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: item,
-          start: 'top 88%',
-          toggleActions: 'play none none reverse'
-        }
-      });
-    });
+    function initScrollReveals() {
+      bindScrollReveal('.reveal-up', 22, 0.15);
+      bindScrollReveal('.about-metric-item', 16, 0.15);
+      bindScrollReveal('.toc-dir-item', 14, 0.15);
+      bindScrollReveal('.service-item-mini', 14, 0.2);
+      ScrollTrigger.refresh();
+    }
 
-    // Animate TOC items
-    document.querySelectorAll('.toc-dir-item').forEach((item, i) => {
-      gsap.fromTo(item, { opacity: 0, y: 20 }, {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        delay: i * 0.1,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: item,
-          start: 'top 90%',
-          toggleActions: 'play none none reverse'
-        }
-      });
-    });
+    window.initScrollReveals = initScrollReveals;
+    initScrollReveals();
 
-    // Animate service items
-    document.querySelectorAll('.service-item-mini').forEach((item, i) => {
-      gsap.fromTo(item, { opacity: 0, x: -20 }, {
-        opacity: 1,
-        x: 0,
-        duration: 0.5,
-        delay: i * 0.08,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: item,
-          start: 'top 90%',
-          toggleActions: 'play none none reverse'
-        }
-      });
-    });
+    // Ensure async Firestore renders (services & projects) bind reveals and update ScrollTrigger positions
+    const servicesContainer = document.getElementById('servicesListContainer');
+    if (servicesContainer && typeof MutationObserver !== 'undefined') {
+      const obs = new MutationObserver(() => initScrollReveals());
+      obs.observe(servicesContainer, { childList: true });
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => ScrollTrigger.refresh()).catch(() => {});
+    }
 
     // Watermark parallax
     const watermark = document.querySelector('.kinetic-watermark');
